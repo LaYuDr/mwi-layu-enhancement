@@ -1,0 +1,32 @@
+# 柆雨强化助手
+
+银河奶牛（Milky Way Idle）的本地 Tampermonkey 辅助插件，当前正式版本使用 V3 界面。
+
+## 功能
+
+- 强化路线、期望消耗、工时费和利润计算。
+- 物品收藏、自定义分区、等级与参考售价管理。
+- 材料汇总、备料车、库存缺口和预算。
+- 官方行情、本人挂单及已观察到的成交记录。
+- 打开游戏市场、制作或强化页面，并预填相关参数。
+- 本地设置备份与恢复；界面随游戏容器宽度调整。
+
+不会自动开始强化、制作、购买或出售。计算结果是估算，实际游戏操作由玩家确认。没有逐笔成交价和时间的数据不会冒充真实成交记录。
+
+## 安装与更新
+
+[从 GitHub 安装正式版](https://raw.githubusercontent.com/LaYuDr/mwi-layu-enhancement/main/mwi-layu-enhancement.user.js)。Greasy Fork 入口尚在配置。
+
+需要先安装 Tampermonkey。安装后刷新游戏；同一插件的正式版、开发加载器、独立 V3 试用版只启用一个。正式脚本已包含运行时代码，无需启动本地服务。
+
+更新由 Tampermonkey 的更新设置控制，也可在其管理面板手动检查更新。作者在 GitHub 更新正式脚本后，由 Greasy Fork 已配置的同步方式拉取；同步和客户端检查可能有延迟。
+
+支持 `www.milkywayidle.com` 与 `www.milkywayidlecn.com`。同一浏览器和游戏域名下沿用原主版本的 `mwi-layu:*` 数据；独立 V3 试用版的隔离数据不自动合并。浏览器、游戏域名和角色作用域按现有规则隔离。
+
+## 隐私与许可
+
+玩家数据保存在本地浏览器，不上传到 GitHub 或 Greasy Fork；游戏行情请求使用官方来源。此仓库只分发完整用户脚本、更新元数据与说明，不包含玩家数据、备份或本地开发加载器。
+
+项目代码采用 MIT；第三方组件与署名见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，同样包含在用户脚本中。
+
+反馈问题请使用 [GitHub Issues](https://github.com/LaYuDr/mwi-layu-enhancement/issues)，不要附带密码、账号凭据或完整玩家备份。
