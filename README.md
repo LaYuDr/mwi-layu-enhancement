@@ -15,7 +15,7 @@
 
 ## 安装与更新
 
-[从 GitHub 安装正式版](https://raw.githubusercontent.com/LaYuDr/mwi-layu-enhancement/main/mwi-layu-enhancement.user.js)。Greasy Fork 入口尚在配置。
+[从 Greasy Fork 安装](https://greasyfork.org/zh-CN/scripts/599358)
 
 需要先安装 Tampermonkey。安装后刷新游戏；同一插件的正式版、开发加载器、独立 V3 试用版只启用一个。正式脚本已包含运行时代码，无需启动本地服务。
 

@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         柆雨强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.1
+// @version      0.3.2
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:zh-CN   柆雨强化助手
 // @description:zh-CN 强化路线、工时费、物品收藏与材料导航
 // @homepageURL  https://github.com/LaYuDr/mwi-layu-enhancement
 // @supportURL   https://github.com/LaYuDr/mwi-layu-enhancement/issues
-// @updateURL    https://raw.githubusercontent.com/LaYuDr/mwi-layu-enhancement/main/mwi-layu-enhancement.meta.js
-// @downloadURL  https://raw.githubusercontent.com/LaYuDr/mwi-layu-enhancement/main/mwi-layu-enhancement.user.js
+// @updateURL    https://update.greasyfork.org/scripts/599358/%E6%9F%86%E9%9B%A8%E5%BC%BA%E5%8C%96%E5%8A%A9%E6%89%8B.meta.js
+// @downloadURL  https://update.greasyfork.org/scripts/599358/%E6%9F%86%E9%9B%A8%E5%BC%BA%E5%8C%96%E5%8A%A9%E6%89%8B.user.js
 // @match        https://www.milkywayidle.com/*
 // @match        https://www.milkywayidlecn.com/*
 // @run-at       document-start
@@ -6330,6 +6330,7 @@ function getPriceTier(price, direction) {
     let inventorySignature = "";
     let engine = null;
     let engineKey = "";
+    let enginePriceRevision = -1, engineMarketSignature = "";
     let revision = 0;
     let calculationRevision = 0;
     let inventoryRevision = 0;
@@ -6420,12 +6421,19 @@ function getPriceTier(price, direction) {
       return results.get(resultKey);
     }
     function ensureEngine() {
-      const key = `${calculationRevision}:${prices.state().revision}:${Math.floor(Date.now() / 60000)}`;
-      if (!engine || key !== engineKey) {
+      const key = `${calculationRevision}:${Math.floor(Date.now() / 60000)}`;
+      const priceRevision = prices.state().revision;
+      if (engine && key === engineKey && priceRevision === enginePriceRevision) return;
+      const market = prices.calculationData();
+      const marketSignature = JSON.stringify(market.marketData);
+      // Receipt timestamps/order-book quantities can change without changing any
+      // formula input. Keep cached routes in that case; freshness still updates in the UI.
+      if (!engine || key !== engineKey || marketSignature !== engineMarketSignature) {
         engineKey = key;
         results.clear();
-        engine = app.wageEngine.create({ config: settings, rules, character: character || {}, market: prices.calculationData() });
+        engine = app.wageEngine.create({ config: settings, rules, character: character || {}, market });
       }
+      enginePriceRevision = priceRevision; engineMarketSignature = marketSignature;
     }
     function preparationResult(item, result) {
       if (result?.reason !== "暂无售价" || result.metrics || !(item.enhancementLevel > 0)) return result;
@@ -6814,17 +6822,61 @@ function getPriceTier(price, direction) {
 })(globalThis);
 
 
+// ---- src/v3/notifications.js ----
+(function initV3Notifications(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  function create({ onEmptyFocus }) {
+    const document = root.document;
+    const element = document.createElement("section");
+    element.className = "v3-notifications";
+    element.setAttribute("aria-label", "操作提示");
+    element.hidden = true;
+    const observers = [];
+    function createStatus({ onDismiss } = {}) {
+      const row = document.createElement("div"); row.className = "v3-notification"; row.hidden = true;
+      const content = document.createElement("div");
+      content.setAttribute("role", "status"); content.setAttribute("aria-atomic", "true");
+      const close = document.createElement("button"); close.type = "button";
+      close.className = "v3-notification-dismiss"; close.textContent = "删除提示";
+      function sync() {
+        row.hidden = content.hidden || !content.textContent.trim();
+        row.classList.toggle("v3-notification-error", content.getAttribute("role") === "alert");
+        element.hidden = ![...element.children].some(child => !child.hidden);
+      }
+      close.onclick = () => {
+        const focused = row.contains(document.activeElement);
+        onDismiss?.(); content.replaceChildren(); sync();
+        if (focused) {
+          const next = [...element.children].find(child => !child.hidden);
+          if (next) next.querySelector(".v3-notification-dismiss").focus({ preventScroll: true });
+          else onEmptyFocus?.();
+        }
+      };
+      row.append(content, close); element.append(row);
+      // Keep existing DOM-based status writers and rich item/undo content intact.
+      const observer = new root.MutationObserver(sync);
+      observer.observe(content, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["hidden", "role"] });
+      observers.push(observer);
+      return content;
+    }
+    return Object.freeze({ element, createStatus, destroy() { observers.forEach(observer => observer.disconnect()); element.remove(); } });
+  }
+  app.v3Notifications = Object.freeze({ create });
+})(globalThis);
+
+
 // ---- src/v3/backup-ui.js ----
 (function initBackupUI(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
-  function create() {
+  function create(createStatus) {
     const document = root.document;
     const backup = app.localBackup.create();
     const section = document.createElement("details"); section.className = "mwi-layu-backup";
     app.viewPreferences.bindDetails(section, "backup");
     const title = document.createElement("summary"); title.textContent = "本地备份与恢复";
-    const status = document.createElement("p"); status.setAttribute("role", "status");
+    const status = createStatus ? createStatus() : document.createElement("p"); status.setAttribute("role", "status");
     const preview = document.createElement("div");
     function button(text, action) {
       const el = document.createElement("button"); el.type = "button"; el.textContent = text; el.onclick = action; return el;
@@ -6867,7 +6919,8 @@ function getPriceTier(price, direction) {
         status.textContent = "校验通过，请检查覆盖范围后再恢复。";
       } catch (error) { if (current === generation) status.textContent = `无法读取备份：${error.message}`; }
     };
-    section.append(title, exportButton, label, preview, status);
+    section.append(title, exportButton, label, preview);
+    if (!createStatus) section.prepend(status);
     return section;
   }
   app.backupUI = Object.freeze({ create });
@@ -6993,7 +7046,7 @@ function getPriceTier(price, direction) {
   const app = root.MWILayuEnhancement;
   const tiers = { loss: "亏损／持平", red: "低工时", orange: "一般工时", gold: "中等工时", lightGreen: "较高工时", brightGreen: "高工时" };
   const sourceLabels = { "": "不使用", ask: "左一", askMinusOne: "左一退一档", bidPlusOne: "右一进一档", bid: "右一" };
-  function createSettings(wages) {
+  function createSettings(wages, createStatus) {
     const document = root.document;
     const container = document.createElement("section");
     container.className = "mwi-layu-wage-settings";
@@ -7076,7 +7129,8 @@ function getPriceTier(price, direction) {
     field(virtual, "virtual.tea_type", "强化茶", { choices: { none: "不使用", basic: "普通强化茶", super: "超级强化茶", ultra: "究极强化茶" } });
     field(virtual, "virtual.champion_achievement", "冠军成就", { type: "checkbox" });
     field(virtual, "virtual.community_enhancing_speed_level", "虚拟社区增益等级", { choices: Object.fromEntries([["system", "跟随当前社区增益开关"], ...Array.from({ length: 21 }, (_, level) => [String(level), String(level)])]) });
-    const virtualStatus = document.createElement("p"); virtualStatus.setAttribute("role", "status"); virtual.append(virtualStatus);
+    const virtualStatus = createStatus ? createStatus() : document.createElement("p"); virtualStatus.setAttribute("role", "status");
+    if (!createStatus) container.prepend(virtualStatus);
     for (const [path, input] of controls) {
       if (!path.startsWith("virtual.")) continue;
       input.addEventListener("change", () => {
@@ -7104,12 +7158,12 @@ function getPriceTier(price, direction) {
         }
       });
     }
-    const status = document.createElement("p"); status.setAttribute("role", "status");
+    const status = createStatus ? createStatus() : document.createElement("p"); status.setAttribute("role", "status");
     const actions = document.createElement("div"); actions.className = "mwi-layu-wage-actions";
     const save = document.createElement("button"); save.type = "submit"; save.className = "mwi-layu-settings-save"; save.textContent = "保存并应用";
     const reset = document.createElement("button"); reset.type = "button"; reset.textContent = "恢复默认值";
     const retry = document.createElement("button"); retry.type = "button"; retry.textContent = "重新读取角色";
-    actions.append(save, reset, retry); form.append(actions, status); container.append(form, app.helpUI.create());
+    actions.append(save, reset, retry); form.append(actions); if (!createStatus) container.prepend(status); container.append(form, app.helpUI.create());
     function populate(value) {
       for (const [path, input] of controls) {
         let stored;
@@ -7174,7 +7228,7 @@ function getPriceTier(price, direction) {
     if (!match) return NaN;
     return Number(match[1].replaceAll(",", "")) * ({ k: 1e3, m: 1e6, b: 1e9 }[match[2]?.toLowerCase()] || 1);
   }
-  function create({ item, capture, readQuote, names = {} }) {
+  function create({ item, capture, readQuote, names = {}, onStatus }) {
     const document = root.document;
     function node(tag, text, className) {
       const el = document.createElement(tag); if (text != null) el.textContent = text;
@@ -7245,7 +7299,7 @@ function getPriceTier(price, direction) {
       const restore = button("左一", () => {
         const quote = currentQuote();
         if (!(quote?.price > 0) || !Number.isFinite(quote.price) || quote.price > 1e12) {
-          note.textContent = "暂无有效左一价格，请先读取该材料行情"; return;
+          (onStatus || (text => { note.textContent = text; }))("暂无有效左一价格，请先读取该材料行情"); return;
         }
         if (!snapshot) initialize();
         // Restore the input used by this cost control, including bid-priced recipes.
@@ -7265,7 +7319,7 @@ function getPriceTier(price, direction) {
         if (!dirty) { displayPrice(); return; }
         const price = parsePrice(amount.value);
         if (!Number.isFinite(price) || price <= 0 || price > 1e12) {
-          amount.setAttribute("aria-invalid", "true"); note.textContent = "请输入大于 0 且不超过 1,000,000,000,000 的单价"; return;
+          amount.setAttribute("aria-invalid", "true"); (onStatus || (text => { note.textContent = text; }))("请输入大于 0 且不超过 1,000,000,000,000 的单价"); return;
         }
         dirty = false; amount.removeAttribute("aria-invalid"); setPrice(hrid, side, price);
       }
@@ -7364,7 +7418,7 @@ function getPriceTier(price, direction) {
     }
     return [...pairs.values()].flatMap(pair => [pair.top, pair.bottoms].filter(Boolean)).concat(other);
   }
-  function create({ presets, onChange, preferences, onOpen }) {
+  function create({ presets, onChange, preferences, onOpen, createStatus }) {
     const document = root.document, prefix = `mwi-preset-${++nextId}`;
     const node = (tag, text, className) => {
       const el = document.createElement(tag);
@@ -7376,6 +7430,8 @@ function getPriceTier(price, direction) {
     // Equipment choices belong to this open manager; enhancement levels and the display filter persist.
     const selected = new Map(), levels = new Set(preferences.read().presetLevels || []), expanded = new Set(["clothes"]);
     let resultText = "", failure = false, snapshot, deleting = false, removed = [], searchText = "", targetGroup = "";
+    const message = createStatus ? createStatus({ onDismiss: () => { resultText = ""; failure = false; } }) : node("p");
+    message.className = "mwi-layu-preset-message";
     const choices = tier => selected.get(tier.id) || new Set();
     function checkbox(label, value, checked, change) {
       const input = node("input"); input.type = "checkbox"; input.checked = checked; input.value = value;
@@ -7406,7 +7462,7 @@ function getPriceTier(price, direction) {
         filterTree();
       }; modes.append(search);
       element.append(modes);
-      if (!catalog.ready) { element.append(node("p", "等待游戏物品数据，请刷新游戏后重试。", "mwi-layu-preset-message")); return; }
+      if (!catalog.ready) { message.hidden = false; message.textContent = "等待游戏物品数据，请刷新游戏后重试。"; if (!createStatus) element.prepend(message); return; }
       const filter = button("隐藏普通装备", "preset-hide-ordinary", () => {
         const parents = [];
         for (let parent = element.parentElement; parent; parent = parent.parentElement) parents.push([parent, parent.scrollTop]);
@@ -7588,8 +7644,7 @@ function getPriceTier(price, direction) {
       const matches = node("details", null, "mwi-layu-preset-matches"); matches.hidden = !deleting;
       const matchSummary = node("summary"), matchList = node("div", null, "mwi-layu-delete-preview");
       matches.append(matchSummary, matchList);
-      const message = node("p", null, "mwi-layu-preset-message");
-      element.append(node("p", deleting ? "两个按钮使用相同物品与强化等级条件：仅删预设新增，或删除全部匹配。删除同时移除参考价，可撤销；分区、备料车及游戏挂单保持原状。" : "仅添加所选物品；保留已有分区归属、收藏与参考价。", "mwi-layu-preset-preserve mwi-layu-group-note"), matches, footer, message);
+      element.append(node("p", deleting ? "两个按钮使用相同物品与强化等级条件：仅删预设新增，或删除全部匹配。删除同时移除参考价，可撤销；分区、备料车及游戏挂单保持原状。" : "仅添加所选物品；保留已有分区归属、收藏与参考价。", "mwi-layu-preset-preserve mwi-layu-group-note"), matches, footer);
       function activeItems() {
         return Object.fromEntries(catalog.presets.filter(tier => choices(tier).size).map(tier => [tier.id, [...choices(tier)]]));
       }
@@ -7654,7 +7709,8 @@ function getPriceTier(price, direction) {
       }
       update(); filterTree();
       const layout = node("div", null, "v3-preset-layout"), side = node("div", null, "v3-preset-config");
-      grid.before(layout); layout.append(grid, side); side.append(aside, selection, matches, footer, message);
+      grid.before(layout); layout.append(grid, side); side.append(aside, selection, matches, footer);
+      if (!createStatus) element.prepend(message);
     }
     return Object.freeze({ element, render });
   }
@@ -7666,7 +7722,7 @@ function getPriceTier(price, direction) {
 (function initV3FavoriteManagement(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
-  function create({ store, partitions, onChange }) {
+  function create({ store, partitions, onChange, createStatus }) {
     const document = root.document, key = app.marketFavoritesStore.key;
     const node = (tag, text, className) => {
       const el = document.createElement(tag);
@@ -7700,7 +7756,7 @@ function getPriceTier(price, direction) {
     field("收藏来源", "source", [["", "全部来源"], ["preset", "明确由预设新增"], ["other", "手动或来源未记录"]]);
     const actions = node("div", null, "v3-favorite-actions"), summary = node("p"), list = node("div", null, "mwi-layu-favorite-delete-list mwi-layu-group-scroll");
     list.tabIndex = 0; list.setAttribute("role", "region"); list.setAttribute("aria-label", "收藏管理表格");
-    const status = node("p"); status.setAttribute("role", "status");
+    const status = createStatus ? createStatus() : node("p"); status.setAttribute("role", "status");
     function matching() {
       const query = filters.search.trim().toLocaleLowerCase();
       return store.list().filter(item => (!query || `${snapshot.names[item.itemHrid] || item.name} ${item.itemHrid}`.toLocaleLowerCase().includes(query)) &&
@@ -7739,7 +7795,8 @@ function getPriceTier(price, direction) {
     const help = node("details", null, "v3-favorite-help"); help.append(node("summary", "删除范围与撤销说明"),
       node("p", "筛选条件同时生效；改变条件会清空勾选。删除同时移除参考价，可撤销最近一次删除。分区、备料车及游戏挂单保持原状。"),
       node("p", "一键清理覆盖全部分区与强化等级，仅删除明确由预设新增的收藏；旧收藏及预设复用的已有收藏保留。"), presetPreview);
-    element.append(heading, bar, operations, help, list, status);
+    element.append(heading, bar, operations, help, list);
+    if (!createStatus) element.prepend(status);
     function identity(item) { return app.itemUI.identity(item, snapshot.spriteBase, `${snapshot.names[item.itemHrid] || item.name} +${item.enhancementLevel}`); }
     function draw() {
       const rows = matching(), valid = new Set(rows.map(key));
@@ -7855,7 +7912,13 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel p {margin:6px 0;color:var(--v3-muted);}
 .mwi-layu-panel p:empty,.mwi-layu-panel div[role=status]:empty {display:none;}
 .mwi-layu-panel summary {cursor:pointer;}
-.mwi-layu-panel > p[role=status] {padding:4px 12px;color:#fbbf24;flex-shrink:0;}
+.mwi-layu-panel .v3-notifications {flex:0 1 auto;min-height:0;max-height:25%;overflow:auto;border-bottom:1px solid var(--v3-line);}
+.mwi-layu-panel .v3-notification {display:flex;align-items:flex-start;gap:12px;padding:6px 14px;color:#fbbf24;}
+.mwi-layu-panel .v3-notification + .v3-notification {border-top:1px solid var(--v3-line);}
+.mwi-layu-panel .v3-notification > :first-child {flex:1;min-width:0;overflow-wrap:anywhere;align-self:center;}
+.mwi-layu-panel .v3-notification-error {color:#f87171;}
+.mwi-layu-panel .v3-notification-dismiss {flex-shrink:0;color:var(--v3-text);}
+.mwi-layu-panel .v3-notification .mwi-layu-undo {padding:0;background:none;}
 .mwi-layu-panel .v3-header {min-height:46px;flex-shrink:0;display:flex;flex-wrap:wrap;gap:6px;padding-block:6px;align-items:center;justify-content:space-between;padding:0 14px;background:var(--v3-header);border-bottom:1px solid var(--v3-line);}
 .mwi-layu-panel .v3-header strong {font-size:14px;}
 .mwi-layu-panel .v3-header .mwi-layu-group-toolbar {padding:0;border:0;}
@@ -8034,7 +8097,7 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-section-heading h2,.mwi-layu-panel .v3-section-heading p {margin:0;}
 .mwi-layu-panel .mwi-layu-group-nav .mwi-layu-partition-choice {border:1px solid transparent;border-radius:4px;padding:4px 8px;cursor:pointer;}
 .mwi-layu-panel .mwi-layu-group-nav .mwi-layu-partition-choice input {position:absolute;opacity:0;width:1px;height:1px;}
-.mwi-layu-panel .mwi-layu-group-nav .mwi-layu-partition-choice:focus-within {outline:2px solid #38bdf8;}
+.mwi-layu-panel .mwi-layu-group-nav .mwi-layu-partition-choice:has(input:focus-visible) {outline:2px solid #38bdf8;}
 .mwi-layu-panel .mwi-layu-group-nav .mwi-layu-partition-choice:has(input:checked) {border-color:#3c6a87;background:#183349;}
 .mwi-layu-panel .mwi-layu-level-actions button {display:flex;justify-content:center;align-items:center;gap:6px;}
 .mwi-layu-panel .v3-sim-actions {display:flex;gap:3px;margin-left:auto;flex-shrink:0;}
@@ -8199,7 +8262,7 @@ function getPriceTier(price, direction) {
     return "≤ " + [days && `${days}天`, hours && `${hours}小时`, minutes && `${minutes}分`,
       (rest || seconds === 0) && `${rest}秒`].filter(Boolean).join(" ");
   };
-  function create({ partitions, cart, presets, onChange, onOpen, onCraft, onEnhance, onPrice, onStatus }) {
+  function create({ partitions, cart, presets, onChange, onOpen, onCraft, onEnhance, onPrice, onStatus, createStatus }) {
     const document = root.document;
     function node(tag, text, className) {
       const el = document.createElement(tag); if (text != null) el.textContent = text;
@@ -8242,8 +8305,8 @@ function getPriceTier(price, direction) {
     let { workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder } = pageState.read();
     let settingsPage = null, matrixQuery = "";
     const savePage = () => pageState.save({ workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder });
-    const favoriteManager = app.v3FavoriteManagement.create({ store: app.marketFavoritesStore.createStore(root.localStorage), partitions, onChange });
-    const presetView = presets ? app.partitionPresetUI.create({ presets, onChange, preferences, onOpen }) : null;
+    const favoriteManager = app.v3FavoriteManagement.create({ store: app.marketFavoritesStore.createStore(root.localStorage), partitions, onChange, createStatus });
+    const presetView = presets ? app.partitionPresetUI.create({ presets, onChange, preferences, onOpen, createStatus }) : null;
     let partitionGesture = null;
     const partitionEdits = new Map();
     function bindPartitionSorting(nav) {
@@ -8530,13 +8593,30 @@ function getPriceTier(price, direction) {
         apply(widths[key]); th.append(grip);
       });
     }
+    let structureSignature = "", refreshLive = null, renderRevision = 0;
+    // Keep loaded SVG instances when a changed detail/cart region needs new controls.
+    // New controls retain their own closures; no generic DOM morphing of event handlers.
+    function replaceRegion(previous, next) {
+      const icons = new Map();
+      for (const svg of previous.querySelectorAll("svg")) {
+        const href = svg.querySelector("use")?.getAttribute("href");
+        if (!href) continue;
+        if (!icons.has(href)) icons.set(href, []);
+        icons.get(href).push(svg);
+      }
+      for (const svg of next.querySelectorAll("svg")) {
+        const old = icons.get(svg.querySelector("use")?.getAttribute("href"))?.shift();
+        if (old) svg.replaceWith(old);
+      }
+      previous.replaceWith(next);
+    }
     function render(snapshot) {
       if (partitionGesture) return;
       if (resizeSession) { resizePending = true; return; }
       if (composingSearch) return;
       // Keep the workspace stable even when filters leave no project table.
       syncProjectWidth(partitions.columnWidths());
-      const { items, wages, prices, own, history, historyError, names, spriteBase, cartScope, cartItems, cartError } = snapshot;
+      let { items, wages, prices, own, history, historyError, names, spriteBase, cartScope, cartItems, cartError } = snapshot;
       if (cartError || !cartItems.some(item => item.quantity === 1 && `${cartScope}|${app.materialCart.key(item)}` === pendingRemoval)) clearPendingRemoval();
       // Calculation revisions include routinely refreshed role/buff metadata.
       // A frozen scenario belongs to a confirmed character, not a cache epoch.
@@ -8546,7 +8626,7 @@ function getPriceTier(price, direction) {
       }
       const groups = partitions.groups();
       const selected = partitions.selectedGroups();
-      const catalog = app.materialCart.catalog(items.filter(item => wages.materialInfo(item).category !== "materials"), cartItems, wages, prices);
+      let catalog = app.materialCart.catalog(items.filter(item => wages.materialInfo(item).category !== "materials"), cartItems, wages, prices);
       const materialItems = items.map(item => wages.materialInfo(item)).filter(item => item.category === "materials");
       partitions.setMaterialHrids([...materialItems, ...catalog.rows.filter(item => wages.materialInfo(item).category !== "equipment")].map(item => item.itemHrid));
       const materialRows = new Map(catalog.rows.map(item => [app.materialCart.key(item), item]));
@@ -8561,7 +8641,7 @@ function getPriceTier(price, direction) {
       const all = [...new Map(items.map(item => [item.itemHrid, { item, sortIndex: wages.materialInfo(item).sortIndex }])).values()]
         .sort((a, b) => app.marketPartitions.compare(a.sortIndex, b.sortIndex, 1));
       const matchesSearch = item => !search.trim() || `${names[item.itemHrid] || item.name} +${item.enhancementLevel} ${item.itemHrid}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase());
-      const chosen = items.filter(item => matchesSearch(item) && partitions.groupsOf(item.itemHrid).some(id => selected.includes(id) && id !== "materials") &&
+      let chosen = items.filter(item => matchesSearch(item) && partitions.groupsOf(item.itemHrid).some(id => selected.includes(id) && id !== "materials") &&
         !(showMaterials && materialRows.has(app.materialCart.key(item)))).map(item => {
         const quote = prices.quote(item);
         const simulation = simulationPanels.get(app.materialCart.key(item));
@@ -8579,6 +8659,19 @@ function getPriceTier(price, direction) {
         (sort === "name" ? compare(a.item.enhancementLevel, b.item.enhancementLevel, direction) : 0));
       const active = document.activeElement;
       if (element.contains(active) && active.tagName === "INPUT" && !["checkbox", "search"].includes(active.type)) return;
+      const nextStructure = JSON.stringify([items, cartItems, cartScope, cartError, partitions.read(), names, spriteBase,
+        workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, search, listingFilter, sort, direction,
+        materialSort, materialDirection, shortagesOnly, [...expanded], [...historyExpanded], [...simulationEnabled],
+        [...quantityDrafts], [...priceDrafts], pendingRemoval, allocationOwner,
+        chosen.map(plan => app.materialCart.key(plan.item)).sort(), catalog.rows.map(app.materialCart.key).sort(), wages.settings()]);
+      if (nextStructure === structureSignature && refreshLive) {
+        refreshLive(snapshot, chosen, catalog);
+        element.dataset.renderRevision = String(++renderRevision);
+        return;
+      }
+      structureSignature = nextStructure;
+      refreshLive = null;
+      element.dataset.renderRevision = String(++renderRevision);
       const savedView = rememberView();
       syncDrawerHeight = () => {};
       element.replaceChildren();
@@ -8591,13 +8684,14 @@ function getPriceTier(price, direction) {
           settingsPage = node("section", null, "v3-settings-page");
           settingsPage.setAttribute("aria-label", "设置与备份");
           const content = node("div", null, "v3-settings-body");
-          const settings = app.v3Settings.createSettings(wages); settings.open = true;
-          content.append(settings, app.backupUI.create());
+          const settings = app.v3Settings.createSettings(wages, createStatus); settings.open = true;
+          content.append(settings, app.backupUI.create(createStatus));
           settingsPage.append(node("h2", "设置与备份"), content);
         }
         element.append(settingsPage);
         app.itemUI.decorate(element, spriteBase, names);
         restoreView(savedView);
+        refreshLive = () => {};
         return;
       }
       const controlsRow = node("div", null, "v3-controls");
@@ -8670,6 +8764,18 @@ function getPriceTier(price, direction) {
         else { favoriteManager.render(snapshot); suite.append(favoriteManager.element); }
         element.append(suite);
       }
+      const projectRows = new Map();
+      let projectBody = null;
+      const fingerprint = plan => JSON.stringify([plan, own?.cached, Boolean(own),
+        plan.quote?.at && Date.now() - plan.quote.at >= 5 * 60000,
+        expanded.has(app.materialCart.key(plan.item)) ? [
+          wages.materials(plan.item, plan.result, plan.quantity), wages.materialInfo(plan.item),
+          Array.from({ length: plan.item.enhancementLevel + 1 }, (_, enhancementLevel) =>
+            wages.materialInfo({ ...plan.item, enhancementLevel }).inventoryCount),
+          prices.orderBook(plan.item), historyError,
+          history?.filter(sale => app.materialCart.key(sale) === app.materialCart.key(plan.item)),
+          wages.materials(plan.item, plan.result, plan.quantity).inputs.map(input => prices.quote(input))
+        ] : null]);
       const shell = node("div", null, "mwi-layu-shopping-layout");
       const main = node("div", null, "mwi-layu-projects");
       if (showProjects) {
@@ -8682,7 +8788,11 @@ function getPriceTier(price, direction) {
           listing.region.classList.add("mwi-layu-project-scroll"); listing.body.parentElement.classList.add("mwi-layu-project-table");
           sortableHeaders(listing, ["name", "market", "profit", "wage", "margin", "own", "reference", null], false);
           resizableColumns(listing);
-          for (const plan of chosen) projectRow(listing.body, plan);
+          projectBody = listing.body;
+          for (const plan of chosen) {
+            const nodes = projectRow(listing.body, plan);
+            projectRows.set(app.materialCart.key(plan.item), { ...nodes, signature: fingerprint(plan) });
+          }
           main.append(listing.region);
         }
       }
@@ -8697,8 +8807,8 @@ function getPriceTier(price, direction) {
       drawer.hidden = !drawerOpen; drawer.setAttribute("aria-label", "备料抽屉");
       if (drawerOpen) { resizableDrawer(drawer); drawer.append(cartPanel()); }
       const dock = node("footer", null, "v3-cart-dock");
-      const totals = app.materialCart.summarize(cartItems, wages, prices);
-      const budget = app.materialCart.budget(totals, prices);
+      let totals = app.materialCart.summarize(cartItems, wages, prices);
+      let budget = app.materialCart.budget(totals, prices);
       dock.append(node("span", `备料车 · ${cartItems.length} 项 / ${cartItems.reduce((n, item) => n + item.quantity, 0)} 件`),
         node("span", `采购预算 ${cartError || !cartScope ? "未知" : number(budget.amount)}${budget.complete ? "" : " · 数据待完整"}`));
       const toggle = button(drawerOpen ? "收起备料清单" : "展开备料清单", () => { drawerOpen = !drawerOpen; savePage(); onChange(); });
@@ -8712,6 +8822,61 @@ function getPriceTier(price, direction) {
       app.itemUI.decorate(element, spriteBase, names);
       syncDrawerHeight();
       restoreView(savedView);
+      let cartSignature = JSON.stringify([totals, budget, wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 })]);
+      let catalogSignature = JSON.stringify([catalog, catalog.rows.map(item => prices.quote(item))]);
+      refreshLive = (next, plans, nextCatalog) => {
+        ({ items, wages, prices, own, history, historyError, names, spriteBase, cartScope, cartItems, cartError } = next);
+        chosen = plans; catalog = nextCatalog;
+        const saved = rememberView();
+        let changed = false;
+        for (const plan of chosen) {
+          const entry = projectRows.get(app.materialCart.key(plan.item));
+          const signature = fingerprint(plan);
+          if (!entry || entry.signature === signature) continue;
+          const buffer = node("tbody");
+          const fresh = projectRow(buffer, plan, entry.tr);
+          // Identity, inputs, row and table stay connected. Only quote/order cells change.
+          // Moving a cell changes the source row's live HTMLCollection indices.
+          // Keep named references so the reference-price input cannot become the own-order cell.
+          for (const key of ["market", "own"]) {
+            entry.liveCells[key].replaceWith(fresh.liveCells[key]);
+            entry.liveCells[key] = fresh.liveCells[key];
+          }
+          if (entry.detail && fresh.detail) {
+            app.itemUI.decorate(fresh.detail, spriteBase, names);
+            replaceRegion(entry.detail, fresh.detail); entry.detail = fresh.detail;
+          }
+          entry.signature = signature; changed = true;
+        }
+        if (projectBody) {
+          let cursor = projectBody.firstChild;
+          for (const plan of chosen) {
+            const entry = projectRows.get(app.materialCart.key(plan.item));
+            for (const child of [entry.tr, entry.detail].filter(Boolean)) {
+              if (child !== cursor) { projectBody.insertBefore(child, cursor); changed = true; }
+              cursor = child.nextSibling;
+            }
+          }
+        }
+        const nextCatalogSignature = JSON.stringify([catalog, catalog.rows.map(item => prices.quote(item))]);
+        if (showMaterials && nextCatalogSignature !== catalogSignature) {
+          const nextPanel = materialCatalog(); app.itemUI.decorate(nextPanel, spriteBase, names);
+          replaceRegion(main.querySelector(".mwi-layu-material-catalog"), nextPanel); changed = true;
+        }
+        catalogSignature = nextCatalogSignature;
+        totals = app.materialCart.summarize(cartItems, wages, prices); budget = app.materialCart.budget(totals, prices);
+        const nextCartSignature = JSON.stringify([totals, budget, wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 })]);
+        if (nextCartSignature !== cartSignature) {
+          dock.children[2].textContent = `采购预算 ${cartError || !cartScope ? "未知" : number(budget.amount)}${budget.complete ? "" : " · 数据待完整"}`;
+          dock.querySelector(".v3-dock-shortage").textContent = `缺料 ${budget.total - budget.ready} 种`;
+          if (drawerOpen) {
+            const nextPanel = cartPanel(); app.itemUI.decorate(nextPanel, spriteBase, names);
+            replaceRegion(drawer.querySelector(".mwi-layu-cart"), nextPanel);
+          }
+          cartSignature = nextCartSignature; changed = true;
+        }
+        if (changed) { syncDrawerHeight(); restoreView(saved); }
+      };
       function sortableHeaders(listing, keys, isMaterial) {
         const current = isMaterial ? materialSort : sort;
         const order = isMaterial ? materialDirection : direction;
@@ -8850,7 +9015,7 @@ function getPriceTier(price, direction) {
         if (quantityDrafts.has(draftKey)) { try { readDraft(cartItems); } catch (_) { /* Keep validation visible after a redraw. */ } }
         stepper.append(lower, input, higher); return stepper;
       }
-      function projectRow(body, plan) {
+      function projectRow(body, plan, retainedRow = null) {
         const { item, quote, result, quantity } = plan; const key = app.materialCart.key(item); const label = `${item.name} +${item.enhancementLevel}`;
         const identity = button(null, () => { if (expanded.has(key)) expanded.delete(key); else expanded.add(key); saveView(); onChange(); }, `项目明细：${label}`);
         identity.className = "mwi-layu-project-identity"; identity.setAttribute("aria-expanded", String(expanded.has(key)));
@@ -8880,16 +9045,18 @@ function getPriceTier(price, direction) {
         }
         const saved = cartItems.find(row => app.materialCart.key(row) === key);
         const tr = row(body, [identity, price, profit(result), wage(result), profitMargin(result), mine, priceInput(item), projectQuantity(item)], "mwi-layu-project-row"); tr.dataset.favoriteKey = key;
+        const liveCells = { market:tr.cells[1], own:tr.cells[5] };
+        const metricRow = retainedRow || tr;
         const updateMetrics = () => {
           const simulation = simulationPanels.get(key);
           const active = simulation?.active();
           const metric = active ? simulation.current()?.simulated || { reason: "模拟报价无效，请修正" } : wages.calculate(item, prices.quote(item));
-          tr.cells[2].replaceChildren(profit(metric)); tr.cells[3].replaceChildren(wage(metric)); tr.cells[4].replaceChildren(profitMargin(metric));
-          tr.dataset.simulated = String(Boolean(active));
-          if (active) tr.cells[2].append(node("small", "模拟", "mwi-layu-quote-source"));
+          metricRow.cells[2].replaceChildren(profit(metric)); metricRow.cells[3].replaceChildren(wage(metric)); metricRow.cells[4].replaceChildren(profitMargin(metric));
+          metricRow.dataset.simulated = String(Boolean(active));
+          if (active) metricRow.cells[2].append(node("small", "模拟", "mwi-layu-quote-source"));
           for (const [index, value] of [[2, metric?.evaluation?.profit], [3, metric?.hourlyWage], [4, metric?.evaluation?.profitMargin]]) {
-            tr.cells[index].dataset.value = value ?? "";
-            tr.cells[index].title = active ? `材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : "按当前行情计算";
+            metricRow.cells[index].dataset.value = value ?? "";
+            metricRow.cells[index].title = active ? `材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : "按当前行情计算";
           }
         };
         updateMetrics();
@@ -8900,10 +9067,12 @@ function getPriceTier(price, direction) {
           mine.setAttribute("aria-label", mine.textContent);
         }
         if (saved) tr.classList.add("mwi-layu-project-selected");
+        let detailRow = null;
         if (expanded.has(key)) {
-          const detailRow = node("tr", null, "mwi-layu-project-detail-row"); const cell = node("td"); cell.colSpan = 8;
+          detailRow = node("tr", null, "mwi-layu-project-detail-row"); const cell = node("td"); cell.colSpan = 8;
           cell.append(levelSection(plan, quantity, updateMetrics)); detailRow.append(cell); body.append(detailRow);
         }
+        return { tr, detail: detailRow, liveCells };
       }
       function cartPanel() {
         const byUnitPrice = rows => rows.map(item => ({ item, price: item.itemHrid === "/items/coin" ? 1 : prices.quote(item)?.price }))
@@ -9147,7 +9316,7 @@ function getPriceTier(price, direction) {
         const key = app.marketFavoritesStore.key(item); const label = `${item.name} +${item.enhancementLevel}`;
         const section = node("section", null, "mwi-layu-group-level"); section.dataset.favoriteKey = key;
         if (!simulationPanels.has(key) || !simulationEnabled.has(key)) simulationPanels.set(key, app.priceSimulationUI.create({ item, spriteBase, names,
-          readQuote: entry => prices.quote(entry),
+          onStatus, readQuote: entry => prices.quote(entry),
           capture: () => wages.createSimulation(item, prices.quote(item)) }));
         const simulation = simulationPanels.get(key);
         section.classList.toggle("v3-simulation-enabled", simulationEnabled.has(key));
@@ -9494,12 +9663,14 @@ function getPriceTier(price, direction) {
     const cart = app.materialCart.create();
     const element = document.createElement("section"); element.id = panelId; element.className = "mwi-layu-panel";
     element.setAttribute("role", "tabpanel"); element.setAttribute("aria-label", "强化助手"); element.hidden = true;
-    const status = document.createElement("p"); status.setAttribute("role", "status");
-    const preferenceStatus = document.createElement("p"); preferenceStatus.setAttribute("role", "status");
+    const notifications = app.v3Notifications.create({ onEmptyFocus: () => refresh.focus({ preventScroll: true }) });
+    const createStatus = notifications.createStatus;
+    const status = createStatus();
+    const preferenceStatus = createStatus();
     const onPreferenceError = event => { preferenceStatus.textContent = event.detail; };
     document.addEventListener(app.viewPreferences.errorEvent, onPreferenceError);
     preferenceStatus.textContent = app.viewPreferences.shared().error();
-    const undo = document.createElement("div"); undo.className = "mwi-layu-undo"; undo.setAttribute("role", "status"); undo.tabIndex = -1;
+    const undo = createStatus(); undo.className = "mwi-layu-undo"; undo.setAttribute("role", "status"); undo.tabIndex = -1;
     const priceStatus = document.createElement("p"); priceStatus.className = "mwi-layu-price-status";
     const wageStatus = document.createElement("p"); wageStatus.className = "mwi-layu-wage-status";
     let nativeHost = null, timer = 0, destroyed = false, spriteBase = "", signature = "";
@@ -9511,7 +9682,7 @@ function getPriceTier(price, direction) {
     const prices = app.marketPrices.create({ onChange: schedule });
     const wages = app.marketWages.create({ prices, onChange: schedule });
     const presets = app.partitionPresets.create({ getCatalog: () => wages.presetCatalog() });
-    const view = app.v3Workspace.create({ partitions, cart, presets, onChange() { signature = ""; schedule(); },
+    const view = app.v3Workspace.create({ partitions, cart, presets, createStatus, onChange() { signature = ""; schedule(); },
       onOpen: openMarket, onCraft: (item, button) => prepareItem(item, button, "crafting"),
       onEnhance: (item, button) => prepareItem(item, button, "enhancing"),
       onPrice: (item, value) => store.setCustomPrice(item, value), onStatus: (text) => { status.textContent = text; } });
@@ -9534,7 +9705,7 @@ function getPriceTier(price, direction) {
     const healthTitle = document.createElement("summary"); healthTitle.textContent = "行情与角色状态";
     health.append(healthTitle, priceStatus, wageStatus);
     header.insertBefore(health, toolbar);
-    element.append(header, preferenceStatus, undo, view.element, status); document.body.append(element);
+    element.append(header, notifications.element, view.element); document.body.append(element);
     function fail() { status.textContent = "无法读取或保存收藏，请检查浏览器存储设置后重试。"; }
     function change(item, button, remove = false) {
       try {
@@ -9580,14 +9751,14 @@ function getPriceTier(price, direction) {
           catch (_) { own = null; ownSaveError = "本地挂单不可用，请检查浏览器存储权限"; }
           if (destroyed) return;
         } else {
-        own = { characterId, listings: response.listings, cached: false };
-        try {
-          const saved = await app.listingHistory.saveCurrent(listingServer, characterId, response.listings);
-          if (destroyed) return;
-          own = { ...saved, cached: false }; ownSaveError = "";
-        } catch (_) { ownSaveError = "挂单保存失败，本次数据仅在当前页面有效；请检查浏览器存储空间或权限"; }
-        const incoming = response.listings.map((item) => ({ ...item, name: names[item.itemHrid] }));
-        if (wages.settings().features.autoFavoriteListings) store.ingestListings(own.characterId, incoming);
+          own = { characterId, listings: response.listings, cached: false };
+          try {
+            const saved = await app.listingHistory.saveCurrent(listingServer, characterId, response.listings);
+            if (destroyed) return;
+            own = { ...saved, cached: false }; ownSaveError = "";
+          } catch (_) { ownSaveError = "挂单保存失败，本次数据仅在当前页面有效；请检查浏览器存储空间或权限"; }
+          const incoming = response.listings.map((item) => ({ ...item, name: names[item.itemHrid] }));
+          if (wages.settings().features.autoFavoriteListings) store.ingestListings(own.characterId, incoming);
         }
         render();
         const ownSignature = JSON.stringify(own);
@@ -9858,6 +10029,7 @@ function getPriceTier(price, direction) {
         document.removeEventListener("click", onListingsClick);
         root.clearInterval(wageTimer);
         view.destroy();
+        notifications.destroy();
         wages?.destroy();
         prices.destroy();
         document.removeEventListener(app.config.bridgeEvent, onMarketMessage);
