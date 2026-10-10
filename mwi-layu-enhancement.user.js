@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         柆雨强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.2
+// @version      0.3.3
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:zh-CN   柆雨强化助手
@@ -26,6 +26,7 @@
 - 固定版本：98c0fb04f2fbd8c9f9f1bb9ff1b027a907cf6286，userscript 1.6.231。
 - 作者署名（上游 header）：design by baozhi; from PaperCat; 感谢 ColaCola 倾情优化; 感谢 Q7 大厨神的 api 接口; 纪念 Foreversunny 的创意。
 - 上游 `src/header.js` 声明 MIT。`src/vendor/mooncake-wages.js` 提取计算依赖，新增显式输入适配层；不包含上报、交易、聊天或页面安装代码。
+- 本地取得方式适配：显式采购／自制选择传入底子与同物品保护的价格解析；不改变强化概率、期望次数和收益公式。显式选择 +0 来源时不使用先强化后精炼的替代取得路径。未传入此选项的上游固定参考用例保持原行为。
 - 提取的声明清单见 `mooncake-wages-symbols.json`。仅去除行尾空白，保留函数及常量语义。更新上游时须重新执行一致性与边界测试。
 
 ## mathjs 10.6.4 / lz-string 1.5.0
@@ -2171,16 +2172,29 @@ SOFTWARE.
       return row;
     };
     for (const item of items) {
-      if (!products.has(item.itemHrid)) products.set(item.itemHrid, { ...item, quantity: 0 });
-      products.get(item.itemHrid).quantity += item.quantity;
       const result = wages.calculate(item, prices.quote(item));
       const plan = wages.materials(item, result, item.quantity);
+      if (plan.craftingDemands) {
+        for (const demand of plan.craftingDemands) {
+          if (!products.has(demand.itemHrid)) products.set(demand.itemHrid, { ...wages.materialInfo({itemHrid:demand.itemHrid, enhancementLevel:0}), quantity:0, base:0, protects:0 });
+          const product = products.get(demand.itemHrid);
+          product.base += demand.base; product.protects += demand.protects * plan.multiplier;
+          product.quantity = Math.ceil(product.base) + Math.ceil(product.protects);
+        }
+      } else {
+        if (!products.has(item.itemHrid)) products.set(item.itemHrid, { ...item, quantity:0 });
+        products.get(item.itemHrid).quantity += item.quantity;
+      }
       if (plan.preparationBasis === "minCostWithoutSale") minimumCostItems.push({ item, message: "无目标售价，按最低成本路线备料", includeLevel: true });
       if (!plan.enhancementReady) { enhancementReady = false; addWarning(warnings, warningItems, item,
         `强化方案未就绪${plan.enhancementReason || result?.reason ? `（${plan.enhancementReason || result.reason}）` : ""}`); }
-      if (plan.mirrorRoute) addWarning(warnings, warningItems, item, "镜子路线组成装备需另外备齐");
-      for (const input of plan.inputs) {
+      if (plan.mirrorRoute && !plan.directInputs) addWarning(warnings, warningItems, item, "镜子路线组成装备需另外备齐");
+      for (const input of plan.directInputs || plan.inputs) {
         const row = ensure(input);
+        if (plan.directInputs) {
+          if (!Number.isFinite(input.count) || input.count < 0) manufacturingReady = false;
+          else row.manufacturing += input.count;
+        }
         const required = input.expectedEnhancement * item.quantity * plan.multiplier;
         if (!Number.isFinite(required) || required < 0) enhancementReady = false;
         else if (plan.enhancementReady) row.expectedEnhancement += required;
@@ -2232,7 +2246,7 @@ SOFTWARE.
     const products = new Map([...items, ...cartItems].map(item => [key(item), item]));
     for (const item of products.values()) {
       const plan = wages.materials(item, wages.calculate(item, prices.quote(item)), 1);
-      if (plan.batches == null || !plan.enhancementReady || plan.mirrorRoute) addWarning(warnings, warningItems, item, "材料范围尚未完整");
+      if (plan.batches == null || !plan.enhancementReady || (plan.mirrorRoute && !plan.directInputs)) addWarning(warnings, warningItems, item, "材料范围尚未完整");
       for (const input of plan.inputs) {
         const id = key(input);
         if (!rows.has(id)) rows.set(id, { ...input, sources: [], manufacturing: 0, enhancement: 0, required: 0, shortage: 0 });
@@ -2911,7 +2925,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 (function initWageEngine(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
-  function create({ config, rules = {}, character = {}, market = { marketData: {} }, math = app.wageMath }) {
+  function create({ config, rules = {}, character = {}, market = { marketData: {} }, math = app.wageMath, acquisitionSource = null }) {
     const itemDetailMap = rules.itemDetailMap || {};
     const characterSkills = character.characterSkills || [];
     const characterItems = character.characterItems || [];
@@ -4989,7 +5003,7 @@ function findBestProtectLevel(itemHrid, targetLevel, marketData, targetPrice, op
         const protectionItems = getProtectionItems(itemHrid);
         let minProtectCost = Infinity;
         for (const protectHrid of protectionItems) {
-            const price = getMarketPrice(protectHrid, marketData);
+            const price = hostProtectionPrice(itemHrid, protectHrid, marketData);
             if (price > 0 && price < minProtectCost) {
                 minProtectCost = price;
             }
@@ -5212,7 +5226,7 @@ function mooncakeResolveGenericMaterialPrice(materialHrid, marketData) {
 function mooncakeBuildGenericEnhancementCostContext(itemHrid, marketData) {
         return mooncakeBuildEnhancementCostContext(itemHrid, marketData, {
             resolveMaterialPrice: mooncakeResolveGenericMaterialPrice,
-            resolveProtectionPrice: (protectHrid, sourceMarketData) => getMarketPrice(protectHrid, sourceMarketData),
+            resolveProtectionPrice: (protectHrid, sourceMarketData) => hostProtectionPrice(itemHrid, protectHrid, sourceMarketData),
             resolveBaseItemPrice: mooncakeResolveGenericBaseItemPrice
         });
     }
@@ -5655,7 +5669,7 @@ function mooncakeBuildLegacyTraditionalRoute(itemHrid, targetLevel, marketData, 
             routeSelectionPolicy: best.routeSelectionPolicy || null,
             protectAt: best.protectAt,
             protectionItemHrid: best.expectedProtects > 1e-9 ? (getProtectionItems(itemHrid) || [])
-                .find(hrid => Number(getMarketPrice(hrid, marketData)) === Number(best.minProtectCost)) || null : null,
+                .find(hrid => Number(hostProtectionPrice(itemHrid, hrid, marketData)) === Number(best.minProtectCost)) || null : null,
             expectedActions: best.expectedActions,
             expectedProtects: best.expectedProtects,
             traditionalActions: best.expectedActions,
@@ -6044,6 +6058,25 @@ function getPriceTier(price, direction) {
         }
         return mooncakeSnapMarketPrice(currentPrice - 1, 'down');
     }
+    // Host acquisition policy: change inputs to the upstream probability and
+    // route formulas, never their arithmetic. Missing forced prices stay missing.
+    const resolveAutomaticBase = mooncakeResolveGenericBaseItemPrice;
+    mooncakeResolveGenericBaseItemPrice = (hrid, data) => {
+      const result = resolveAutomaticBase(hrid, data);
+      if (!["market", "craft"].includes(acquisitionSource)) return result;
+      return { ...result, source: acquisitionSource,
+        price: acquisitionSource === "craft" ? result.craftingCost : result.productPrice };
+    };
+    function hostProtectionPrice(itemHrid, protectHrid, data) {
+      return acquisitionSource && itemHrid === protectHrid
+        ? mooncakeResolveGenericBaseItemPrice(itemHrid, data).price
+        : getMarketPrice(protectHrid, data);
+    }
+    // An explicit +0 acquisition choice cannot be replaced by enhancing an
+    // unrefined item and refining it later. Unselected legacy routes are intact.
+    const carryoverPlans = mooncakeBuildRefinementCarryoverPlans;
+    mooncakeBuildRefinementCarryoverPlans = (...args) =>
+      ["market", "craft"].includes(acquisitionSource) ? [] : carryoverPlans(...args);
     // Host-only observation: preserve the exact upstream aggregation and retain
     // the selected component plans for material quantities, including carryover
     // provenance and protection HRIDs that upstream componentDetails omits.
@@ -6058,6 +6091,7 @@ function getPriceTier(price, direction) {
       // price, but 'profit' selects minimum total cost independently of it.
       // This neutral internal argument is never exposed as a market quote.
       minimumCostRoute: (hrid, level) => mooncakeGetEnhancementRoute(hrid, level, market, 1, 'profit'),
+      acquisition: hrid => ({ ...mooncakeResolveGenericBaseItemPrice(hrid, market) }),
       compareBase: (hrid, price) => mooncakeCalculateLevelZeroMarketComparison(hrid, "sell", price, market),
       // Host-only readout. Reuse upstream price resolvers without altering formulas.
       simulationPriceInfo: (hrid) => {
@@ -6067,6 +6101,8 @@ function getPriceTier(price, direction) {
           ask: mooncakeGetMarketAskPrice(hrid, market), bid: mooncakeGetMarketBidPrice(hrid, market),
           enhancement: mooncakeResolveGenericMaterialPrice(hrid, market),
           protection: getMarketPrice(hrid, market),
+          basePurchase: mooncakeGetBaseItemCostPolicyQuote(hrid, market, mooncakeGetBaseItemCostPricePolicy().product),
+          basePurchaseSource: mooncakeGetBaseItemCostPricePolicy().product,
           manufacturingQuote: source ? mooncakeGetBaseItemCostPolicyQuote(hrid, market, source) : 0,
           manufacturingSource: source || null,
           mirror: hrid === MOONCAKE_PHILOSOPHERS_MIRROR_HRID ? mooncakeResolveGenericMirrorUnitCost(market)?.unitCost : null
@@ -6152,10 +6188,10 @@ function getPriceTier(price, direction) {
     add("/items/philosophers_mirror", "镜子路线候选");
     return [...entries.values()];
   }
-  function create({ item, quote, settings, rules, character, market, quoteFor, capturedAt = Date.now() }) {
+  function create({ item, quote, settings, rules, character, market, quoteFor, acquisitionSource = "auto", capturedAt = Date.now() }) {
     const target = clone(item), sale = positive(quote?.price);
     const config = clone(settings), ruleData = clone(rules), player = clone(character || {}), baselineMarket = clone(market);
-    const engine = data => app.wageEngine.create({ config: clone(config), rules: ruleData, character: player, market: data });
+    const engine = data => app.wageEngine.create({ config: clone(config), rules: ruleData, character: player, market: data, acquisitionSource });
     const baselineEngine = engine(baselineMarket);
     function calculate(calculator, atPrice = sale) {
       if (!positive(atPrice)) {
@@ -6200,14 +6236,14 @@ function getPriceTier(price, direction) {
       for (const entry of inputs) {
         const info = calculator.simulationPriceInfo(entry.itemHrid);
         materialPrices[entry.itemHrid] = Object.fromEntries(Object.entries(info).map(([key, value]) =>
-          [key, key === "manufacturingSource" ? value : positive(value)]));
+          [key, ["manufacturingSource", "basePurchaseSource"].includes(key) ? value : positive(value)]));
         materialPrices[entry.itemHrid].manufacturing = positive(manufacturingPrices[entry.itemHrid]);
       }
       const diff = (before, after) => Number.isFinite(before) && Number.isFinite(after) ? after - before : null;
       return { baseline: clone(baseline), simulated, changed, materialPrices,
         // compareBase requires a positive quote to expose its cost decomposition.
         // The neutral fallback is never rendered as a quote; readyMadeCost remains 0/missing.
-        baseComparison: calculator.compareBase(target.itemHrid, data.marketData[target.itemHrid]?.["0"]?.a > 0 ? data.marketData[target.itemHrid]["0"].a : 1),
+        baseComparison: (() => { const base = calculator.acquisition(target.itemHrid); return { craftingCost: base.craftingCost, readyMadeCost: base.productPrice, baseItemSource: base.source }; })(),
         calculateAt: atPrice => positive(atPrice) ? calculate(calculator, atPrice) : { reason: "暂无有效售价" },
         routeChanged: baseline.metrics && simulated.metrics ? routeKey(baseline.metrics) !== routeKey(simulated.metrics) : null, delta: {
         totalCost: diff(baseline.metrics?.totalCost, simulated.metrics?.totalCost),
@@ -6237,7 +6273,7 @@ function getPriceTier(price, direction) {
     features: { marketHourlyWage: true, enhancingCommunityBuff: false, manufacturingArtisanTea: true, autoFavoriteListings: true },
     preferences: {
       enhancementRouteObjective: "hourly", enhancementStandardHourlyM: 15, enhancementMaterialMultiplier: 1.2,
-      baseItemCostPricePolicy: { material: ["ask", "bid"], product: "ask" },
+      baseItemCostPricePolicy: { material: ["ask", "bid"], product: "ask" }, baseItemSources: {},
       hourlyWageColorProfile: clone(reference.defaults.colors)
     }
   };
@@ -6267,6 +6303,12 @@ function getPriceTier(price, direction) {
     if (typeof prefs.enhancementMaterialMultiplier === "number" && Number.isFinite(prefs.enhancementMaterialMultiplier) &&
         prefs.enhancementMaterialMultiplier >= 0 && prefs.enhancementMaterialMultiplier <= 100) result.preferences.enhancementMaterialMultiplier = prefs.enhancementMaterialMultiplier;
     result.preferences.baseItemCostPricePolicy = reference.normalizePolicy(prefs.baseItemCostPricePolicy);
+    for (const [scope, entries] of Object.entries(prefs.baseItemSources || {})) {
+      if (!/^(virtual|[1-9][0-9]*)$/.test(scope) || !entries || typeof entries !== "object" || Array.isArray(entries)) continue;
+      const choices = Object.fromEntries(Object.entries(entries).filter(([hrid, source]) =>
+        /^\/items\/[a-z0-9_]+$/.test(hrid) && ["market", "craft"].includes(source)));
+      if (Object.keys(choices).length) result.preferences.baseItemSources[scope] = choices;
+    }
     const colors = reference.normalizeColors(prefs.hourlyWageColorProfile);
     result.preferences.hourlyWageColorProfile = { thresholdsM: colors.thresholdsM, colors: colors.colors };
     return result;
@@ -6336,8 +6378,9 @@ function getPriceTier(price, direction) {
     let inventoryRevision = 0;
     let pending = null;
     let destroyed = false;
-    const results = new Map();
-    function invalidate() { engine = null; results.clear(); calculationRevision += 1; revision += 1; onChange(); }
+    const results = new Map(), engines = new Map();
+    let engineMarketData = null;
+    function invalidate() { engine = null; engines.clear(); results.clear(); calculationRevision += 1; revision += 1; onChange(); }
     function save(value) {
       const next = normalize(value);
       storage.setItem(storageKey, JSON.stringify(next));
@@ -6406,40 +6449,51 @@ function getPriceTier(price, direction) {
       }
       return settings.virtual.enabled ? "虚拟角色" : "当前角色";
     }
+    const sourceScope = () => Number.isSafeInteger(character?.characterId) && character.characterId > 0
+      ? String(character.characterId) : settings.virtual.enabled ? "virtual" : null;
+    function baseItemSource(item) {
+      return settings.preferences.baseItemSources[sourceScope()]?.[item.itemHrid] || "market";
+    }
+    function setBaseItemSource(item, source) {
+      if (!["market", "craft"].includes(source) || !/^\/items\/[a-z0-9_]+$/.test(item.itemHrid)) throw new RangeError("无效的底子取得方式");
+      const scope = sourceScope();
+      if (!scope) throw new Error("角色尚未就绪，请重新读取角色后选择底子来源。");
+      const next = clone(settings);
+      next.preferences.baseItemSources[scope] = { ...next.preferences.baseItemSources[scope], [item.itemHrid]: source };
+      save(next);
+    }
     function calculate(item, quote) {
       if (!settings.features.marketHourlyWage) return { reason: "已关闭" };
       if (!rules?.itemDetailMap) return { reason: "等待物品数据" };
       if (!settings.virtual.enabled && !ready()) return { reason: "等待角色参数" };
       if (!item.enhancementLevel) return { reason: "未强化" };
       if (!(Number.isFinite(quote?.price) && quote.price > 0)) return preparationResult(item, { reason: "暂无售价" });
-      ensureEngine();
-      const resultKey = `${item.itemHrid}:${item.enhancementLevel}:${quote.price}`;
+      ensureEngine(item);
+      const resultKey = `${baseItemSource(item)}:${item.itemHrid}:${item.enhancementLevel}:${quote.price}`;
       if (!results.has(resultKey)) {
         const result = engine.calculate(item.itemHrid, item.enhancementLevel, quote.price);
         results.set(resultKey, result && Number.isFinite(result.hourlyWage) ? result : { reason: "缺少材料、底子或保护物价格" });
       }
       return results.get(resultKey);
     }
-    function ensureEngine() {
+    function ensureEngine(item) {
+      const acquisitionSource = item ? baseItemSource(item) : "market";
       const key = `${calculationRevision}:${Math.floor(Date.now() / 60000)}`;
       const priceRevision = prices.state().revision;
-      if (engine && key === engineKey && priceRevision === enginePriceRevision) return;
-      const market = prices.calculationData();
-      const marketSignature = JSON.stringify(market.marketData);
-      // Receipt timestamps/order-book quantities can change without changing any
-      // formula input. Keep cached routes in that case; freshness still updates in the UI.
-      if (!engine || key !== engineKey || marketSignature !== engineMarketSignature) {
-        engineKey = key;
-        results.clear();
-        engine = app.wageEngine.create({ config: settings, rules, character: character || {}, market });
+      if (!engineMarketData || key !== engineKey || priceRevision !== enginePriceRevision) {
+        const market = prices.calculationData(), signature = JSON.stringify(market.marketData);
+        if (key !== engineKey || signature !== engineMarketSignature) { engines.clear(); results.clear(); }
+        engineMarketData = market; engineMarketSignature = signature; engineKey = key; enginePriceRevision = priceRevision;
       }
-      enginePriceRevision = priceRevision; engineMarketSignature = marketSignature;
+      if (!engines.has(acquisitionSource)) engines.set(acquisitionSource,
+        app.wageEngine.create({ config: settings, rules, character: character || {}, market: engineMarketData, acquisitionSource }));
+      engine = engines.get(acquisitionSource);
     }
     function preparationResult(item, result) {
       if (result?.reason !== "暂无售价" || result.metrics || !(item.enhancementLevel > 0)) return result;
       if (!settings.features.marketHourlyWage || !rules?.itemDetailMap || (!settings.virtual.enabled && !ready())) return result;
-      ensureEngine();
-      const key = `preparation:minCost:${item.itemHrid}:${item.enhancementLevel}`;
+      ensureEngine(item);
+      const key = `preparation:minCost:${baseItemSource(item)}:${item.itemHrid}:${item.enhancementLevel}`;
       if (!results.has(key)) {
         const route = engine.minimumCostRoute(item.itemHrid, item.enhancementLevel);
         results.set(key, route && Number.isFinite(route.totalCost) && route.totalCost > 0
@@ -6453,7 +6507,7 @@ function getPriceTier(price, direction) {
       if (!rules?.itemDetailMap) throw new Error("等待游戏物品数据，请刷新游戏后重试。");
       if (!settings.virtual.enabled && !ready()) throw new Error("角色参数尚未就绪，请重新读取角色。");
       if (!(item.enhancementLevel > 0)) throw new Error("请选择已强化的收藏项目。");
-      return app.priceSimulation.create({ item, quote, settings, rules, character, market: prices.calculationData(), quoteFor: entry => prices.quote(entry) });
+      return app.priceSimulation.create({ item, quote, settings, rules, character, acquisitionSource: baseItemSource(item) || "auto", market: prices.calculationData(), quoteFor: entry => prices.quote(entry) });
     }
     function craftingRecipe(itemHrid) {
       const slug = itemHrid.split("/").pop();
@@ -6513,66 +6567,93 @@ function getPriceTier(price, direction) {
       result = preparationResult(item, result);
       const quantity = Number.isSafeInteger(planQuantity) && planQuantity >= 1 && planQuantity <= 1000000 ? planQuantity : targetQuantity(item);
       const multiplier = settings.preferences.enhancementMaterialMultiplier;
-      const inputs = new Map();
-      const artisan = manufacturingReduction();
+      const inputs = new Map(), manufacture = new Map();
+      const artisan = manufacturingReduction(), route = result?.metrics;
       const recipe = rules?.itemDetailMap ? craftingRecipe(item.itemHrid) : null;
-      const craftingReady = Boolean(recipe && Number.isFinite(recipe.outputCount) && recipe.outputCount > 0);
-      const batches = craftingReady ? Math.ceil(quantity / recipe.outputCount) : null;
+      let enhancementReady = item.enhancementLevel === 0 || Boolean(route), reason = "", batches = 0;
       const ensure = (hrid, level = 0) => {
         const key = `${hrid}:${level}`;
         if (!inputs.has(key)) inputs.set(key, { itemHrid: hrid, enhancementLevel: level,
-          name: rules?.itemDetailMap?.[hrid]?.name || hrid.split("/").pop(),
-          count: craftingReady ? 0 : null, expectedEnhancement: 0, inventoryCount: inventoryCount(hrid, level),
+          name: rules?.itemDetailMap?.[hrid]?.name || hrid.split("/").pop(), count: 0, expectedEnhancement: 0,
+          inventoryCount: inventoryCount(hrid, level),
           pendingPurchaseCount: app.materialCart.pendingPurchases(character?.purchaseListings, { itemHrid: hrid, enhancementLevel: level }) });
         return inputs.get(key);
       };
-      for (const input of recipe?.inputs || []) {
-        const entry = ensure(input.itemHrid, input.enhancementLevel ?? 0);
-        const reduction = input.isFixedUpgradeItem ? 1 : artisan.multiplier;
-        entry.count = entry.count != null && reduction != null && Number.isFinite(input.count) && input.count >= 0
-          ? entry.count + input.count * batches * reduction : null;
-      }
-      const route = result?.metrics;
-      let enhancementReady = item.enhancementLevel === 0 || Boolean(route);
       const addExpected = (hrid, count, level = 0) => {
         if (!hrid || !Number.isFinite(count) || count < 0) { enhancementReady = false; return; }
         if (count > 0) ensure(hrid, level).expectedEnhancement += count;
+      };
+      const addBase = (hrid, count, source, protects = 0) => {
+        if (!hrid || !Number.isFinite(count) || count < 0 || !Number.isFinite(protects) || protects < 0) { enhancementReady = false; return; }
+        if (source === "craft") {
+          const demand = manufacture.get(hrid) || { base: 0, protects: 0 };
+          demand.base += count; demand.protects += protects;
+          manufacture.set(hrid, demand);
+        } else if (source === "market") {
+          const entry = ensure(hrid); entry.purchasedBase = true; entry.count += count;
+          addExpected(hrid, protects / quantity);
+        } else enhancementReady = false;
+      };
+      const addRecipe = (hrid, units, refinementOnly = false) => {
+        const recipe = craftingRecipe(hrid);
+        if (!recipe || !(Number.isFinite(recipe.outputCount) && recipe.outputCount > 0)) {
+          enhancementReady = false; reason = "制造配方或产出数量未知，无法计算完整备料。"; return;
+        }
+        const count = Math.ceil(units / recipe.outputCount);
+        batches += count;
+        for (const input of recipe.inputs) {
+          if (refinementOnly && input.isFixedUpgradeItem) continue;
+          const entry = ensure(input.itemHrid, input.enhancementLevel ?? 0);
+          const reduction = input.isFixedUpgradeItem ? 1 : artisan.multiplier;
+          entry.count = entry.count != null && reduction != null && Number.isFinite(input.count) && input.count >= 0
+            ? entry.count + input.count * count * reduction : null;
+        }
       };
       if (route && item.enhancementLevel > 0) {
         const parts = route.routeType === "philosophersMirror" ? route.materialComponents : [{ ...route, itemHrid: item.itemHrid, quantity: 1 }];
         if (!Array.isArray(parts) || !parts.length) enhancementReady = false;
         for (const part of parts || []) {
-          const sourceHrid = part.routeType === "refinementCarryover"
-            ? craftingRecipe(part.itemHrid)?.upgradeItemHrid
-            : part.itemHrid;
-          const costs = rules?.itemDetailMap?.[sourceHrid]?.enhancementCosts;
+          const sourceHrid = part.routeType === "refinementCarryover" ? craftingRecipe(part.itemHrid)?.upgradeItemHrid : part.itemHrid;
           if (!Number.isFinite(part.quantity) || part.quantity < 0 || !Number.isFinite(part.expectedActions) || part.expectedActions < 0) {
             enhancementReady = false; continue;
           }
+          const units = part.quantity * quantity;
+          const replacements = part.baseItemPrice > 0 && Number.isFinite(part.baseItemCost)
+            ? part.baseItemCost / part.baseItemPrice : 1;
+          const sameProtection = part.protectionItemHrid === sourceHrid;
+          addBase(sourceHrid, units * replacements, part.baseItemSource,
+            sameProtection ? part.expectedProtects * units : 0);
+          if (part.routeType === "refinementCarryover") addRecipe(part.itemHrid, units, true);
+          const costs = rules?.itemDetailMap?.[sourceHrid]?.enhancementCosts;
           if (part.expectedActions > 0) {
             if (!Array.isArray(costs)) enhancementReady = false;
-            for (const cost of costs || []) {
-              if (!Number.isFinite(cost.count) || cost.count < 0) { enhancementReady = false; continue; }
-              addExpected(cost.itemHrid, cost.count * part.expectedActions * part.quantity, cost.enhancementLevel ?? 0);
-            }
+            for (const cost of costs || []) addExpected(cost.itemHrid, cost.count * part.expectedActions * part.quantity, cost.enhancementLevel ?? 0);
           }
           if (!Number.isFinite(part.expectedProtects) || part.expectedProtects < 0) enhancementReady = false;
-          else if (part.expectedProtects > 0) addExpected(part.protectionItemHrid, part.expectedProtects * part.quantity);
+          else if (!sameProtection && part.expectedProtects > 0) addExpected(part.protectionItemHrid, part.expectedProtects * part.quantity);
         }
         if (route.mirrorCount > 0) addExpected("/items/philosophers_mirror", route.mirrorCount);
+      } else {
+        // Keep +0 manufacturing previews available; unknown enhancement demand
+        // remains unknown instead of appearing to be a complete one-piece plan.
+        addBase(item.itemHrid, quantity, item.enhancementLevel > 0 ? baseItemSource(item) : "craft");
+      }
+      const directInputs = [...inputs.values()].map(entry => ({ ...entry }));
+      const craftingDemands = [...manufacture].map(([itemHrid, demand]) => ({ itemHrid, ...demand }));
+      for (const [hrid, demand] of manufacture) {
+        // Round protection equipment before expanding its recipe. Applying the
+        // safety multiplier to each ingredient would produce incomplete batches.
+        addRecipe(hrid, Math.ceil(demand.base) + Math.ceil(demand.protects * multiplier));
       }
       for (const entry of inputs.values()) {
         entry.enhancementCount = enhancementReady ? Math.ceil(entry.expectedEnhancement * quantity * multiplier) : null;
         entry.totalCount = entry.count != null && entry.enhancementCount != null ? entry.count + entry.enhancementCount : null;
       }
-      return { inputs: [...inputs.values()], outputCount: recipe?.outputCount, targetQuantity: quantity, batches, multiplier, artisan,
+      return { inputs: [...inputs.values()], directInputs, craftingDemands, outputCount: recipe?.outputCount, targetQuantity: quantity, batches: reason ? null : batches, multiplier, artisan,
         enhancementReady, preparationBasis: result?.preparationBasis || null,
-        enhancementReason: !enhancementReady ? result?.reason || "强化方案未就绪" : "",
+        enhancementReason: !enhancementReady ? result?.reason || reason || "强化方案未就绪" : "",
         mirrorRoute: route?.routeType === "philosophersMirror",
-        reason: !rules?.itemDetailMap ? "材料数据尚未就绪，请重新读取角色或刷新游戏。"
-          : !recipe ? "未收录目标装备的制造配方。"
-            : !craftingReady ? "制造产出数量未知，无法计算制造所需与总数。"
-              : inputs.size ? "" : "目标装备的制造配方无需材料。" };
+        reason: !rules?.itemDetailMap ? "材料数据尚未就绪，请重新读取角色或刷新游戏。" : reason };
     }
     function materialInfo(item) {
       const detail = rules?.itemDetailMap?.[item.itemHrid];
@@ -6585,8 +6666,8 @@ function getPriceTier(price, direction) {
     return Object.freeze({ parameters() {
       if (!rules?.itemDetailMap || (!settings.virtual.enabled && !ready())) return null;
       ensureEngine(); return { ...engine.params() };
-    }, presetCatalog: () => app.partitionPresets.catalog(rules), save, calculate, createSimulation, materials, materialInfo, targetQuantity, setTargetQuantity, preparation, refreshCharacter, status, settings: () => clone(settings),
-      state: () => ({ revision, calculationRevision, inventoryRevision, storageError, simulationOwner }), destroy() { destroyed = true; results.clear(); } });
+    }, presetCatalog: () => app.partitionPresets.catalog(rules), save, calculate, baseItemSource, setBaseItemSource, createSimulation, materials, materialInfo, targetQuantity, setTargetQuantity, preparation, refreshCharacter, status, settings: () => clone(settings),
+      state: () => ({ revision, calculationRevision, inventoryRevision, storageError, simulationOwner }), destroy() { destroyed = true; results.clear(); engines.clear(); } });
   }
   app.marketWages = Object.freeze({ create, normalize, collectMaterialReferences, defaults: () => clone(defaults), storageKey, numericVirtual });
 })(globalThis);
@@ -6695,7 +6776,7 @@ function getPriceTier(price, direction) {
     }
     if (own(value, "preferences")) {
       const p = value.preferences;
-      shape(p, ["enhancementRouteObjective", "enhancementStandardHourlyM", "enhancementMaterialMultiplier", "baseItemCostPricePolicy", "hourlyWageColorProfile"]);
+      shape(p, ["enhancementRouteObjective", "enhancementStandardHourlyM", "enhancementMaterialMultiplier", "baseItemCostPricePolicy", "baseItemSources", "hourlyWageColorProfile"]);
       if (own(p, "enhancementRouteObjective")) check(["hourly", "profit", "standard"].includes(p.enhancementRouteObjective));
       if (own(p, "enhancementStandardHourlyM")) check(numeric(p.enhancementStandardHourlyM, 0, 1e6));
       if (own(p, "enhancementMaterialMultiplier")) check(numeric(p.enhancementMaterialMultiplier, 0, 100));
@@ -6703,6 +6784,14 @@ function getPriceTier(price, direction) {
         const policy = p.baseItemCostPricePolicy; const sources = ["ask", "askMinusOne", "bidPlusOne", "bid"];
         shape(policy, ["material", "product"], ["material", "product"]); array(policy.material, 4);
         check(policy.material.every(entry => sources.includes(entry)) && new Set(policy.material).size === policy.material.length && (policy.product === "" || sources.includes(policy.product)));
+      }
+      if (own(p, "baseItemSources")) {
+        check(p.baseItemSources && typeof p.baseItemSources === "object" && !Array.isArray(p.baseItemSources));
+        for (const [scope, choices] of Object.entries(p.baseItemSources)) {
+          check(/^(virtual|[1-9][0-9]*)$/.test(scope));
+          check(choices && typeof choices === "object" && !Array.isArray(choices));
+          for (const [hrid, source] of Object.entries(choices)) check(/^\/items\/[a-z0-9_]+$/.test(hrid) && ["market", "craft"].includes(source));
+        }
       }
       if (own(p, "hourlyWageColorProfile")) {
         const profile = p.hourlyWageColorProfile;
@@ -7269,13 +7358,14 @@ function getPriceTier(price, direction) {
     }
     function createMaterialControl(material, mode, equivalentControl = null) {
       const hrid = material.itemHrid;
+      const modeLabel = mode === "purchase" ? "采购" : mode === "manufacturing" ? "制造" : "强化";
       const label = names[hrid] || material.name || hrid.slice(7);
       const control = node("div", null, "mwi-layu-material-price-control");
       control.dataset.costHrid = hrid; control.dataset.costMode = mode;
       const line = node("div", null, "mwi-layu-material-price-stepper");
       const value = node("span"); const amount = node("input"); value.append(amount);
       amount.type = "text"; amount.inputMode = "decimal";
-      amount.setAttribute("aria-label", `${mode === "manufacturing" ? "制造" : "强化"}材料模拟单价：${label}`);
+      amount.setAttribute("aria-label", `${modeLabel}材料模拟单价：${label}`);
       amount.dataset.focusKey = `simulation-input:${key}:${mode}:${hrid}`;
       const note = node("small");
       let side = "a", previous = null, next = null, dirty = false;
@@ -7289,7 +7379,7 @@ function getPriceTier(price, direction) {
       };
       const lower = button("", () => move(-1)); const higher = button("", () => move(1));
       for (const [el, direction, text] of [[lower, -1, "降低一档"], [higher, 1, "提高一档"]]) {
-        el.setAttribute("aria-label", `${mode === "manufacturing" ? "制造" : "强化"}材料${text}：${label}`);
+        el.setAttribute("aria-label", `${modeLabel}材料${text}：${label}`);
         el.dataset.focusKey = `simulation-step:${key}:${mode}:${hrid}:${direction}`;
         el.textContent = direction < 0 ? "−" : "+";
       }
@@ -7305,14 +7395,14 @@ function getPriceTier(price, direction) {
         // Restore the input used by this cost control, including bid-priced recipes.
         setPrice(hrid, side, quote.price);
       });
-      restore.setAttribute("aria-label", `${mode === "manufacturing" ? "制造" : "强化"}材料恢复当前左一价格：${label}`);
+      restore.setAttribute("aria-label", `${modeLabel}材料恢复当前左一价格：${label}`);
       restore.dataset.focusKey = `simulation-restore:${key}:${mode}:${hrid}`;
       restore.className = "mwi-layu-material-price-restore";
       const bid = button("右一", () => {
         const price = currentQuote()?.bid;
         if (Number.isFinite(price) && price > 0 && price <= 1e12) setPrice(hrid, side, price);
       });
-      bid.setAttribute("aria-label", `${mode === "manufacturing" ? "制造" : "强化"}材料使用当前右一价格：${label}`);
+      bid.setAttribute("aria-label", `${modeLabel}材料使用当前右一价格：${label}`);
       bid.dataset.focusKey = `simulation-bid:${key}:${mode}:${hrid}`;
       function commit() {
         // A rounded display is never a new quote until the user edits it.
@@ -7337,9 +7427,11 @@ function getPriceTier(price, direction) {
         const entry = snapshot?.inputs.find(input => input.itemHrid === hrid);
         const info = latest?.materialPrices?.[hrid];
         side = mode === "manufacturing" && info?.manufacturingSource ? (info.manufacturingSource.startsWith("bid") ? "b" : "a") : info?.ask != null ? "a" : "b";
+        if (mode === "purchase" && info?.basePurchaseSource) side = info.basePurchaseSource.startsWith("bid") ? "b" : "a";
         const quote = side === "a" ? info?.ask : info?.bid;
         let unit = info?.enhancement, kind = "强化计价";
-        if (mode === "manufacturing") { unit = info?.manufacturing; kind = "自制材料计价"; }
+        if (mode === "purchase") { unit = info?.basePurchase; kind = "底子采购计价"; }
+        else if (mode === "manufacturing") { unit = info?.manufacturing; kind = "自制材料计价"; }
         else if (hrid === "/items/philosophers_mirror") { unit = info?.mirror; kind = "镜子计价"; }
         else if (!entry?.roles.includes("强化材料")) { unit = info?.protection; kind = "保护计价"; }
         amount.placeholder = "未知";
@@ -7387,7 +7479,7 @@ function getPriceTier(price, direction) {
       }
       materialControls.add(update); update(); return control;
     }
-    return Object.freeze({ reset() { drafts.clear(); snapshot = null; initialize(); }, current: () => latest, active: () => drafts.size > 0,
+    return Object.freeze({ reset() { drafts.clear(); snapshot = null; initialize(); }, refreshSource() { initialize(); }, current: () => latest, active: () => drafts.size > 0,
       sellPrice: () => snapshot?.sellPrice, calculateAt: price => latest?.calculateAt(price) || { reason: "模拟报价无效，请修正" }, createMaterialControl, clearMaterialControls: () => materialControls.clear(), bind(listener) {
       onResult = listener; materialControls.clear();
       if (!snapshot) initialize(); else onResult(latest);
@@ -8059,7 +8151,7 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-settings-help p {line-height:1.7;}
 .mwi-layu-panel .mwi-layu-undo {padding:6px 14px;background:#192333;}
 .mwi-layu-market-favorite-host {position:relative;}
-.mwi-layu-favorite-toggle {position:absolute;right:-5px;bottom:-4px;background:#151d2b;border:1px solid #3b4966;border-radius:3px;color:#94a3b8;cursor:pointer;padding:2px;width:20px;height:20px;z-index:3;}
+.mwi-layu-favorite-toggle {position:absolute;left:-5px;bottom:-4px;background:#151d2b;border:1px solid #3b4966;border-radius:3px;color:#94a3b8;cursor:pointer;padding:2px;width:20px;height:20px;z-index:3;}
 .mwi-layu-favorite-toggle svg {width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;}
 .mwi-layu-favorite-toggle[aria-pressed=true] {color:#fbbf24;}
 .mwi-layu-favorite-toggle[aria-pressed=true] svg {fill:currentColor;}
@@ -8077,7 +8169,25 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-preset-grid {max-height:650px;overflow:auto;background:#141b28;border:1px solid #2b3a52;border-radius:6px;padding:12px;}
 .mwi-layu-panel .v3-preset-config > div > label {display:flex;flex-direction:column;gap:6px;}
 .mwi-layu-panel .v3-order-depth {max-height:280px;overflow:auto;}
-.mwi-layu-panel .v3-strategy {display:flex;flex-direction:row;flex-wrap:wrap;gap:2px 12px;}
+/* The acquisition strip stays 60px; long identities truncate, controls remain reachable. */
+.mwi-layu-panel .v3-strategy {height:60px;margin:6px 0;padding:6px 8px;display:grid;grid-template-rows:24px 20px;gap:4px;line-height:1.5;min-width:0;}
+.mwi-layu-panel .v3-source-top {display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;}
+.mwi-layu-panel .v3-source-top > :first-child {min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.mwi-layu-panel .v3-source-top .mwi-layu-item-label > span {overflow:hidden;text-overflow:ellipsis;}
+.mwi-layu-panel .v3-source-options {display:flex;gap:4px;flex-shrink:0;}
+.mwi-layu-panel .v3-source-choice {height:24px;display:flex;align-items:center;gap:4px;padding:2px 6px;border:1px solid #30415b;border-radius:4px;background:#1e2636;color:#a0aec2;cursor:pointer;white-space:nowrap;}
+.mwi-layu-panel .v3-source-choice:has(input:checked) {background:#16425a;border-color:#38bdf8;color:#a5e6ff;}
+.mwi-layu-panel .v3-source-choice:hover {border-color:#7dd3fc;}
+.mwi-layu-panel .v3-source-choice:has(input:focus-visible) {outline:2px solid #7dd3fc;outline-offset:2px;}
+.mwi-layu-panel .v3-source-choice input {appearance:auto;width:12px;height:12px;min-height:0;margin:0;padding:0;accent-color:#38bdf8;}
+.mwi-layu-panel .v3-source-bottom {display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;font-size:10px;color:#a0aec2;white-space:nowrap;}
+.mwi-layu-panel .v3-source-protection {display:flex;align-items:center;min-width:0;overflow:hidden;}
+.mwi-layu-panel .v3-source-protection strong {font-weight:500;color:#7dd3fc;}
+.mwi-layu-panel .v3-source-protection .mwi-layu-item-label {min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.mwi-layu-panel .v3-source-protection svg {width:16px;height:16px;}
+.mwi-layu-panel .v3-source-route,.mwi-layu-panel .v3-source-difference {flex-shrink:0;}
+.mwi-layu-panel .v3-source-difference {color:#66dfb6;}
+.mwi-layu-panel .v3-source-extra {color:#fbbf24;}
 .mwi-layu-panel .v3-workbench-materials > .mwi-layu-level-heading {margin-bottom:4px;}
 .mwi-layu-panel .v3-workbench-materials > .mwi-layu-group-note {margin:3px 0;}
 .mwi-layu-panel .v3-workbench-materials .mwi-layu-level-actions {margin-top:6px;gap:4px;}
@@ -8658,7 +8768,7 @@ function getPriceTier(price, direction) {
       if (sort !== "saved") chosen.sort((a, b) => compare(projectValue(a, sort), projectValue(b, sort), direction) ||
         (sort === "name" ? compare(a.item.enhancementLevel, b.item.enhancementLevel, direction) : 0));
       const active = document.activeElement;
-      if (element.contains(active) && active.tagName === "INPUT" && !["checkbox", "search"].includes(active.type)) return;
+      if (element.contains(active) && active.tagName === "INPUT" && !["checkbox", "search", "radio"].includes(active.type)) return;
       const nextStructure = JSON.stringify([items, cartItems, cartScope, cartError, partitions.read(), names, spriteBase,
         workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, search, listingFilter, sort, direction,
         materialSort, materialDirection, shortagesOnly, [...expanded], [...historyExpanded], [...simulationEnabled],
@@ -9224,15 +9334,17 @@ function getPriceTier(price, direction) {
         for (const match of parts) {
           const rows = inputs.filter(match); if (!rows.length) continue;
           for (const m of rows) {
-            const need = m.totalCount, lack = need == null || m.inventoryCount == null ? null : Math.max(0, need - m.inventoryCount);
+            const need = m.totalCount, lack = need == null || m.inventoryCount == null || m.pendingPurchaseCount == null
+              ? null : Math.max(0, need - m.inventoryCount - m.pendingPurchaseCount);
             const pricing = node("div", null, "v3-material-pricing");
-            const enhancement = m.itemHrid !== "/items/coin" && m.expectedEnhancement > 0 ? simulation.createMaterialControl(m, "enhancement") : null;
+            const enhancement = m.itemHrid !== "/items/coin" && (m.expectedEnhancement > 0 || m.purchasedBase) ? simulation.createMaterialControl(m, m.purchasedBase ? "purchase" : "enhancement") : null;
             if (enhancement) pricing.append(enhancement);
-            if (m.itemHrid !== "/items/coin" && m.count !== 0) pricing.append(simulation.createMaterialControl(m, "manufacturing", enhancement));
+            if (m.itemHrid !== "/items/coin" && m.count !== 0 && !m.purchasedBase) pricing.append(simulation.createMaterialControl(m, "manufacturing", enhancement));
             if (m.itemHrid === "/items/coin") pricing.append(node("strong", "1"));
             const card = node("article", null, "v3-material-card");
             card.dataset.materialHrid = m.itemHrid; card.dataset.materialLevel = m.enhancementLevel;
-            const head = node("div", null, "v3-material-card-head"); head.append(materialLink(m), pricing);
+            const head = node("div", null, "v3-material-card-head");
+            head.append(materialLink(m, { type: "material", required: need }), pricing);
             if (!enabled && m.itemHrid !== "/items/coin") {
               const control = pricing.querySelector("[data-quote-price]");
               const quote = control?.dataset.quotePrice;
@@ -9247,6 +9359,7 @@ function getPriceTier(price, direction) {
             progress.setAttribute("aria-label", `${names[m.itemHrid] || m.name}备料进度`);
             const counts = node("div", null, "v3-material-counts");
             const shortage = node("span", `缺：${number(lack)}`, lack > 0 ? "mwi-layu-shortage" : ""); shortage.dataset.value = lack ?? "";
+            if (m.pendingPurchaseCount > 0) shortage.title = `已扣除待收货数量 ${number(m.pendingPurchaseCount)}`;
             counts.append(node("span", `需：${number(need)}`), node("span", `库存：${number(m.inventoryCount)}`), shortage);
             card.append(head, progress, counts); list.append(card);
           }
@@ -9322,7 +9435,7 @@ function getPriceTier(price, direction) {
         section.classList.toggle("v3-simulation-enabled", simulationEnabled.has(key));
         simulation.updateAppearance({ spriteBase, names });
         const combinedMaterials = node("div");
-        const strategy = node("p", null, "v3-strategy");
+        const strategy = node("div", null, "v3-strategy");
         const plan = node("section", null, "v3-enhancement-plan");
         let materialSignature = "";
         let refreshEconomics = () => {};
@@ -9331,24 +9444,66 @@ function getPriceTier(price, direction) {
           refreshEconomics();
           const current = comparison?.simulated;
           const route = current?.metrics;
+          const focusKey = strategy.contains(document.activeElement) ? document.activeElement.dataset.focusKey : null;
           strategy.replaceChildren();
           const base = comparison?.baseComparison;
-          if (base) {
-            strategy.append(node("span", `底子 +0：自制 ${number(base.craftingCost > 0 ? base.craftingCost : null)} · 直购 ${number(base.readyMadeCost > 0 ? base.readyMadeCost : null)}`));
-            if (base.craftingCost > 0 && base.readyMadeCost > 0) strategy.append(node("span", `${base.craftingCost <= base.readyMadeCost ? "自制" : "直购"}节省 ${number(Math.abs(base.readyMadeCost - base.craftingCost))}`));
+          const selectedSource = wages.baseItemSource(item);
+          const top = node("div", null, "v3-source-top");
+          const identity = app.itemUI.identity(item, spriteBase, `${item.name} +0`);
+          identity.title = `${item.name} +0`;
+          const options = node("div", null, "v3-source-options");
+          options.setAttribute("role", "radiogroup"); options.setAttribute("aria-label", "底子取得方式");
+          for (const [source, label, cost] of [["market", "采购", base?.readyMadeCost], ["craft", "自制", base?.craftingCost]]) {
+            const choice = node("label", null, "v3-source-choice");
+            const input = node("input"); input.type = "radio"; input.name = `base-source:${key}`; input.value = source;
+            input.checked = selectedSource === source; input.setAttribute("aria-label", `${label}底子：${item.name}`);
+            input.dataset.focusKey = `base-source:${key}:${source}`;
+            input.addEventListener("change", () => {
+              if (!input.checked) return;
+              attempt(() => {
+                try { wages.setBaseItemSource(item, source); }
+                catch (error) {
+                  for (const radio of options.querySelectorAll("input")) radio.checked = radio.value === wages.baseItemSource(item);
+                  throw error;
+                }
+                // Source is real preparation policy. Re-capture prices while
+                // retaining each open scenario's explicit quote overrides.
+                for (const [otherKey, panel] of simulationPanels) if (otherKey.startsWith(`${item.itemHrid}:`)) panel.refreshSource();
+                onChange();
+              });
+            });
+            choice.append(input, node("span", `${label} ${number(cost > 0 ? cost : null)}`));
+            choice.title = `${label}底子及同物品保护；同角色的该物品各强化等级共用此选择`;
+            options.append(choice);
           }
-          if (route) {
-            if (current.preparationBasis === "minCostWithoutSale") {
-              strategy.append(node("strong", "无有效售价 · 最低成本强化方案"));
-              const cost = node("span", `单件预计成本 ${number(route.totalCost)} · 预计耗时 ${number(route.totalTimeHours)} 小时`, "v3-min-cost-summary");
-              cost.dataset.totalCost = route.totalCost; cost.dataset.totalTimeHours = route.totalTimeHours;
-              strategy.append(cost);
-            }
-            const label = route.routeType === "traditional" ? `普通保护路线（+${route.protectAt} 起保）` : route.routeType === "philosophersMirror" ? "贤者之镜路线" : "精炼继承路线";
-            strategy.append(node("span", `采用${route.baseItemSource === "craft" ? "自制" : "购买"}底子 · ${label}`));
-          } else strategy.append(node("span", "等待路线计算"));
+          top.append(identity, options);
+          const bottom = node("div", null, "v3-source-bottom");
+          const protection = node("span", null, "v3-source-protection");
+          if (route?.protectionItemHrid === item.itemHrid || !route) {
+            protection.append(node("span", "同物品保护："), node("strong", selectedSource === "craft" ? "同步自制" : "同步采购"));
+          } else if (route.protectionItemHrid) {
+            protection.append(node("span", "保护："), app.itemUI.identity({ itemHrid:route.protectionItemHrid }, spriteBase,
+              names[route.protectionItemHrid] || route.protectionItemHrid.slice(7)));
+          } else protection.append(node("span", route.routeType === "philosophersMirror" ? "保护随组成装备来源" : "无需保护"));
+          const label = !route ? "方案未就绪" : route.routeType === "traditional"
+            ? route.expectedProtects > 0 ? `普通保护 · +${route.protectAt} 起保` : "普通路线 · 无需保护"
+            : route.routeType === "philosophersMirror" ? "贤者之镜路线" : "精炼继承路线";
+          const routeLabel = node("span", label, "v3-source-route");
+          const difference = base?.craftingCost > 0 && base?.readyMadeCost > 0
+            ? (base.craftingCost - base.readyMadeCost) * (selectedSource === "market" ? 1 : -1) : null;
+          const saving = node("span", difference == null ? "差价未知" : difference === 0 ? "成本相同"
+            : `${difference > 0 ? "节省" : "多花"} ${number(Math.abs(difference))}/件`, `v3-source-difference${difference < 0 ? " v3-source-extra" : ""}`);
+          saving.title = "单件底子差价；按未缩写的价格计算";
+          bottom.append(protection, routeLabel, saving); strategy.append(top, bottom);
+          if (!route) strategy.title = current?.reason || "等待路线计算；所选来源缺价时不会自动改用另一种来源";
+          else strategy.removeAttribute("title");
           app.itemUI.decorate(strategy, spriteBase, names);
+          if (focusKey) [...strategy.querySelectorAll("[data-focus-key]")].find(el => el.dataset.focusKey === focusKey)?.focus({ preventScroll:true });
           renderEnhancementPlan(plan, item, current?.metrics, quantity, comparison?.changed);
+          if (current?.preparationBasis === "minCostWithoutSale") {
+            const cost = node("small", `无有效售价 · 最低成本强化方案 · 单件预计成本 ${number(route.totalCost)} · 预计耗时 ${number(route.totalTimeHours)} 小时`, "v3-min-cost-summary");
+            cost.dataset.totalCost = route.totalCost; cost.dataset.totalTimeHours = route.totalTimeHours; plan.append(cost);
+          }
           const projected = wages.materials(item, current, quantity);
           const signature = JSON.stringify([projected, comparison?.materialPrices]);
           if (signature !== materialSignature) {
@@ -9773,7 +9928,7 @@ function getPriceTier(price, direction) {
     function render() {
       if (destroyed || element.hidden) return;
       const owner = app.materialCart.scope(currentCharacterId) || "";
-      if (view.element.contains(document.activeElement) && document.activeElement.tagName === "INPUT" && !["checkbox", "search"].includes(document.activeElement.type)) {
+      if (view.element.contains(document.activeElement) && document.activeElement.tagName === "INPUT" && !["checkbox", "search", "radio"].includes(document.activeElement.type)) {
         if (element.dataset.cartOwner === owner) return;
         document.activeElement.blur();
       }
@@ -9838,17 +9993,36 @@ function getPriceTier(price, direction) {
       try {
         let quantity = null;
         let reservedCoins = 0;
+        let purchaseNotice = "";
         if (purchaseMode) {
+          const owner = wages.state().simulationOwner;
           await wages.refreshCharacter();
-          const scope = app.materialCart.scope(wages.state().simulationOwner);
-          const summary = app.materialCart.summarize(cart.read(scope), wages, prices);
-          const coins = wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 }).inventoryCount;
-          const plan = purchaseMode === "budget" ? app.materialCart.allocate(summary, prices, coins) : app.materialCart.budget(summary, prices);
-          const material = plan.rows?.find(row => app.materialCart.key(row) === app.materialCart.key(item));
-          quantity = material?.purchaseQuantity;
-          reservedCoins = plan.reservedCoins || 0;
+          if (owner !== wages.state().simulationOwner) {
+            status.textContent = "角色已切换，请在当前角色的材料卡片重新打开市场。"; return;
+          }
+          if (purchaseMode.type === "material") {
+            // Card previews also work without a cart entry. Keep the displayed exact
+            // requirement, but re-read stock and outstanding purchases at click time.
+            const { inventoryCount, pendingPurchaseCount } = wages.materialInfo(item);
+            if ([purchaseMode.required, inventoryCount, pendingPurchaseCount].every(value => Number.isFinite(value) && value >= 0)) {
+              quantity = Math.ceil(Math.max(0, purchaseMode.required - inventoryCount - pendingPurchaseCount));
+            }
+          } else {
+            const scope = app.materialCart.scope(wages.state().simulationOwner);
+            const summary = app.materialCart.summarize(cart.read(scope), wages, prices);
+            const coins = wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 }).inventoryCount;
+            const plan = purchaseMode === "budget" ? app.materialCart.allocate(summary, prices, coins) : app.materialCart.budget(summary, prices);
+            const material = plan.rows?.find(row => app.materialCart.key(row) === app.materialCart.key(item));
+            quantity = material?.purchaseQuantity;
+            reservedCoins = plan.reservedCoins || 0;
+          }
           if (!Number.isSafeInteger(quantity) || quantity < 0) {
-            status.textContent = "采购数量尚未确定，请等待库存、挂单和行情更新后重试。"; return;
+            if (purchaseMode.type === "material") {
+              purchaseMode = null;
+              purchaseNotice = "已打开市场；需求、库存或待收货数量未知，本次不预填采购数量，请手动填写。";
+            } else {
+              status.textContent = "采购数量尚未确定，请等待库存、挂单和行情更新后重试。"; return;
+            }
           }
         }
         const opened = purchaseMode ? await app.marketBridge.openPurchase(item, quantity, reservedCoins)
@@ -9857,7 +10031,7 @@ function getPriceTier(price, direction) {
         if (destroyed) return;
         const error = app.marketBridge?.lastError();
         element.dataset.marketBridgeStatus = opened ? "ready" : error || "unknown";
-        status.textContent = opened ? purchaseMode ? "已打开市场；两分钟内打开该物品的购买表单将预填数量，超出当前价格可负担数量时自动减至上限，请核对后手动确认。" : "" : error === "bridge_timeout"
+        status.textContent = opened ? purchaseMode ? "已打开市场；两分钟内打开该物品的购买表单将预填数量，超出当前价格可负担数量时自动减至上限，请核对后手动确认。" : purchaseNotice : error === "bridge_timeout"
           ? "游戏桥接未响应，请确认脚本更新后已刷新游戏。"
           : "未找到游戏市场入口，请刷新游戏后重试。";
       } catch (_error) {
