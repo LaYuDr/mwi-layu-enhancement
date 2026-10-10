@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         柆雨强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.3
+// @version      0.3.4
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:zh-CN   柆雨强化助手
@@ -506,8 +506,12 @@ SOFTWARE.
   function preparationPlan(request, records) {
     if (request.destination === "crafting") {
       const actionHrid = request.recipe?.actionHrid;
+      if ("productionQuantity" in request && (!Number.isSafeInteger(request.productionQuantity) ||
+          request.productionQuantity <= 0 || request.productionQuantity > 1e10)) {
+        return { destination: "manual", notice: request.productionNotice || "生产数量无效，请核对当前计划后重试。" };
+      }
       return /^\/actions\/(cheesesmithing|crafting|tailoring|cooking|brewing)\/[a-z0-9_]+$/.test(actionHrid || "")
-        ? { destination: "crafting", actionHrid }
+        ? { destination: "crafting", actionHrid, productionQuantity: request.productionQuantity ?? 1 }
         : { destination: "manual", notice: "未找到该物品的制作配方，无法打开制作页面。" };
     }
     if (request.unsupported) return { destination: "manual", notice: request.notice || "该路线需分步准备，请按路线明细手动设置。" };
@@ -733,7 +737,7 @@ SOFTWARE.
           notice = plan.notice || "";
           if (destination === "manual") { /* A multi-step route must not become a normal enhancement prefill. */ }
           else if (destination === "market") controller.handleGoToMarketplace(request.itemHrid, 0);
-          else if (destination === "crafting") controller.handleGoToAction(plan.actionHrid, 1);
+          else if (destination === "crafting") controller.handleGoToAction(plan.actionHrid, plan.productionQuantity ?? 1);
           else if (destination === "owned") notice = "库存中已有达到目标等级的物品，无需继续强化。";
           else {
             const characterId = controller.state.character?.id;
@@ -6520,8 +6524,9 @@ function getPriceTier(price, direction) {
         ...(recipe.detail.upgradeItemHrid ? [{ itemHrid: recipe.detail.upgradeItemHrid, count: 1, isFixedUpgradeItem: true }] : [])
       ] } : null;
     }
-    function preparation(item, { route: selection = "selected" } = {}) {
+    function preparation(item, { route: selection = "selected", quantity = 1 } = {}) {
       if (!["selected", "minCost"].includes(selection)) throw new RangeError("无效的准备路线");
+      if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000) throw new RangeError("无效的计划数量");
       const result = preparationResult(item, calculate(item, prices.quote(item)));
       const route = result?.preparationBasis === "minCostWithoutSale" ? result.metrics
         : selection === "minCost" ? result?.routePair?.highestProfit : result?.metrics;
@@ -6532,10 +6537,28 @@ function getPriceTier(price, direction) {
           ? input.count * (input.isFixedUpgradeItem ? 1 : artisan.multiplier) : null
       })) };
       const unsupported = Boolean(item.enhancementLevel > 0 && route && route.routeType !== "traditional");
-      const info = { quantity: 1, routeSelection: result?.preparationBasis ? "minCost" : selection, objective: selection === "minCost" || result?.preparationBasis ? "profit" : settings.preferences.enhancementRouteObjective,
+      let productionQuantity = null;
+      let productionNotice = "生产需求或成品库存未知，请待数据就绪后重试。";
+      if (unsupported) productionNotice = "所选路线包含镜子或精炼步骤，请按路线明细手动设置各步骤的生产数量。";
+      else if (recipe?.outputCount > 0 && Number.isFinite(recipe.outputCount) && (item.enhancementLevel === 0 || route)) {
+        // Clicking manufacture explicitly requests this product, even when its
+        // acquisition source is market. Reuse the selected route's batch rounding.
+        const plan = materials(item, route ? { ...result, metrics: { ...route, baseItemSource: "craft" } } : result, quantity);
+        const demand = plan.craftingDemands.find(entry => entry.itemHrid === item.itemHrid);
+        const stock = inventoryCount(item.itemHrid, 0);
+        if (plan.enhancementReady && demand && Number.isFinite(stock) && stock >= 0) {
+          const required = Math.ceil(demand.base) + Math.ceil(demand.protects * plan.multiplier);
+          const count = Math.ceil(Math.max(0, required - Math.floor(stock)) / recipe.outputCount);
+          if (Number.isSafeInteger(count) && count >= 0 && count <= 1e10) {
+            productionQuantity = count;
+            productionNotice = count === 0 ? "同名 +0 成品库存已满足当前计划，无需继续生产。" : "";
+          }
+        }
+      }
+      const info = { quantity, routeSelection: result?.preparationBasis ? "minCost" : selection, objective: selection === "minCost" || result?.preparationBasis ? "profit" : settings.preferences.enhancementRouteObjective,
         routeType: route?.routeType || null, protectAt: Number.isInteger(route?.protectAt) ? route.protectAt : null,
         protectionItemHrid: route?.protectionItemHrid || null, artisan };
-      return { recipe, info, unsupported,
+      return { recipe, info, unsupported, productionQuantity, productionNotice,
         notice: unsupported ? "所选路线包含镜子或精炼步骤，无法预填为一次普通强化。请按路线明细手动准备各步骤。" : "",
         protection: !unsupported && route && Number.isInteger(route.protectAt) ? {
           level: route.protectAt, itemHrid: route.protectionItemHrid, needed: route.expectedProtects > 0
@@ -8220,7 +8243,7 @@ function getPriceTier(price, direction) {
  .mwi-layu-panel .v3-material-cards {grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 .mwi-layu-panel .v3-material-card {min-width:0;background:#101722;border:1px solid #28364b;border-radius:4px;padding:5px 6px;}
-.mwi-layu-panel .v3-material-card-head {display:flex;align-items:center;flex-wrap:wrap;gap:3px 6px;}
+.mwi-layu-panel .v3-material-card-head {display:flex;align-items:center;flex-wrap:wrap;gap:3px 6px;min-height:28px;}
 .mwi-layu-panel .v3-material-card-head > .mwi-layu-group-link {flex:1 1 auto;font-weight:600;}
 .mwi-layu-panel .v3-material-pricing {max-width:100%;margin-left:auto;}
 .mwi-layu-panel .v3-material-pricing .mwi-layu-material-price-control {justify-content:flex-end;gap:2px;}
@@ -8239,8 +8262,21 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-material-card progress:not([value]) {opacity:.45;}
 .mwi-layu-panel .v3-material-counts {display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:1px 6px;color:#a0aec2;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;}
 .mwi-layu-panel .v3-material-counts > * {white-space:nowrap;}
-.mwi-layu-panel .v3-enhancement-plan {margin-top:8px;padding:6px 8px;background:#1b2638;border:1px solid #30415b;border-radius:5px;white-space:normal;}
-.mwi-layu-panel .v3-enhancement-plan h4 {margin:0 0 3px;font-size:12px;}
+.mwi-layu-panel .v3-enhancement-plan {margin-top:8px;padding:10px 8px;background:#1b2638;border:1px solid #30415b;border-radius:5px;white-space:normal;}
+.mwi-layu-panel .v3-enhancement-plan h4 {margin:0;font-size:12px;}
+.mwi-layu-panel .v3-plan-header {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;margin-bottom:12px;}
+.mwi-layu-panel .v3-plan-scope {display:inline-flex;flex-wrap:wrap;gap:2px;padding:2px;border:1px solid #30415b;border-radius:4px;}
+.mwi-layu-panel .v3-plan-scope button {min-height:26px;padding:2px 8px;border:0;border-radius:2px;background:transparent;color:#a0aec2;font-size:11px;}
+.mwi-layu-panel .v3-plan-scope button[aria-pressed=true] {background:#193f56;color:#7dd3fc;}
+.mwi-layu-panel .v3-plan-scope button:hover {background:#203e4b;color:#f1f5f9;}
+.mwi-layu-panel .v3-plan-scope button:focus-visible {outline:2px solid #38bdf8;outline-offset:2px;}
+.mwi-layu-panel .v3-plan-body {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 18px;}
+.mwi-layu-panel .v3-plan-routes {flex:1 1 auto;min-width:0;}
+.mwi-layu-panel .v3-plan-metrics {display:flex;flex-wrap:wrap;gap:8px 20px;min-width:0;}
+.mwi-layu-panel .v3-plan-metric {display:flex;flex-direction:column;gap:4px;min-width:0;}
+.mwi-layu-panel .v3-plan-metric > span {font-size:11px;color:#a0aec2;}
+.mwi-layu-panel .v3-plan-metric > strong {font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;color:#f1f5f9;overflow-wrap:anywhere;}
+.mwi-layu-panel .v3-plan-protect-label {margin-left:4px;font-size:11px;color:#a0aec2;font-weight:400;}
 .mwi-layu-panel .v3-enhancement-plan p {margin:3px 0;color:#a0aec2;}
 .mwi-layu-panel .v3-plan-path {display:flex;align-items:center;flex-wrap:wrap;gap:5px;}
 .mwi-layu-panel .v3-plan-path {margin:3px 0;font-size:12px;}
@@ -8348,6 +8384,22 @@ function getPriceTier(price, direction) {
     return (value / unit[0]).toFixed(2).replace(/\.?0+$/, "") + unit[1];
   };
   const time = (value) => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString() : "未知";
+  function enhancementPlanMetrics(route, quantity, scope = "total") {
+    const units = scope === "unit" ? 1 : quantity;
+    const scale = value => Number.isFinite(value) && value >= 0 && Number.isFinite(units) && units >= 0 &&
+      Number.isFinite(value * units) ? value * units : null;
+    const hours = scale(route?.totalTimeHours), actions = scale(route?.expectedActions);
+    let duration = "未知";
+    if (hours === 0) duration = "0秒";
+    else if (hours > 0 && hours < 1 / 60) duration = hours < 1 / 3600 ? "不足1秒" : `${Math.round(hours * 3600)}秒`;
+    else if (hours > 0) {
+      const minutes = Math.round(hours * 60);
+      const days = Math.floor(minutes / 1440), rest = minutes % 1440;
+      duration = [days && `${days}天`, Math.floor(rest / 60) && `${Math.floor(rest / 60)}小时`,
+        rest % 60 && `${rest % 60}分`].filter(Boolean).join("");
+    }
+    return { hours, actions, duration, count: actions == null ? "未知" : `${actions.toLocaleString("en-US", {maximumFractionDigits:2})} 次` };
+  }
   const partialNumber = (value, known) => Number.isFinite(value) ? number(value)
     : Number.isFinite(known) && known > 0 ? `${number(known)} + 未知` : "未知";
   function preparationAction(item, materials, inventoryAt) {
@@ -8503,6 +8555,7 @@ function getPriceTier(price, direction) {
     const quantityDrafts = new Map();
     const simulationPanels = new Map();
     const simulationEnabled = new Set();
+    const enhancementPlanScopes = new Map();
     const ladderPositions = new Map();
     let simulationRevision = null;
     let pendingRemoval = null;
@@ -8732,7 +8785,7 @@ function getPriceTier(price, direction) {
       // A frozen scenario belongs to a confirmed character, not a cache epoch.
       const owner = wages.state().simulationOwner;
       if (owner != null && simulationRevision !== owner) {
-        simulationPanels.clear(); simulationEnabled.clear(); simulationRevision = owner;
+        simulationPanels.clear(); simulationEnabled.clear(); enhancementPlanScopes.clear(); simulationRevision = owner;
       }
       const groups = partitions.groups();
       const selected = partitions.selectedGroups();
@@ -9371,13 +9424,47 @@ function getPriceTier(price, direction) {
         return container;
       }
       function renderEnhancementPlan(panel, item, route, quantity, simulated) {
-        panel.replaceChildren(node("h4", "强化方案"));
+        const key = app.materialCart.key(item);
+        // Unplanned favorites still preview one item's materials, but their plan total is zero.
+        const plannedQuantity = cartScope && !cartError ? cartItems.find(entry => app.materialCart.key(entry) === key)?.quantity ?? 0 : null;
+        const focusKey = panel.contains(document.activeElement) ? document.activeElement?.dataset.focusKey : null;
+        const header = node("div", null, "v3-plan-header");
+        const scopeControl = node("div", null, "v3-plan-scope");
+        scopeControl.setAttribute("role", "group"); scopeControl.setAttribute("aria-label", "期望数值统计范围");
+        scopeControl.title = "仅切换期望时间与次数的统计范围，不改变计划数量或路线保护用量";
+        const body = node("div", null, "v3-plan-body");
+        const routes = node("div", null, "v3-plan-routes");
+        const metrics = node("div", null, "v3-plan-metrics"); metrics.setAttribute("aria-live", "polite");
+        const duration = node("strong"), count = node("strong");
+        for (const [label, value, metric] of [["期望时间", duration, "time"], ["期望次数", count, "actions"]]) {
+          const field = node("div", null, "v3-plan-metric"); field.dataset.metric = metric;
+          field.append(node("span", label), value); metrics.append(field);
+        }
+        duration.title = "仅强化耗时，不含制造、采购或等待；期望值不保证本次完成时间";
+        count.title = "期望强化动作次数，不是保护材料消耗量";
+        function updateScope() {
+          const scope = enhancementPlanScopes.get(key) || "total";
+          const result = enhancementPlanMetrics(route, plannedQuantity, scope);
+          panel.dataset.metricScope = scope;
+          for (const choice of scopeControl.children) choice.setAttribute("aria-pressed", String(choice.dataset.scope === scope));
+          duration.textContent = result.duration; duration.dataset.hours = result.hours ?? "";
+          count.textContent = result.count; count.dataset.actions = result.actions ?? "";
+        }
+        for (const [scope, label] of [["unit", "单件"], ["total", `${plannedQuantity == null ? "未知" : plannedQuantity.toLocaleString("en-US")} 件合计`]]) {
+          const choice = button(label, () => { enhancementPlanScopes.set(key, scope); updateScope(); });
+          choice.dataset.scope = scope; choice.dataset.focusKey = `plan-scope:${key}:${scope}`;
+          scopeControl.append(choice);
+        }
+        header.append(node("h4", "强化方案"), scopeControl); body.append(routes, metrics);
+        panel.replaceChildren(header, body); updateScope();
+        const restoreFocus = () => { if (focusKey) [...panel.querySelectorAll("[data-focus-key]")]
+          .find(el => el.dataset.focusKey === focusKey)?.focus({preventScroll:true}); };
         delete panel.dataset.routeType; delete panel.dataset.protectAt;
-        if (!route) { panel.append(node("p", "方案尚未就绪，请先读取所需行情。")); return; }
+        if (!route) { routes.append(node("p", "方案尚未就绪，请先读取所需行情。")); restoreFocus(); return; }
         panel.dataset.routeType = route.routeType;
         panel.dataset.protectAt = route.protectAt ?? "";
         const arrow = () => node("span", "→", "v3-plan-arrow");
-        function stage(level, itemHrid = null, action = "") {
+        function stage(level, itemHrid = null, action = "", protects = false) {
           const step = node("span", null, "v3-plan-step");
           step.append(node("strong", `+${level ?? "未知"}`));
           if (itemHrid) {
@@ -9389,6 +9476,7 @@ function getPriceTier(price, direction) {
             image.append(app.itemUI.icon(itemHrid, spriteBase)); icon.append(image);
             step.append(icon, node("span", action));
           }
+          if (protects) step.append(node("span", "起保", "v3-plan-protect-label"));
           return step;
         }
         function path(target, metric, level, count = null, mirrorTarget = null, units = count ?? quantity) {
@@ -9397,8 +9485,8 @@ function getPriceTier(price, direction) {
           const protects = metric.expectedProtects > 0 && Number.isInteger(metric.protectAt);
           const expectedProtects = metric.expectedProtects == null ? null : metric.expectedProtects * units;
           const protectionText = `(${Number.isFinite(expectedProtects) ? expectedProtects.toLocaleString("en-US", {useGrouping:false, maximumFractionDigits:2}) : "未知"})`;
-          line.append(stage(0, protects && metric.protectAt === 0 ? metric.protectionItemHrid : null, protectionText));
-          if (protects && metric.protectAt > 0) line.append(arrow(), stage(metric.protectAt, metric.protectionItemHrid, protectionText));
+          line.append(stage(0, protects && metric.protectAt === 0 ? metric.protectionItemHrid : null, protectionText, protects && metric.protectAt === 0));
+          if (protects && metric.protectAt > 0) line.append(arrow(), stage(metric.protectAt, metric.protectionItemHrid, protectionText, true));
           if (level !== 0) line.append(arrow(), stage(level, mirrorTarget != null ? "/items/philosophers_mirror" : null, "合成"));
           else line.append(node("span", "无需强化"));
           if (mirrorTarget != null) line.append(arrow(), stage(mirrorTarget));
@@ -9409,21 +9497,22 @@ function getPriceTier(price, direction) {
         if (route.routeType === "philosophersMirror") {
           const components = (route.materialComponents || []).map((part, index) => ({part, level:route.componentDetails?.[index]?.level}));
           const primary = components.find(({part, level}) => part.itemHrid === item.itemHrid && level === route.mirrorStartLevel);
-          if (primary) panel.append(path(item, primary.part, primary.level, null, item.enhancementLevel, primary.part.quantity * quantity));
+          if (primary) routes.append(path(item, primary.part, primary.level, null, item.enhancementLevel, primary.part.quantity * quantity));
           else {
             const merge = node("div", null, "v3-plan-path");
             merge.append(stage(route.mirrorStartLevel, "/items/philosophers_mirror", "合成"), arrow(), stage(item.enhancementLevel));
-            panel.append(merge);
+            routes.append(merge);
           }
           const parts = disclosure("组成装备与数量", `route:${app.materialCart.key(item)}`);
           for (const {part, level} of components) parts.append(path({itemHrid:part.itemHrid}, part, level, part.quantity * quantity));
           const mirrors = node("p");
           mirrors.append(app.itemUI.identity({itemHrid:"/items/philosophers_mirror"}, spriteBase, names["/items/philosophers_mirror"] || "贤者之镜"), node("span", ` ×${number(route.mirrorCount * quantity)}`));
           parts.append(mirrors); panel.append(parts, node("small", "需另备组成装备，镜子合成与精炼步骤需手动操作。"));
-        } else panel.append(path(item, route, item.enhancementLevel));
+        } else routes.append(path(item, route, item.enhancementLevel));
         if (route.routeType === "refinementCarryover") panel.append(node("small", "先强化未精炼底子，再按标示等级精炼继承；需分步手动操作。"));
         if (simulated) panel.append(node("small", "下方强化预填按当前行情方案执行；模拟方案仅用于比较。"));
         app.itemUI.decorate(panel, spriteBase, names);
+        restoreFocus();
       }
       function levelSection({ item, quote }, quantity, updateMetrics) {
         const key = app.marketFavoritesStore.key(item); const label = `${item.name} +${item.enhancementLevel}`;
@@ -9768,7 +9857,7 @@ function getPriceTier(price, direction) {
     }
     return Object.freeze({ element, render, show(tab) { workspaceTab = workspaceTab === tab && ["manage", "settings"].includes(tab) ? "projects" : tab; drawerOpen = false; savePage(); onChange(); }, destroy() { partitionGesture?.cancel(); drawerObserver.disconnect(); resizeSession?.cancel(); } });
   }
-  app.v3Workspace = Object.freeze({ create, number, preparationAction });
+  app.v3Workspace = Object.freeze({ create, number, preparationAction, enhancementPlanMetrics });
 })(globalThis);
 
 
@@ -9979,10 +10068,18 @@ function getPriceTier(price, direction) {
       preparing = true; button.disabled = true;
       status.textContent = destination === "crafting" ? "正在打开制作页面…" : "正在打开强化页面并填写设置…";
       try {
+        const owner = wages.state().simulationOwner;
         await wages.refreshCharacter();
-        const result = await app.marketBridge.prepareItem(item, wages.preparation(item, { route: "selected" }), destination);
+        if (owner !== wages.state().simulationOwner) {
+          status.textContent = "角色已切换，请在当前角色的方案中重新操作。"; return;
+        }
+        const scope = app.materialCart.scope(owner);
+        const quantity = destination === "crafting"
+          ? cart.read(scope).find(entry => app.materialCart.key(entry) === app.materialCart.key(item))?.quantity || 1 : 1;
+        const plan = wages.preparation(item, { route: "selected", quantity });
+        const result = await app.marketBridge.prepareItem(item, plan, destination);
         if (!destroyed) status.textContent = result.accepted ? result.notice || ({
-          market: "材料不足，已打开白板物品市场。", crafting: "已打开制作页面，请核对材料和用茶后手动开始。", enhancing: "已填写强化目标和保护设置，请确认后手动开始。"
+          market: "材料不足，已打开白板物品市场。", crafting: `已预填生产数量 ${plan.productionQuantity}，请核对材料和用茶后手动开始。`, enhancing: "已填写强化目标和保护设置，请确认后手动开始。"
         }[result.destination] || "") : "未能完成页面跳转或预填，请刷新游戏后重试。";
       } catch (_error) { if (!destroyed) status.textContent = "读取库存或预填失败，请重试。"; }
       finally { preparing = false; button.disabled = false; }
