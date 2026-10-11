@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         柆雨强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.4
+// @version      0.3.5
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:zh-CN   柆雨强化助手
@@ -26,7 +26,7 @@
 - 固定版本：98c0fb04f2fbd8c9f9f1bb9ff1b027a907cf6286，userscript 1.6.231。
 - 作者署名（上游 header）：design by baozhi; from PaperCat; 感谢 ColaCola 倾情优化; 感谢 Q7 大厨神的 api 接口; 纪念 Foreversunny 的创意。
 - 上游 `src/header.js` 声明 MIT。`src/vendor/mooncake-wages.js` 提取计算依赖，新增显式输入适配层；不包含上报、交易、聊天或页面安装代码。
-- 本地取得方式适配：显式采购／自制选择传入底子与同物品保护的价格解析；不改变强化概率、期望次数和收益公式。显式选择 +0 来源时不使用先强化后精炼的替代取得路径。未传入此选项的上游固定参考用例保持原行为。
+- 本地取得方式适配：显式采购／自制选择传入底子与同物品保护的价格解析；采购报价缺失时使用有效的自制成本，同物品保护同步实际来源，自制成本也缺失时保留未知。不改变强化概率、期望次数和收益公式。显式选择 +0 来源时不使用先强化后精炼的替代取得路径。未传入此选项的上游固定参考用例保持原行为。
 - 提取的声明清单见 `mooncake-wages-symbols.json`。仅去除行尾空白，保留函数及常量语义。更新上游时须重新执行一致性与边界测试。
 
 ## mathjs 10.6.4 / lz-string 1.5.0
@@ -6063,13 +6063,16 @@ function getPriceTier(price, direction) {
         return mooncakeSnapMarketPrice(currentPrice - 1, 'down');
     }
     // Host acquisition policy: change inputs to the upstream probability and
-    // route formulas, never their arithmetic. Missing forced prices stay missing.
+    // route formulas, never their arithmetic. Missing purchase quotes use a
+    // known crafting cost; a missing crafting cost is never treated as free.
     const resolveAutomaticBase = mooncakeResolveGenericBaseItemPrice;
     mooncakeResolveGenericBaseItemPrice = (hrid, data) => {
       const result = resolveAutomaticBase(hrid, data);
       if (!["market", "craft"].includes(acquisitionSource)) return result;
-      return { ...result, source: acquisitionSource,
-        price: acquisitionSource === "craft" ? result.craftingCost : result.productPrice };
+      const source = acquisitionSource === "market" && !(result.productPrice > 0) && result.craftingCost > 0
+        ? "craft" : acquisitionSource;
+      return { ...result, source,
+        price: source === "craft" ? result.craftingCost : result.productPrice };
     };
     function hostProtectionPrice(itemHrid, protectHrid, data) {
       return acquisitionSource && itemHrid === protectHrid
@@ -6659,7 +6662,12 @@ function getPriceTier(price, direction) {
       } else {
         // Keep +0 manufacturing previews available; unknown enhancement demand
         // remains unknown instead of appearing to be a complete one-piece plan.
-        addBase(item.itemHrid, quantity, item.enhancementLevel > 0 ? baseItemSource(item) : "craft");
+        let source = item.enhancementLevel > 0 ? baseItemSource(item) : "craft";
+        if (item.enhancementLevel > 0 && rules?.itemDetailMap) {
+          ensureEngine(item);
+          source = engine.acquisition(item.itemHrid).source;
+        }
+        addBase(item.itemHrid, quantity, source);
       }
       const directInputs = [...inputs.values()].map(entry => ({ ...entry }));
       const craftingDemands = [...manufacture].map(([itemHrid, demand]) => ({ itemHrid, ...demand }));
@@ -8262,29 +8270,27 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-material-card progress:not([value]) {opacity:.45;}
 .mwi-layu-panel .v3-material-counts {display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:1px 6px;color:#a0aec2;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;}
 .mwi-layu-panel .v3-material-counts > * {white-space:nowrap;}
-.mwi-layu-panel .v3-enhancement-plan {margin-top:8px;padding:10px 8px;background:#1b2638;border:1px solid #30415b;border-radius:5px;white-space:normal;}
-.mwi-layu-panel .v3-enhancement-plan h4 {margin:0;font-size:12px;}
-.mwi-layu-panel .v3-plan-header {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;margin-bottom:12px;}
-.mwi-layu-panel .v3-plan-scope {display:inline-flex;flex-wrap:wrap;gap:2px;padding:2px;border:1px solid #30415b;border-radius:4px;}
-.mwi-layu-panel .v3-plan-scope button {min-height:26px;padding:2px 8px;border:0;border-radius:2px;background:transparent;color:#a0aec2;font-size:11px;}
-.mwi-layu-panel .v3-plan-scope button[aria-pressed=true] {background:#193f56;color:#7dd3fc;}
-.mwi-layu-panel .v3-plan-scope button:hover {background:#203e4b;color:#f1f5f9;}
-.mwi-layu-panel .v3-plan-scope button:focus-visible {outline:2px solid #38bdf8;outline-offset:2px;}
-.mwi-layu-panel .v3-plan-body {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 18px;}
-.mwi-layu-panel .v3-plan-routes {flex:1 1 auto;min-width:0;}
-.mwi-layu-panel .v3-plan-metrics {display:flex;flex-wrap:wrap;gap:8px 20px;min-width:0;}
-.mwi-layu-panel .v3-plan-metric {display:flex;flex-direction:column;gap:4px;min-width:0;}
-.mwi-layu-panel .v3-plan-metric > span {font-size:11px;color:#a0aec2;}
-.mwi-layu-panel .v3-plan-metric > strong {font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;color:#f1f5f9;overflow-wrap:anywhere;}
-.mwi-layu-panel .v3-plan-protect-label {margin-left:4px;font-size:11px;color:#a0aec2;font-weight:400;}
+.mwi-layu-panel .v3-enhancement-plan {margin-top:8px;padding:12px 12px 7px;background:#1b2638;border:1px solid #30415b;border-radius:5px;white-space:normal;}
+.mwi-layu-panel .v3-enhancement-plan h4 {margin:0;font-size:12px;line-height:18px;font-weight:600;}
+.mwi-layu-panel .v3-plan-summary {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,max-content) minmax(0,max-content);align-items:center;gap:8px 16px;}
+.mwi-layu-panel .v3-plan-header {grid-column:1;grid-row:1;min-width:0;}
+.mwi-layu-panel .v3-plan-body,.mwi-layu-panel .v3-plan-metrics,.mwi-layu-panel .v3-plan-metric {display:contents;}
+.mwi-layu-panel .v3-plan-routes {grid-column:1;grid-row:2;min-width:0;}
+.mwi-layu-panel .v3-plan-metric[data-metric=time] > * {grid-column:2;}
+.mwi-layu-panel .v3-plan-metric[data-metric=actions] > * {grid-column:3;}
+.mwi-layu-panel .v3-plan-metric > span {grid-row:1;min-width:0;font-size:11px;line-height:18px;font-weight:600;color:inherit;}
+.mwi-layu-panel .v3-plan-metric > strong {grid-row:2;min-width:0;font-size:14px;line-height:20px;font-weight:600;font-variant-numeric:tabular-nums;color:#f1f5f9;overflow-wrap:anywhere;transform:translateY(-2px);}
 .mwi-layu-panel .v3-enhancement-plan p {margin:3px 0;color:#a0aec2;}
-.mwi-layu-panel .v3-plan-path {display:flex;align-items:center;flex-wrap:wrap;gap:5px;}
-.mwi-layu-panel .v3-plan-path {margin:3px 0;font-size:12px;}
+.mwi-layu-panel .v3-plan-path {display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin:0;font-size:13px;line-height:20px;font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-plan-path strong {font-weight:600;}
+.mwi-layu-panel .v3-plan-path + .v3-plan-path {margin-top:4px;}
+.mwi-layu-panel .v3-plan-item-icon .mwi-layu-item-icon {width:18px;height:18px;flex-basis:18px;}
+.mwi-layu-panel .v3-plan-item-icon > [role=img] {display:flex;}
 .mwi-layu-panel .v3-plan-step,.mwi-layu-panel .v3-plan-item-icon {display:inline-flex;align-items:center;white-space:nowrap;}
 .mwi-layu-panel button.v3-plan-item-icon {padding:0;border:0;background:transparent;cursor:pointer;}
 .mwi-layu-panel button.v3-plan-item-icon:hover {background:#203e4b;}
 .mwi-layu-panel button.v3-plan-item-icon:focus-visible {outline:2px solid #38bdf8;}
-.mwi-layu-panel .v3-plan-arrow {color:#38bdf8;font-size:16px;}
+.mwi-layu-panel .v3-plan-arrow {color:#38bdf8;font-size:16px;line-height:20px;}
 .mwi-layu-panel .v3-enhancement-plan small {display:block;color:#fbbf24;}
 .mwi-layu-panel .v3-order-badge {display:block;width:max-content;border-radius:3px;background:#203e4b;padding:1px 4px;color:#7dd3fc;font-size:9px;margin-top:3px;}
 .mwi-layu-panel .mwi-layu-preset-option {border:1px solid #2b3a52;border-radius:5px;background:#192333;}
@@ -8384,11 +8390,9 @@ function getPriceTier(price, direction) {
     return (value / unit[0]).toFixed(2).replace(/\.?0+$/, "") + unit[1];
   };
   const time = (value) => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString() : "未知";
-  function enhancementPlanMetrics(route, quantity, scope = "total") {
-    const units = scope === "unit" ? 1 : quantity;
-    const scale = value => Number.isFinite(value) && value >= 0 && Number.isFinite(units) && units >= 0 &&
-      Number.isFinite(value * units) ? value * units : null;
-    const hours = scale(route?.totalTimeHours), actions = scale(route?.expectedActions);
+  function enhancementPlanMetrics(route) {
+    const valid = value => Number.isFinite(value) && value >= 0 ? value : null;
+    const hours = valid(route?.totalTimeHours), actions = valid(route?.expectedActions);
     let duration = "未知";
     if (hours === 0) duration = "0秒";
     else if (hours > 0 && hours < 1 / 60) duration = hours < 1 / 3600 ? "不足1秒" : `${Math.round(hours * 3600)}秒`;
@@ -8555,7 +8559,6 @@ function getPriceTier(price, direction) {
     const quantityDrafts = new Map();
     const simulationPanels = new Map();
     const simulationEnabled = new Set();
-    const enhancementPlanScopes = new Map();
     const ladderPositions = new Map();
     let simulationRevision = null;
     let pendingRemoval = null;
@@ -8785,7 +8788,7 @@ function getPriceTier(price, direction) {
       // A frozen scenario belongs to a confirmed character, not a cache epoch.
       const owner = wages.state().simulationOwner;
       if (owner != null && simulationRevision !== owner) {
-        simulationPanels.clear(); simulationEnabled.clear(); enhancementPlanScopes.clear(); simulationRevision = owner;
+        simulationPanels.clear(); simulationEnabled.clear(); simulationRevision = owner;
       }
       const groups = partitions.groups();
       const selected = partitions.selectedGroups();
@@ -9384,8 +9387,10 @@ function getPriceTier(price, direction) {
         const list = node("div", null, "v3-material-cards"); list.setAttribute("aria-label", "制造与强化备料合计");
         const inputs = materials.inputs.filter(m => m.count !== 0 || m.expectedEnhancement > 0);
         const parts = [m => m.count !== 0 && !(m.expectedEnhancement > 0), m => m.count !== 0 && m.expectedEnhancement > 0, m => m.count === 0 && m.expectedEnhancement > 0];
-        for (const match of parts) {
-          const rows = inputs.filter(match); if (!rows.length) continue;
+        const groups = parts.map(match => inputs.filter(m => m.itemHrid !== "/items/coin" && match(m)));
+        groups.push(inputs.filter(m => m.itemHrid === "/items/coin"));
+        for (const rows of groups) {
+          if (!rows.length) continue;
           for (const m of rows) {
             const need = m.totalCount, lack = need == null || m.inventoryCount == null || m.pendingPurchaseCount == null
               ? null : Math.max(0, need - m.inventoryCount - m.pendingPurchaseCount);
@@ -9424,14 +9429,9 @@ function getPriceTier(price, direction) {
         return container;
       }
       function renderEnhancementPlan(panel, item, route, quantity, simulated) {
-        const key = app.materialCart.key(item);
-        // Unplanned favorites still preview one item's materials, but their plan total is zero.
-        const plannedQuantity = cartScope && !cartError ? cartItems.find(entry => app.materialCart.key(entry) === key)?.quantity ?? 0 : null;
         const focusKey = panel.contains(document.activeElement) ? document.activeElement?.dataset.focusKey : null;
+        const summary = node("div", null, "v3-plan-summary");
         const header = node("div", null, "v3-plan-header");
-        const scopeControl = node("div", null, "v3-plan-scope");
-        scopeControl.setAttribute("role", "group"); scopeControl.setAttribute("aria-label", "期望数值统计范围");
-        scopeControl.title = "仅切换期望时间与次数的统计范围，不改变计划数量或路线保护用量";
         const body = node("div", null, "v3-plan-body");
         const routes = node("div", null, "v3-plan-routes");
         const metrics = node("div", null, "v3-plan-metrics"); metrics.setAttribute("aria-live", "polite");
@@ -9440,23 +9440,13 @@ function getPriceTier(price, direction) {
           const field = node("div", null, "v3-plan-metric"); field.dataset.metric = metric;
           field.append(node("span", label), value); metrics.append(field);
         }
-        duration.title = "仅强化耗时，不含制造、采购或等待；期望值不保证本次完成时间";
-        count.title = "期望强化动作次数，不是保护材料消耗量";
-        function updateScope() {
-          const scope = enhancementPlanScopes.get(key) || "total";
-          const result = enhancementPlanMetrics(route, plannedQuantity, scope);
-          panel.dataset.metricScope = scope;
-          for (const choice of scopeControl.children) choice.setAttribute("aria-pressed", String(choice.dataset.scope === scope));
-          duration.textContent = result.duration; duration.dataset.hours = result.hours ?? "";
-          count.textContent = result.count; count.dataset.actions = result.actions ?? "";
-        }
-        for (const [scope, label] of [["unit", "单件"], ["total", `${plannedQuantity == null ? "未知" : plannedQuantity.toLocaleString("en-US")} 件合计`]]) {
-          const choice = button(label, () => { enhancementPlanScopes.set(key, scope); updateScope(); });
-          choice.dataset.scope = scope; choice.dataset.focusKey = `plan-scope:${key}:${scope}`;
-          scopeControl.append(choice);
-        }
-        header.append(node("h4", "强化方案"), scopeControl); body.append(routes, metrics);
-        panel.replaceChildren(header, body); updateScope();
+        duration.title = "单件期望强化耗时，不含制造、采购或等待；期望值不保证本次完成时间";
+        count.title = "单件期望强化动作次数，不是保护材料消耗量";
+        const result = enhancementPlanMetrics(route);
+        duration.textContent = result.duration; duration.dataset.hours = result.hours ?? "";
+        count.textContent = result.count; count.dataset.actions = result.actions ?? "";
+        header.append(node("h4", "强化方案")); body.append(routes, metrics);
+        summary.append(header, body); panel.replaceChildren(summary);
         const restoreFocus = () => { if (focusKey) [...panel.querySelectorAll("[data-focus-key]")]
           .find(el => el.dataset.focusKey === focusKey)?.focus({preventScroll:true}); };
         delete panel.dataset.routeType; delete panel.dataset.protectAt;
@@ -9464,7 +9454,7 @@ function getPriceTier(price, direction) {
         panel.dataset.routeType = route.routeType;
         panel.dataset.protectAt = route.protectAt ?? "";
         const arrow = () => node("span", "→", "v3-plan-arrow");
-        function stage(level, itemHrid = null, action = "", protects = false) {
+        function stage(level, itemHrid = null, protectionText = "") {
           const step = node("span", null, "v3-plan-step");
           step.append(node("strong", `+${level ?? "未知"}`));
           if (itemHrid) {
@@ -9474,9 +9464,9 @@ function getPriceTier(price, direction) {
             icon.dataset.itemHrid = itemHrid; icon.title = name;
             const image = node("span"); image.setAttribute("role", "img"); image.setAttribute("aria-label", name);
             image.append(app.itemUI.icon(itemHrid, spriteBase)); icon.append(image);
-            step.append(icon, node("span", action));
+            step.append(icon);
+            if (protectionText) step.append(node("strong", protectionText));
           }
-          if (protects) step.append(node("span", "起保", "v3-plan-protect-label"));
           return step;
         }
         function path(target, metric, level, count = null, mirrorTarget = null, units = count ?? quantity) {
@@ -9485,9 +9475,9 @@ function getPriceTier(price, direction) {
           const protects = metric.expectedProtects > 0 && Number.isInteger(metric.protectAt);
           const expectedProtects = metric.expectedProtects == null ? null : metric.expectedProtects * units;
           const protectionText = `(${Number.isFinite(expectedProtects) ? expectedProtects.toLocaleString("en-US", {useGrouping:false, maximumFractionDigits:2}) : "未知"})`;
-          line.append(stage(0, protects && metric.protectAt === 0 ? metric.protectionItemHrid : null, protectionText, protects && metric.protectAt === 0));
-          if (protects && metric.protectAt > 0) line.append(arrow(), stage(metric.protectAt, metric.protectionItemHrid, protectionText, true));
-          if (level !== 0) line.append(arrow(), stage(level, mirrorTarget != null ? "/items/philosophers_mirror" : null, "合成"));
+          line.append(stage(0, protects && metric.protectAt === 0 ? metric.protectionItemHrid : null, protectionText));
+          if (protects && metric.protectAt > 0) line.append(arrow(), stage(metric.protectAt, metric.protectionItemHrid, protectionText));
+          if (level !== 0) line.append(arrow(), stage(level, mirrorTarget != null ? "/items/philosophers_mirror" : null));
           else line.append(node("span", "无需强化"));
           if (mirrorTarget != null) line.append(arrow(), stage(mirrorTarget));
           if (metric.expectedProtects === 0 && mirrorTarget == null) line.append(node("span", "无需保护"));
@@ -9500,7 +9490,7 @@ function getPriceTier(price, direction) {
           if (primary) routes.append(path(item, primary.part, primary.level, null, item.enhancementLevel, primary.part.quantity * quantity));
           else {
             const merge = node("div", null, "v3-plan-path");
-            merge.append(stage(route.mirrorStartLevel, "/items/philosophers_mirror", "合成"), arrow(), stage(item.enhancementLevel));
+            merge.append(stage(route.mirrorStartLevel, "/items/philosophers_mirror"), arrow(), stage(item.enhancementLevel));
             routes.append(merge);
           }
           const parts = disclosure("组成装备与数量", `route:${app.materialCart.key(item)}`);
@@ -9537,6 +9527,8 @@ function getPriceTier(price, direction) {
           strategy.replaceChildren();
           const base = comparison?.baseComparison;
           const selectedSource = wages.baseItemSource(item);
+          const actualSource = base?.baseItemSource || selectedSource;
+          const craftFallback = selectedSource === "market" && actualSource === "craft";
           const top = node("div", null, "v3-source-top");
           const identity = app.itemUI.identity(item, spriteBase, `${item.name} +0`);
           identity.title = `${item.name} +0`;
@@ -9562,14 +9554,14 @@ function getPriceTier(price, direction) {
               });
             });
             choice.append(input, node("span", `${label} ${number(cost > 0 ? cost : null)}`));
-            choice.title = `${label}底子及同物品保护；同角色的该物品各强化等级共用此选择`;
+            choice.title = `${label}底子及同物品保护；同角色的该物品各强化等级共用此选择${source === "market" ? "；采购报价缺失时使用自制成本" : ""}`;
             options.append(choice);
           }
           top.append(identity, options);
           const bottom = node("div", null, "v3-source-bottom");
           const protection = node("span", null, "v3-source-protection");
           if (route?.protectionItemHrid === item.itemHrid || !route) {
-            protection.append(node("span", "同物品保护："), node("strong", selectedSource === "craft" ? "同步自制" : "同步采购"));
+            protection.append(node("span", "同物品保护："), node("strong", actualSource === "craft" ? "同步自制" : "同步采购"));
           } else if (route.protectionItemHrid) {
             protection.append(node("span", "保护："), app.itemUI.identity({ itemHrid:route.protectionItemHrid }, spriteBase,
               names[route.protectionItemHrid] || route.protectionItemHrid.slice(7)));
@@ -9580,11 +9572,11 @@ function getPriceTier(price, direction) {
           const routeLabel = node("span", label, "v3-source-route");
           const difference = base?.craftingCost > 0 && base?.readyMadeCost > 0
             ? (base.craftingCost - base.readyMadeCost) * (selectedSource === "market" ? 1 : -1) : null;
-          const saving = node("span", difference == null ? "差价未知" : difference === 0 ? "成本相同"
+          const saving = node("span", craftFallback ? "缺价，按自制" : difference == null ? "差价未知" : difference === 0 ? "成本相同"
             : `${difference > 0 ? "节省" : "多花"} ${number(Math.abs(difference))}/件`, `v3-source-difference${difference < 0 ? " v3-source-extra" : ""}`);
-          saving.title = "单件底子差价；按未缩写的价格计算";
+          saving.title = craftFallback ? "采购报价缺失，底子及同物品保护按自制成本计算；采购报价恢复后按采购成本计算。" : "单件底子差价；按未缩写的价格计算";
           bottom.append(protection, routeLabel, saving); strategy.append(top, bottom);
-          if (!route) strategy.title = current?.reason || "等待路线计算；所选来源缺价时不会自动改用另一种来源";
+          if (!route) strategy.title = current?.reason || "等待路线计算；采购报价缺失时使用自制成本，自制成本也缺失时无法估算";
           else strategy.removeAttribute("title");
           app.itemUI.decorate(strategy, spriteBase, names);
           if (focusKey) [...strategy.querySelectorAll("[data-focus-key]")].find(el => el.dataset.focusKey === focusKey)?.focus({ preventScroll:true });
