@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         柆雨强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.5
+// @version      0.3.6
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:zh-CN   柆雨强化助手
@@ -702,11 +702,19 @@ SOFTWARE.
             const plain = (value) => JSON.parse(JSON.stringify(value instanceof Map ? Object.fromEntries(value) : value ?? null,
               (_key, entry) => entry instanceof Map ? Object.fromEntries(entry) : entry));
             const values = (value) => value instanceof Map ? [...value.values()] : Object.values(value || {});
+            const experience = value => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value
+              : typeof value === "string" && /^\d+(?:\.\d+)?$/.test(value) && Number.isFinite(Number(value)) ? Number(value) : null;
+            const wisdomMap = source => source && typeof source === "object" ? Object.fromEntries(
+              Object.entries(source instanceof Map ? Object.fromEntries(source) : source).map(([hrid, buffs]) => {
+                const wisdom = Array.isArray(buffs) ? buffs.filter(buff => buff.typeHrid === "/buff_types/wisdom") : null;
+                return [hrid, wisdom && wisdom.every(buff => Number.isFinite(buff.flatBoost)) ? wisdom.reduce((sum, buff) => sum + buff.flatBoost, 0) : null];
+              })) : null;
             const itemSource = state.characterItemMap ?? state.characterItems;
             const items = values(itemSource);
             enhancementState = {
               characterId: state.character.id,
-              characterSkills: values(state.characterSkillMap || state.characterSkills).map((skill) => ({ skillHrid: skill.skillHrid || skill.hrid, level: skill.level })),
+              characterSkills: values(state.characterSkillMap || state.characterSkills).map((skill) => ({ skillHrid: skill.skillHrid || skill.hrid, level: skill.level, experience: experience(skill.experience) })),
+              experienceBuffs: { types: wisdomMap(state.skillingActionTypeBuffsDict), actions: wisdomMap(state.skillingActionHridBuffsDict) },
               characterItems: itemSource && typeof itemSource === "object" ? items
                 .filter((item) => item.itemLocationHrid && item.itemLocationHrid !== "/item_locations/inventory" && Number(item.count) !== 0)
                 .map((item) => ({ itemHrid: item.itemHrid, itemLocationHrid: item.itemLocationHrid, enhancementLevel: item.enhancementLevel, count: item.count })) : null,
@@ -6198,7 +6206,7 @@ function getPriceTier(price, direction) {
   function create({ item, quote, settings, rules, character, market, quoteFor, acquisitionSource = "auto", capturedAt = Date.now() }) {
     const target = clone(item), sale = positive(quote?.price);
     const config = clone(settings), ruleData = clone(rules), player = clone(character || {}), baselineMarket = clone(market);
-    const engine = data => app.wageEngine.create({ config: clone(config), rules: ruleData, character: player, market: data, acquisitionSource });
+    const engine = (data, source = acquisitionSource) => app.wageEngine.create({ config: clone(config), rules: ruleData, character: player, market: data, acquisitionSource: source });
     const baselineEngine = engine(baselineMarket);
     function calculate(calculator, atPrice = sale) {
       if (!positive(atPrice)) {
@@ -6247,10 +6255,16 @@ function getPriceTier(price, direction) {
         materialPrices[entry.itemHrid].manufacturing = positive(manufacturingPrices[entry.itemHrid]);
       }
       const diff = (before, after) => Number.isFinite(before) && Number.isFinite(after) ? after - before : null;
+      const base = calculator.acquisition(target.itemHrid);
+      const baseComparison = { craftingCost: base.craftingCost, readyMadeCost: base.productPrice, baseItemSource: base.source, hourlyWageDifference: null };
+      // Compare complete routes under the same sale, character and overridden
+      // quotes. A per-base price difference misses protection and route changes.
+      if (sale && base.craftingCost > 0 && base.productPrice > 0 && ["market", "craft"].includes(acquisitionSource)) {
+        const alternative = calculate(engine(data, acquisitionSource === "market" ? "craft" : "market"));
+        baseComparison.hourlyWageDifference = diff(alternative.hourlyWage, simulated.hourlyWage);
+      }
       return { baseline: clone(baseline), simulated, changed, materialPrices,
-        // compareBase requires a positive quote to expose its cost decomposition.
-        // The neutral fallback is never rendered as a quote; readyMadeCost remains 0/missing.
-        baseComparison: (() => { const base = calculator.acquisition(target.itemHrid); return { craftingCost: base.craftingCost, readyMadeCost: base.productPrice, baseItemSource: base.source }; })(),
+        baseComparison,
         calculateAt: atPrice => positive(atPrice) ? calculate(calculator, atPrice) : { reason: "暂无有效售价" },
         routeChanged: baseline.metrics && simulated.metrics ? routeKey(baseline.metrics) !== routeKey(simulated.metrics) : null, delta: {
         totalCost: diff(baseline.metrics?.totalCost, simulated.metrics?.totalCost),
@@ -6264,6 +6278,145 @@ function getPriceTier(price, direction) {
       saleQuote: clone(quote || null), inputs, evaluate });
   }
   app.priceSimulation = Object.freeze({ create, references });
+})(globalThis);
+
+
+// ---- src/v3/experience-plan.js ----
+(function initExperiencePlan(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const valid = value => typeof value === "number" && Number.isFinite(value) && value >= 0;
+  const skills = { enhancing: "强化经验", cheesesmithing: "制造经验 · 奶酪锻造", crafting: "制造经验 · 制作", tailoring: "制造经验 · 缝纫", cooking: "制造经验 · 烹饪", brewing: "制造经验 · 冲泡" };
+  const cache = new Map();
+  function progress(skill, gain, table) {
+    const result = { level: Number.isInteger(skill?.level) ? skill.level : null, gain: valid(gain) ? gain : null,
+      current: null, projected: null, projectedLevel: null, added: null, capped: false };
+    const level = result.level, xp = skill?.experience;
+    if (!Array.isArray(table) || level == null || level < 1 || !valid(xp) || !valid(table[level]) || xp < table[level]) return result;
+    const max = table.length - 1;
+    if (level === max) return { ...result, current: 100, projected: valid(gain) ? 100 : null, projectedLevel: valid(gain) ? level : null, added: valid(gain) ? 0 : null, capped: true };
+    if (!(table[level + 1] > table[level]) || xp >= table[level + 1]) return result;
+    result.current = 100 * (xp - table[level]) / (table[level + 1] - table[level]);
+    if (!valid(gain) || !valid(xp + gain)) return result;
+    let endLevel = level;
+    while (endLevel < max && valid(table[endLevel + 1]) && xp + gain >= table[endLevel + 1]) endLevel += 1;
+    if (endLevel < max && !(table[endLevel + 1] > table[endLevel])) return result;
+    result.projectedLevel = endLevel;
+    result.projected = endLevel === max ? 100 : 100 * (xp + gain - table[endLevel]) / (table[endLevel + 1] - table[endLevel]);
+    result.added = endLevel > level ? 100 - result.current : result.projected - result.current;
+    result.capped = endLevel === max;
+    return result;
+  }
+  function wisdom(character, actionType, actionHrid) {
+    // The native client already aggregates equipment, drinks, house, guild,
+    // community, pass and personal wisdom. Missing aggregates are not zero.
+    const types = character?.experienceBuffs?.types, actions = character?.experienceBuffs?.actions;
+    if (!types || !actionType) return null;
+    const bonus = Object.hasOwn(types, actionType) ? types[actionType] : 0;
+    const extra = actionHrid && actions ? actions[actionHrid] ?? 0 : 0;
+    return Number.isFinite(bonus) && Number.isFinite(extra) && 1 + bonus + extra >= 0 ? 1 + bonus + extra : null;
+  }
+  function rewardPerAction(itemLevel, target, protect, params, rates) {
+    if (!valid(itemLevel) || !Number.isInteger(target) || target < 1 || target > 20 || !Number.isInteger(protect) || protect < 1 || protect > target || !params || !Array.isArray(rates)) return null;
+    const concentration = 1 + (params.drink_concentration_bonus || 0) / 100;
+    const level = params.enhancing_level + concentration * ((params.tea_enhancing ? 3 : 0) + (params.tea_super_enhancing ? 6 : 0) + (params.tea_ultra_enhancing ? 8 : 0));
+    const bonus = params.enhancer_bonus + (params.champion_achievement ? 0.2 : 0) + 0.05 * params.laboratory_level;
+    const successMultiplier = (level >= itemLevel ? 1 + 0.0005 * (level - itemLevel) : 1 - 0.5 * (1 - level / itemLevel)) + bonus / 100;
+    const blessed = params.tea_blessed ? 0.01 * concentration : 0;
+    if (!valid(successMultiplier) || !valid(blessed) || blessed > 1) return null;
+    const key = JSON.stringify([itemLevel, target, protect, successMultiplier, blessed, rates.slice(0, target)]);
+    if (cache.has(key)) return cache.get(key);
+    const matrix = Array.from({length:target}, (_, i) => Array.from({length:target}, (_, j) => i === j ? 1 : 0));
+    const rewards = [];
+    for (let i = 0; i < target; i += 1) {
+      const success = rates[i] * successMultiplier;
+      if (!valid(success) || success <= 0 || success > 1) return null;
+      const add = (destination, chance) => { if (destination < target) matrix[i][destination] -= chance; };
+      add(i + 1, success * (1 - blessed)); add(i + 2, success * blessed);
+      add(i >= protect ? i - 1 : 0, 1 - success);
+      rewards.push(1.4 * (i + 1) * (10 + itemLevel) * (success + 0.1 * (1 - success)));
+    }
+    try {
+      const visits = app.wageMath.inv(matrix)[0];
+      const attempts = visits.reduce((sum, n) => sum + n, 0);
+      const value = visits.reduce((sum, n, i) => sum + n * rewards[i], 0) / attempts;
+      if (!valid(value)) return null;
+      if (cache.size >= 128) cache.delete(cache.keys().next().value);
+      cache.set(key, value); return value;
+    } catch (_error) { return null; }
+  }
+  function enhancingGain({item, route, rules, params, character, quantity, recipe}) {
+    if (!route || !valid(quantity)) return null;
+    if (route.expectedActions === 0 && !route.mirrorCount) return 0;
+    const multiplier = wisdom(character, "/action_types/enhancing", "/actions/enhancing/enhance");
+    if (multiplier == null) return null;
+    const parts = route.routeType === "philosophersMirror" ? route.materialComponents : [{...route, itemHrid:item.itemHrid, quantity:1}];
+    if (!Array.isArray(parts) || !parts.length) return null;
+    let xp = 0;
+    for (const [index, part] of parts.entries()) {
+      if (!valid(part.quantity) || !valid(part.expectedActions)) return null;
+      if (part.expectedActions === 0) continue;
+      const hrid = part.routeType === "refinementCarryover" ? recipe(part.itemHrid)?.upgradeItemHrid : part.itemHrid;
+      const target = part.refinementAtLevel ?? (route.routeType === "philosophersMirror" ? route.componentDetails?.[index]?.level : item.enhancementLevel);
+      const perAction = rewardPerAction(rules.itemDetailMap?.[hrid]?.itemLevel, target, part.protectAt, params, rules.enhancementLevelSuccessRateTable);
+      if (perAction == null) return null;
+      // Exact-level components retry overshoots. Their route action count already
+      // includes retries; the per-cycle state distribution remains unchanged.
+      xp += perAction * part.expectedActions * part.quantity;
+    }
+    if (route.mirrorCount > 0) {
+      // Expand guaranteed mirror steps by output level, matching the route flow.
+      const min = route.mirrorOutputMin, target = item.enhancementLevel;
+      if (!Number.isInteger(min) || min < 2 || min > target || target > 20) return null;
+      const refined = item.itemHrid.endsWith("_refined"), base = refined ? recipe(item.itemHrid)?.upgradeItemHrid : item.itemHrid;
+      const normalNeeds = Array(21).fill(0), refinedNeeds = Array(21).fill(0);
+      (refined ? refinedNeeds : normalNeeds)[target] = 1;
+      for (let output = target; output >= min; output -= 1) {
+        for (const [needs, hrid] of [[normalNeeds, base], [refinedNeeds, item.itemHrid]]) {
+          const count = needs[output];
+          if (!count) continue;
+          const itemLevel = rules.itemDetailMap?.[hrid]?.itemLevel;
+          if (!valid(itemLevel)) return null;
+          xp += count * 1.4 * output * (10 + itemLevel);
+          needs[output - 1] += count; normalNeeds[output - 2] += count;
+        }
+      }
+    }
+    return xp * quantity * multiplier;
+  }
+  function estimate({ item, route, quantity, rules, character, params, materials, recipe, inventoryCount, showManufacturing, virtual }) {
+    const pack = (skillHrid, gain, reason = "") => ({ skillHrid, label:skills[skillHrid.split("/").pop()] || "制造经验",
+      ...progress(virtual ? null : character?.characterSkills?.find(s => s.skillHrid === skillHrid), gain, rules?.levelExperienceTable), reason });
+    const gain = virtual ? null : enhancingGain({item, route, quantity, rules:rules || {}, params, character, recipe});
+    const enhancement = pack("/skills/enhancing", gain, virtual ? "虚拟角色没有可对应的实际经验进度" : gain == null ? "经验所需的角色增益、游戏规则或路线数据未就绪" : "按当前角色增益及路线估算，不预测途中升级或增益到期引起的变化");
+    const manufacturing = [];
+    if (showManufacturing) {
+      const gains = new Map();
+      const add = (hrid, units, subtractStock) => {
+        const action = recipe(hrid), detail = rules?.actionDetailMap?.[action?.actionHrid];
+        const skill = detail?.experienceGain?.skillHrid || (action ? `/skills/${action.actionHrid.split("/")[2]}` : "/skills/manufacturing");
+        const stock = subtractStock ? inventoryCount(hrid, 0) : 0;
+        const count = valid(units) && valid(stock) && action?.outputCount > 0 ? Math.ceil(Math.max(0, units - Math.floor(stock)) / action.outputCount) : null;
+        const factor = wisdom(character, detail?.type || `/action_types/${skill.split("/").pop()}`, action?.actionHrid);
+        const xp = count === 0 ? 0 : !virtual && count != null && factor != null && valid(detail?.experienceGain?.value) ? count * detail.experienceGain.value * factor : null;
+        const before = gains.get(skill) ?? 0;
+        gains.set(skill, gains.has(skill) && gains.get(skill) == null || xp == null ? null : before + xp);
+      };
+      for (const demand of materials?.craftingDemands || []) {
+        const units = valid(demand.base) && valid(demand.protects) && valid(materials.multiplier) ? Math.ceil(demand.base) + Math.ceil(demand.protects * materials.multiplier) : null;
+        add(demand.itemHrid, units, true);
+      }
+      const parts = route?.routeType === "philosophersMirror" ? route.materialComponents : route ? [{...route,itemHrid:item.itemHrid,quantity:1}] : [];
+      for (const part of parts || []) if (part.routeType === "refinementCarryover") add(part.itemHrid, part.quantity * quantity, false);
+      if (!gains.size) gains.set(`/skills/${recipe(item.itemHrid)?.actionHrid.split("/")[2] || "manufacturing"}`, null);
+      for (const [skill, gain] of gains) {
+        const value = materials?.enhancementReady === false || virtual ? null : gain;
+        manufacturing.push(pack(skill, value, value == null ? "制造配方、库存或经验增益未知" : "按当前计划需实际制作的批次估算，扣除同名 +0 库存；含备料倍率对应的保护装备，不含另行加工原材料"));
+      }
+    }
+    return { enhancement, manufacturing };
+  }
+  app.experiencePlan = Object.freeze({ progress, wisdom, rewardPerAction, enhancingGain, estimate });
 })(globalThis);
 
 
@@ -6377,12 +6530,14 @@ function getPriceTier(price, direction) {
     let rulesText = "";
     let characterSignature = "";
     let inventorySignature = "";
+    let experienceSignature = "";
     let engine = null;
     let engineKey = "";
     let enginePriceRevision = -1, engineMarketSignature = "";
     let revision = 0;
     let calculationRevision = 0;
     let inventoryRevision = 0;
+    let experienceRevision = 0;
     let pending = null;
     let destroyed = false;
     const results = new Map(), engines = new Map();
@@ -6418,7 +6573,12 @@ function getPriceTier(price, direction) {
         } catch (_error) { characterReadError = "bridge_unavailable"; }
         if (destroyed) return;
         // Inventory changes update quantities, but are not formula inputs.
-        const nextSignature = JSON.stringify([characterReadError, next && { ...next, inventoryItems: undefined, purchaseListings: undefined }]);
+        const nextSignature = JSON.stringify([characterReadError, next && { ...next, inventoryItems: undefined, purchaseListings: undefined,
+          experienceBuffs: undefined, characterSkills: next.characterSkills?.map(({experience, ...skill}) => skill) }]);
+        const nextExperienceSignature = JSON.stringify([next?.characterId, next?.characterSkills, next?.experienceBuffs]);
+        const experienceChanged = nextExperienceSignature !== experienceSignature;
+        experienceSignature = nextExperienceSignature;
+        if (experienceChanged) experienceRevision += 1;
         const nextInventorySignature = JSON.stringify([next?.characterId, next?.inventoryItems, next?.purchaseListings]);
         const inventoryChanged = nextInventorySignature !== inventorySignature;
         character = next;
@@ -6429,7 +6589,7 @@ function getPriceTier(price, direction) {
         if (nextSignature !== characterSignature || changedRules) {
           characterSignature = nextSignature;
           invalidate();
-        } else if (inventoryChanged) { revision += 1; onChange(); }
+        } else if (inventoryChanged || experienceChanged) { revision += 1; onChange(); }
       })().finally(() => { pending = null; });
       return pending;
     }
@@ -6694,11 +6854,19 @@ function getPriceTier(price, direction) {
         inventoryCount: inventoryCount(item.itemHrid, item.enhancementLevel || 0),
         pendingPurchaseCount: app.materialCart.pendingPurchases(character?.purchaseListings, item) };
     }
+    function experiencePlan(item, result, quantity, projected = materials(item, result, quantity)) {
+      if (rules?.itemDetailMap && (settings.virtual.enabled || ready())) ensureEngine(item);
+      const route = result?.metrics;
+      const showManufacturing = baseItemSource(item) === "craft" || route?.baseItemSource === "craft" ||
+        route?.materialComponents?.some(part => part.baseItemSource === "craft");
+      return app.experiencePlan.estimate({ item, route, quantity, rules, character, params: engine?.params(), materials: projected,
+        recipe: craftingRecipe, inventoryCount, showManufacturing, virtual: settings.virtual.enabled });
+    }
     return Object.freeze({ parameters() {
       if (!rules?.itemDetailMap || (!settings.virtual.enabled && !ready())) return null;
       ensureEngine(); return { ...engine.params() };
-    }, presetCatalog: () => app.partitionPresets.catalog(rules), save, calculate, baseItemSource, setBaseItemSource, createSimulation, materials, materialInfo, targetQuantity, setTargetQuantity, preparation, refreshCharacter, status, settings: () => clone(settings),
-      state: () => ({ revision, calculationRevision, inventoryRevision, storageError, simulationOwner }), destroy() { destroyed = true; results.clear(); engines.clear(); } });
+    }, presetCatalog: () => app.partitionPresets.catalog(rules), save, calculate, baseItemSource, setBaseItemSource, createSimulation, materials, materialInfo, experiencePlan, targetQuantity, setTargetQuantity, preparation, refreshCharacter, status, settings: () => clone(settings),
+      state: () => ({ revision, calculationRevision, inventoryRevision, experienceRevision, storageError, simulationOwner }), destroy() { destroyed = true; results.clear(); engines.clear(); } });
   }
   app.marketWages = Object.freeze({ create, normalize, collectMaterialReferences, defaults: () => clone(defaults), storageKey, numericVirtual });
 })(globalThis);
@@ -8244,7 +8412,12 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-sim-actions {display:flex;gap:3px;margin-left:auto;flex-shrink:0;}
 .mwi-layu-panel .v3-sim-actions button {min-height:24px;padding:2px 4px;font-size:10px;color:#7dd3fc;white-space:nowrap;}
 .mwi-layu-panel .v3-sim-toggle[aria-pressed=true] {background:#075985;border-color:#38bdf8;color:#fff;}
-.mwi-layu-panel .v3-material-quote {margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-material-readout {display:flex;gap:12px;margin-left:auto;max-width:100%;font-size:12px;line-height:16px;text-align:right;font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-material-price-field {display:flex;flex-direction:column;min-width:0;}
+.mwi-layu-panel .v3-material-price-label {font-size:10px;line-height:13px;color:#a0aec2;white-space:nowrap;}
+.mwi-layu-panel .v3-material-quote,.mwi-layu-panel .v3-material-total {overflow-wrap:anywhere;}
+.mwi-layu-panel .v3-material-total {font-weight:600;}
+.mwi-layu-panel .v3-material-total[data-value="0"] {color:#a0aec2;}
 .mwi-layu-panel .v3-workbench-materials {container-type:inline-size;container-name:v3-material-panel;}
 .mwi-layu-panel .v3-material-cards {display:grid;grid-template-columns:minmax(0,1fr);gap:4px;align-items:start;}
 @container v3-material-panel (min-width:440px) {
@@ -8292,6 +8465,29 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel button.v3-plan-item-icon:focus-visible {outline:2px solid #38bdf8;}
 .mwi-layu-panel .v3-plan-arrow {color:#38bdf8;font-size:16px;line-height:20px;}
 .mwi-layu-panel .v3-enhancement-plan small {display:block;color:#fbbf24;}
+.mwi-layu-panel .v3-xp-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:12px;padding-top:10px;border-top:1px solid #30415b;}
+.mwi-layu-panel .v3-xp {min-width:0;--xp-color:#38bdf8;--xp-tint:#7dd3fc;font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-xp-manufacturing {--xp-color:#a78bfa;--xp-tint:#c4b5fd;}
+.mwi-layu-panel .v3-xp-manufacturing-list {display:grid;gap:12px;min-width:0;}
+.mwi-layu-panel .v3-xp-heading {display:flex;justify-content:space-between;gap:4px 8px;align-items:baseline;font-size:11px;}
+.mwi-layu-panel .v3-xp-heading > strong {white-space:nowrap;}
+.mwi-layu-panel .v3-xp-label {display:inline-flex;align-items:center;gap:4px;}
+.mwi-layu-panel .v3-xp-label svg {width:16px;height:16px;flex-shrink:0;}
+.mwi-layu-panel .v3-xp-comparison {display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 5px;font-size:12px;}
+.mwi-layu-panel .v3-xp-comparison > span,.mwi-layu-panel .v3-xp-comparison > strong {white-space:nowrap;}
+.mwi-layu-panel .v3-xp-comparison strong,.mwi-layu-panel .v3-xp-arrow {color:var(--xp-tint);}
+.mwi-layu-panel .v3-xp-track {position:relative;height:7px;margin-top:7px;background:#304057;border-radius:2px;overflow:hidden;}
+.mwi-layu-panel .v3-xp-track > span {position:absolute;top:0;height:100%;}
+.mwi-layu-panel .v3-xp-current {left:0;background:var(--xp-color);}
+.mwi-layu-panel .v3-xp-projected {background:repeating-linear-gradient(125deg,transparent 0 3px,var(--xp-tint) 3px 5px);box-shadow:inset 0 1px var(--xp-tint),inset 0 -1px var(--xp-tint);}
+.mwi-layu-panel .v3-xp-bottom {display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 5px;margin-top:5px;color:#a0aec2;font-size:10px;}
+.mwi-layu-panel .v3-xp-gain,.mwi-layu-panel .v3-xp-level-up {color:var(--xp-tint);}
+.mwi-layu-panel .v3-xp-gain {margin-left:auto;}
+.mwi-layu-panel .v3-xp-level-up {font-size:10px;}
+@container v3-material-panel (max-width:600px) {
+ .mwi-layu-panel .v3-xp-heading {flex-direction:column;align-items:stretch;}
+ .mwi-layu-panel .v3-xp-comparison {justify-content:space-between;}
+}
 .mwi-layu-panel .v3-order-badge {display:block;width:max-content;border-radius:3px;background:#203e4b;padding:1px 4px;color:#7dd3fc;font-size:9px;margin-top:3px;}
 .mwi-layu-panel .mwi-layu-preset-option {border:1px solid #2b3a52;border-radius:5px;background:#192333;}
 .mwi-layu-panel .mwi-layu-preset-category-head {padding:7px 8px;justify-content:space-between;}
@@ -8782,7 +8978,7 @@ function getPriceTier(price, direction) {
       if (composingSearch) return;
       // Keep the workspace stable even when filters leave no project table.
       syncProjectWidth(partitions.columnWidths());
-      let { items, wages, prices, own, history, historyError, names, spriteBase, cartScope, cartItems, cartError } = snapshot;
+      let { items, wages, prices, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError } = snapshot;
       if (cartError || !cartItems.some(item => item.quantity === 1 && `${cartScope}|${app.materialCart.key(item)}` === pendingRemoval)) clearPendingRemoval();
       // Calculation revisions include routinely refreshed role/buff metadata.
       // A frozen scenario belongs to a confirmed character, not a cache epoch.
@@ -8825,7 +9021,7 @@ function getPriceTier(price, direction) {
         (sort === "name" ? compare(a.item.enhancementLevel, b.item.enhancementLevel, direction) : 0));
       const active = document.activeElement;
       if (element.contains(active) && active.tagName === "INPUT" && !["checkbox", "search", "radio"].includes(active.type)) return;
-      const nextStructure = JSON.stringify([items, cartItems, cartScope, cartError, partitions.read(), names, spriteBase,
+      const nextStructure = JSON.stringify([items, cartItems, cartScope, cartError, partitions.read(), names, spriteBase, skillSpriteBase,
         workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, search, listingFilter, sort, direction,
         materialSort, materialDirection, shortagesOnly, [...expanded], [...historyExpanded], [...simulationEnabled],
         [...quantityDrafts], [...priceDrafts], pendingRemoval, allocationOwner,
@@ -8935,6 +9131,7 @@ function getPriceTier(price, direction) {
       const fingerprint = plan => JSON.stringify([plan, own?.cached, Boolean(own),
         plan.quote?.at && Date.now() - plan.quote.at >= 5 * 60000,
         expanded.has(app.materialCart.key(plan.item)) ? [
+          wages.state().experienceRevision,
           wages.materials(plan.item, plan.result, plan.quantity), wages.materialInfo(plan.item),
           Array.from({ length: plan.item.enhancementLevel + 1 }, (_, enhancementLevel) =>
             wages.materialInfo({ ...plan.item, enhancementLevel }).inventoryCount),
@@ -8991,7 +9188,7 @@ function getPriceTier(price, direction) {
       let cartSignature = JSON.stringify([totals, budget, wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 })]);
       let catalogSignature = JSON.stringify([catalog, catalog.rows.map(item => prices.quote(item))]);
       refreshLive = (next, plans, nextCatalog) => {
-        ({ items, wages, prices, own, history, historyError, names, spriteBase, cartScope, cartItems, cartError } = next);
+        ({ items, wages, prices, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError } = next);
         chosen = plans; catalog = nextCatalog;
         const saved = rememberView();
         let changed = false;
@@ -9403,11 +9600,22 @@ function getPriceTier(price, direction) {
             card.dataset.materialHrid = m.itemHrid; card.dataset.materialLevel = m.enhancementLevel;
             const head = node("div", null, "v3-material-card-head");
             head.append(materialLink(m, { type: "material", required: need }), pricing);
-            if (!enabled && m.itemHrid !== "/items/coin") {
+            if (!enabled) {
               const control = pricing.querySelector("[data-quote-price]");
-              const quote = control?.dataset.quotePrice;
-              const readout = node("span", quote ? app.priceSimulationUI.formatPrice(Number(quote)) : "—", "v3-material-quote");
-              readout.title = control?.querySelector("input")?.title || "暂无报价";
+              const rawQuote = m.itemHrid === "/items/coin" ? "1" : control?.dataset.quotePrice;
+              const quote = rawQuote != null && rawQuote !== "" && Number.isFinite(Number(rawQuote)) && Number(rawQuote) >= 0 ? Number(rawQuote) : null;
+              // Use the same net shortage shown below, including pending purchases,
+              // and multiply unrounded values rather than the compact display text.
+              const total = lack === 0 ? 0 : Number.isFinite(lack) && quote != null ? lack * quote : null;
+              const readout = node("div", null, "v3-material-readout");
+              for (const [label, value, className] of [["单价", quote, "v3-material-quote"], ["补齐总价", total, "v3-material-total"]]) {
+                const field = node("div", null, "v3-material-price-field");
+                const amount = node("span", Number.isFinite(value) ? app.priceSimulationUI.formatPrice(value) : "未知", className);
+                amount.dataset.value = Number.isFinite(value) ? value : "";
+                field.append(node("span", label, "v3-material-price-label"), amount); readout.append(field);
+              }
+              readout.firstElementChild.title = quote == null ? "暂无报价" : `当前单价：${number(quote)}`;
+              readout.lastElementChild.title = lack === 0 ? "无需补齐，补齐总价为 0；已扣除库存与待收货" : Number.isFinite(total) ? `补齐总价：${number(lack)} × ${number(quote)} = ${number(total)}；缺少数量已扣除库存与待收货` : "缺少数量或当前单价未知";
               pricing.hidden = true; head.append(readout);
             }
             const progress = node("progress"); progress.max = 1;
@@ -9427,6 +9635,49 @@ function getPriceTier(price, direction) {
         else container.append(node("p", materials.enhancementReady && !materials.reason ? "无需此类材料。" : "强化方案未就绪，合计需备未知。", "mwi-layu-group-note"));
         if (materials.reason) container.append(node("p", materials.reason, "mwi-layu-group-note"));
         return container;
+      }
+      function renderExperiencePlan(panel, forecast) {
+        const grid = node("div", null, "v3-xp-grid"); grid.setAttribute("aria-label", "计划经验预估");
+        const percent = value => Number.isFinite(value) ? `${value.toFixed(2)}%` : "未知";
+        function field(value, manufacturing = false) {
+          const el = node("div", null, `v3-xp${manufacturing ? " v3-xp-manufacturing" : ""}`);
+          el.dataset.skillHrid = value.skillHrid; el.dataset.gain = value.gain ?? "";
+          const cross = value.projectedLevel != null && value.projectedLevel > value.level;
+          const start = percent(value.current), end = percent(value.projected);
+          const heading = node("div", null, "v3-xp-heading"), comparison = node("span", null, "v3-xp-comparison");
+          comparison.append(node("span", start), node("span", "→", "v3-xp-arrow"), node("strong", end));
+          const title = node("strong", null, "v3-xp-label");
+          if (skillSpriteBase && /^\/skills\/[a-z0-9_]+$/.test(value.skillHrid)) {
+            const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            icon.setAttribute("viewBox", value.skillHrid === "/skills/cheesesmithing" ? "0 0 41 41" : "0 0 40 40");
+            icon.setAttribute("aria-hidden", "true"); icon.setAttribute("focusable", "false");
+            const use = document.createElementNS(icon.namespaceURI, "use");
+            use.setAttribute("href", `${skillSpriteBase}#${value.skillHrid.slice(8)}`); icon.append(use); title.append(icon);
+          }
+          title.append(node("span", value.label));
+          heading.append(title, comparison);
+          const track = node("div", null, "v3-xp-track"); track.setAttribute("role", "progressbar");
+          track.setAttribute("aria-label", value.label); track.setAttribute("aria-valuemin", "0"); track.setAttribute("aria-valuemax", "100");
+          if (value.current != null) track.setAttribute("aria-valuenow", value.current.toFixed(2));
+          track.setAttribute("aria-valuetext", `${cross ? "跨级，" : ""}${start}，预计 ${end}；预计增加 ${number(value.gain)} 经验`);
+          track.title = `实心表示已有经验，斜纹表示预计新增经验。${value.reason}`;
+          const solid = node("span", null, "v3-xp-current"), projected = node("span", null, "v3-xp-projected");
+          solid.style.width = `${value.current ?? 0}%`;
+          projected.style.left = `${value.current ?? 0}%`; projected.style.width = `${value.added ?? 0}%`;
+          track.append(solid, projected);
+          const bottom = node("div", null, "v3-xp-bottom");
+          if (cross) bottom.append(node("span", "跨级", "v3-xp-level-up"));
+          bottom.append(node("span", value.gain == null ? "预计经验未知" : `预计 +${number(value.gain)} 经验`, "v3-xp-gain"));
+          el.title = value.reason; el.append(heading, track, bottom);
+          return el;
+        }
+        grid.append(field(forecast.enhancement));
+        if (forecast.manufacturing.length) {
+          const right = node("div", null, "v3-xp-manufacturing-list");
+          for (const value of forecast.manufacturing) right.append(field(value, true));
+          grid.append(right);
+        }
+        panel.append(grid);
       }
       function renderEnhancementPlan(panel, item, route, quantity, simulated) {
         const focusKey = panel.contains(document.activeElement) ? document.activeElement?.dataset.focusKey : null;
@@ -9570,11 +9821,12 @@ function getPriceTier(price, direction) {
             ? route.expectedProtects > 0 ? `普通保护 · +${route.protectAt} 起保` : "普通路线 · 无需保护"
             : route.routeType === "philosophersMirror" ? "贤者之镜路线" : "精炼继承路线";
           const routeLabel = node("span", label, "v3-source-route");
-          const difference = base?.craftingCost > 0 && base?.readyMadeCost > 0
-            ? (base.craftingCost - base.readyMadeCost) * (selectedSource === "market" ? 1 : -1) : null;
-          const saving = node("span", craftFallback ? "缺价，按自制" : difference == null ? "差价未知" : difference === 0 ? "成本相同"
-            : `${difference > 0 ? "节省" : "多花"} ${number(Math.abs(difference))}/件`, `v3-source-difference${difference < 0 ? " v3-source-extra" : ""}`);
-          saving.title = craftFallback ? "采购报价缺失，底子及同物品保护按自制成本计算；采购报价恢复后按采购成本计算。" : "单件底子差价；按未缩写的价格计算";
+          const difference = base?.hourlyWageDifference;
+          const saving = node("span", craftFallback ? "缺价，按自制" : difference == null ? "工时费差未知" : difference === 0 ? "工时费相同"
+            : `${difference > 0 ? "多赚" : "少赚"} ${number(Math.abs(difference))}/h`, `v3-source-difference${difference < 0 ? " v3-source-extra" : ""}`);
+          saving.dataset.value = difference ?? "";
+          saving.title = craftFallback ? "采购报价缺失，底子及同物品保护按自制成本计算；采购报价恢复后按采购成本计算。"
+            : `当前${selectedSource === "market" ? "采购" : "自制"}方案相对${selectedSource === "market" ? "自制" : "采购"}方案的预计工时费差；使用相同售价、角色参数和当前模拟报价，分别计算完整强化方案。${difference == null ? "缺少有效售价或可比较的方案。" : "按未缩写数值计算。"}`;
           bottom.append(protection, routeLabel, saving); strategy.append(top, bottom);
           if (!route) strategy.title = current?.reason || "等待路线计算；采购报价缺失时使用自制成本，自制成本也缺失时无法估算";
           else strategy.removeAttribute("title");
@@ -9586,6 +9838,7 @@ function getPriceTier(price, direction) {
             cost.dataset.totalCost = route.totalCost; cost.dataset.totalTimeHours = route.totalTimeHours; plan.append(cost);
           }
           const projected = wages.materials(item, current, quantity);
+          renderExperiencePlan(plan, wages.experiencePlan(item, current, quantity, projected));
           const signature = JSON.stringify([projected, comparison?.materialPrices]);
           if (signature !== materialSignature) {
             materialSignature = signature;
@@ -9909,7 +10162,7 @@ function getPriceTier(price, direction) {
     const undo = createStatus(); undo.className = "mwi-layu-undo"; undo.setAttribute("role", "status"); undo.tabIndex = -1;
     const priceStatus = document.createElement("p"); priceStatus.className = "mwi-layu-price-status";
     const wageStatus = document.createElement("p"); wageStatus.className = "mwi-layu-wage-status";
-    let nativeHost = null, timer = 0, destroyed = false, spriteBase = "", signature = "";
+    let nativeHost = null, timer = 0, destroyed = false, spriteBase = "", skillSpriteBase = "", signature = "";
     let nextNameLookup = 0, nameLookupPending = false, listingPending = false;
     let own = null, history = null, historyError = "", ownSaveError = "", currentCharacterId = null;
     const listingServer = `${/^test\./.test(root.location.hostname) ? "api-test" : "api"}.${root.location.hostname.includes("milkywayidlecn") ? "milkywayidlecn" : "milkywayidle"}.com`;
@@ -10019,7 +10272,7 @@ function getPriceTier(price, direction) {
         let cartItems = [], cartError = "";
         try { cartItems = cart.read(cartScope); } catch (error) { cartError = error.message; }
         const priceState = prices.state();
-        const next = JSON.stringify([items, cartItems, cartError, own, history, historyError, ownSaveError, priceState, wages.state(), partitions.read(), names, spriteBase, Math.floor(Date.now() / 60000), cartScope]);
+        const next = JSON.stringify([items, cartItems, cartError, own, history, historyError, ownSaveError, priceState, wages.state(), partitions.read(), names, spriteBase, skillSpriteBase, Math.floor(Date.now() / 60000), cartScope]);
         if (next === signature) return;
         priceStatus.textContent = priceState.snapshotAt ? `市场快照 ${new Date(priceState.snapshotAt).toLocaleString()}${priceState.error ? " · 更新失败，保留已有价格" : ""}`
           : priceState.error ? `行情读取失败：${priceState.errorMessage}` : "正在获取市场快照…";
@@ -10033,7 +10286,7 @@ function getPriceTier(price, direction) {
         for (const item of [...items, ...cartItems]) for (const material of wages.materials(item, wages.calculate(item, prices.quote(item)), item.quantity || 1).inputs) {
           materialNames.add(material.itemHrid);
         }
-        view.render({ items, prices, wages, own, history, historyError, names, spriteBase, cartScope, cartItems, cartError });
+        view.render({ items, prices, wages, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError });
         element.dataset.cartOwner = owner;
         app.itemUI.decorate(element, spriteBase, names);
         signature = next;
@@ -10136,6 +10389,12 @@ function getPriceTier(price, direction) {
         if (url.origin === root.location.origin && /^\/static\/media\/items_sprite\.[a-z0-9]+\.svg$/.test(url.pathname)) {
           spriteBase = url.pathname;
         }
+      }
+      const skillSprite = document.querySelector('use[href*="skills_sprite"],use[xlink\\:href*="skills_sprite"]');
+      const skillHref = skillSprite?.getAttribute("href") || skillSprite?.getAttribute("xlink:href");
+      if (skillHref) {
+        const url = new URL(skillHref, root.location.href);
+        if (url.origin === root.location.origin && /^\/static\/media\/skills_sprite\.[a-z0-9]+\.svg$/.test(url.pathname)) skillSpriteBase = url.pathname;
       }
       for (const [container, button] of buttons) {
         if (!container.isConnected || !container.contains(button)) {
