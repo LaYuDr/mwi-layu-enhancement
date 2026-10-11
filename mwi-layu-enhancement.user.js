@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         柆雨强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.7
+// @version      0.3.8
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:zh-CN   柆雨强化助手
@@ -9823,7 +9823,7 @@ function getPriceTier(price, direction) {
           const routeLabel = node("span", label, "v3-source-route");
           const difference = base?.hourlyWageDifference;
           const saving = node("span", craftFallback ? "缺价，按自制" : difference == null ? "工时费差未知" : difference === 0 ? "工时费相同"
-            : `${difference > 0 ? "多赚" : "少赚"} ${number(Math.abs(difference))}/h`, `v3-source-difference${difference < 0 ? " v3-source-extra" : ""}`);
+            : `${difference > 0 ? "获得" : "失去"}${number(Math.abs(difference))}/h收益`, `v3-source-difference${difference < 0 ? " v3-source-extra" : ""}`);
           saving.dataset.value = difference ?? "";
           saving.title = craftFallback ? "采购报价缺失，底子及同物品保护按自制成本计算；采购报价恢复后按采购成本计算。"
             : `当前${selectedSource === "market" ? "采购" : "自制"}方案相对${selectedSource === "market" ? "自制" : "采购"}方案的预计工时费差；使用相同售价、角色参数和当前模拟报价，分别计算完整强化方案。${difference == null ? "缺少有效售价或可比较的方案。" : "按未缩写数值计算。"}`;
