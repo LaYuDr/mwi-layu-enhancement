@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         柆雨强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.6
+// @version      0.3.7
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:zh-CN   柆雨强化助手
@@ -6286,7 +6286,7 @@ function getPriceTier(price, direction) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   const valid = value => typeof value === "number" && Number.isFinite(value) && value >= 0;
-  const skills = { enhancing: "强化经验", cheesesmithing: "制造经验 · 奶酪锻造", crafting: "制造经验 · 制作", tailoring: "制造经验 · 缝纫", cooking: "制造经验 · 烹饪", brewing: "制造经验 · 冲泡" };
+  const skills = { enhancing: "强化经验", cheesesmithing: "制造经验 · 锻造", crafting: "制造经验 · 制作", tailoring: "制造经验 · 缝纫", cooking: "制造经验 · 烹饪", brewing: "制造经验 · 冲泡" };
   const cache = new Map();
   function progress(skill, gain, table) {
     const result = { level: Number.isInteger(skill?.level) ? skill.level : null, gain: valid(gain) ? gain : null,
