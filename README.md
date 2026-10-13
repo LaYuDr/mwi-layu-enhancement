@@ -1,4 +1,4 @@
-# 柆雨强化助手
+# 强化助手
 
 银河奶牛（Milky Way Idle）的本地 Tampermonkey 辅助插件，当前正式版本使用 V3 界面。
 
