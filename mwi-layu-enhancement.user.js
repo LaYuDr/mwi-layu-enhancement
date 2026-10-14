@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.12
+// @version      0.3.13
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:en      Enhancement Assistant
@@ -314,7 +314,7 @@
     return { dispose, report, client };
   }
   if (typeof module !== "undefined" && module.exports) module.exports = { createUsageClient, boot };
-  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.12","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
+  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.13","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
 setValue: typeof GM_setValue === "function" ? GM_setValue : null,
 menu: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : null,
 unmenu: typeof GM_unregisterMenuCommand === "function" ? GM_unregisterMenuCommand : null,
@@ -1233,7 +1233,8 @@ SOFTWARE.
   "强化可用 {0}": "Enhance available {0}",
   "剩余 {0}": "Remaining {0}",
   "{0}库存分配": "{0} inventory allocation",
-  "整条表示库存 {0}；自制需 {1}，可用 {2}；强化需 {3}，可用 {4}；剩余 {5}。按先自制、后强化分配；不含待收货。": "Full bar: inventory {0}; craft needs {1}, available {2}; enhance needs {3}, available {4}; remaining {5}. Allocated to crafting first, then enhancement; incoming purchases excluded.",
+  "库存缺口 {0}": "Stock gap {0}",
+  "库存 {0}；自制需 {1}，可用 {2}；强化需 {3}，可用 {4}；剩余 {5}；库存缺口 {6}。条长按库存与总需求较大值计算，按先自制、后强化分配；红色缺口未扣待收货，下方缺少数量已扣待收货。": "Inventory {0}; craft needs {1}, available {2}; enhance needs {3}, available {4}; remaining {5}; stock gap {6}. Scale is the greater of inventory and total demand, allocated to crafting first, then enhancement. The red gap excludes incoming purchases; the shortfall below deducts them.",
   "缺：{0}": "Missing: {0}",
   "已扣除待收货数量 {0}": "Incoming quantity already deducted: {0}",
   "需：{0}": "Required: {0}",
@@ -2204,13 +2205,48 @@ SOFTWARE.
     return row;
   }
 
+  function normalizeOrderBook(data) {
+    if (!/^\/items\/[a-z0-9_]+$/.test(data?.itemHrid || "") || !Array.isArray(data?.orderBooks)) return null;
+    const books = data.orderBooks.slice(0, 21);
+    const best = (book, side) => {
+      let result = side === "asks" ? Infinity : 0;
+      for (const entry of Array.isArray(book?.[side]) ? book[side] : []) {
+        const price = Number(Array.isArray(entry) ? entry[0] : entry?.price ?? entry?.p);
+        if (Number.isFinite(price) && price > 0) result = side === "asks" ? Math.min(result, price) : Math.max(result, price);
+      }
+      return Number.isFinite(result) && result > 0 ? result : null;
+    };
+    return { direction: "in", at: new Date().toISOString(), message: {
+      type: "market_item_order_books_updated", itemHrid: data.itemHrid,
+      priceBandMins: books.map((_, level) => Number.isFinite(data.priceBandMins?.[level]) && data.priceBandMins[level] > 0 ? data.priceBandMins[level] : null),
+      priceBandMaxs: books.map((_, level) => Number.isFinite(data.priceBandMaxs?.[level]) && data.priceBandMaxs[level] > 0 ? data.priceBandMaxs[level] : null),
+      sellBooks: books.map((book) => Array.isArray(book?.asks) ? book.asks.slice(0, 100).map((entry) => ({
+        id: Number.isSafeInteger(entry?.listingId) && entry.listingId > 0 ? entry.listingId : null,
+        price: Array.isArray(entry) ? entry[0] : entry?.price ?? entry?.p,
+        quantity: Array.isArray(entry) ? entry[1] : entry?.quantity
+      })).map((entry) => ({ id: entry.id,
+        price: typeof entry.price === "number" && Number.isFinite(entry.price) && entry.price > 0 ? entry.price : null,
+        quantity: typeof entry.quantity === "number" && Number.isFinite(entry.quantity) && entry.quantity >= 0 ? entry.quantity : null
+      })) : null),
+      buyBooks: books.map((book) => Array.isArray(book?.bids) ? book.bids.slice(0, 100).map((entry) => ({
+        id: Number.isSafeInteger(entry?.listingId) && entry.listingId > 0 ? entry.listingId : null,
+        price: Array.isArray(entry) ? entry[0] : entry?.price ?? entry?.p,
+        quantity: Array.isArray(entry) ? entry[1] : entry?.quantity
+      })).map((entry) => ({ id: entry.id,
+        price: typeof entry.price === "number" && Number.isFinite(entry.price) && entry.price > 0 ? entry.price : null,
+        quantity: typeof entry.quantity === "number" && Number.isFinite(entry.quantity) && entry.quantity >= 0 ? entry.quantity : null
+      })) : null),
+      asks: books.map((book) => best(book, "asks")), bids: books.map((book) => best(book, "bids"))
+    } };
+  }
+
   // Serialized into MAIN at document-start by both the production script and loader.
   // Observe incoming order books and own listings; never replace send or request data.
-  function pageBridgeInstaller(options, normalizeLoot) {
+  function pageBridgeInstaller(options, normalizeLoot, normalizeBook) {
     if (window[options.marker]) return;
     const NativeWebSocket = window.WebSocket;
     if (typeof NativeWebSocket !== "function") return;
-    window[options.marker] = true;
+    window[options.marker] = { buyBooks: true };
     const latest = new Map();
     const pendingListings = new Map();
     const pendingLoot = new Map();
@@ -2280,37 +2316,7 @@ SOFTWARE.
       const data = message?.marketItemOrderBooks;
       if (message?.type !== "market_item_order_books_updated" ||
           !/^\/items\/[a-z0-9_]+$/.test(data?.itemHrid || "") || !Array.isArray(data.orderBooks)) return;
-      const books = data.orderBooks.slice(0, 21);
-      const best = (book, side) => {
-        let result = side === "asks" ? Infinity : 0;
-        for (const entry of Array.isArray(book?.[side]) ? book[side] : []) {
-          const price = Number(Array.isArray(entry) ? entry[0] : entry?.price ?? entry?.p);
-          if (Number.isFinite(price) && price > 0) result = side === "asks" ? Math.min(result, price) : Math.max(result, price);
-        }
-        return Number.isFinite(result) && result > 0 ? result : null;
-      };
-      const envelope = { direction: "in", at: new Date().toISOString(), message: {
-        type: message.type, itemHrid: data.itemHrid,
-        priceBandMins: books.map((_, level) => Number.isFinite(data.priceBandMins?.[level]) && data.priceBandMins[level] > 0 ? data.priceBandMins[level] : null),
-        priceBandMaxs: books.map((_, level) => Number.isFinite(data.priceBandMaxs?.[level]) && data.priceBandMaxs[level] > 0 ? data.priceBandMaxs[level] : null),
-        sellBooks: books.map((book) => Array.isArray(book?.asks) ? book.asks.slice(0, 100).map((entry) => ({
-          id: Number.isSafeInteger(entry?.listingId) && entry.listingId > 0 ? entry.listingId : null,
-          price: Array.isArray(entry) ? entry[0] : entry?.price ?? entry?.p,
-          quantity: Array.isArray(entry) ? entry[1] : entry?.quantity
-        })).map((entry) => ({ id: entry.id,
-          price: typeof entry.price === "number" && Number.isFinite(entry.price) && entry.price > 0 ? entry.price : null,
-          quantity: typeof entry.quantity === "number" && Number.isFinite(entry.quantity) && entry.quantity >= 0 ? entry.quantity : null
-        })) : null),
-        buyBooks: books.map((book) => Array.isArray(book?.bids) ? book.bids.slice(0, 100).map((entry) => ({
-          id: Number.isSafeInteger(entry?.listingId) && entry.listingId > 0 ? entry.listingId : null,
-          price: Array.isArray(entry) ? entry[0] : entry?.price ?? entry?.p,
-          quantity: Array.isArray(entry) ? entry[1] : entry?.quantity
-        })).map((entry) => ({ id: entry.id,
-          price: typeof entry.price === "number" && Number.isFinite(entry.price) && entry.price > 0 ? entry.price : null,
-          quantity: typeof entry.quantity === "number" && Number.isFinite(entry.quantity) && entry.quantity >= 0 ? entry.quantity : null
-        })) : null),
-        asks: books.map((book) => best(book, "asks")), bids: books.map((book) => best(book, "bids"))
-      } };
+      const envelope = normalizeBook(data);
       latest.delete(data.itemHrid);
       latest.set(data.itemHrid, envelope);
       if (latest.size > 120) latest.delete(latest.keys().next().value);
@@ -2336,7 +2342,7 @@ SOFTWARE.
       marker: app.config.bridgeMarker, eventName: app.config.bridgeEvent, readyEvent: app.config.bridgeReadyEvent,
       listingEvent: app.config.listingEvent, listingAckEvent: app.config.listingAckEvent,
       lootEvent: app.config.lootEvent, lootAckEvent: app.config.lootAckEvent
-    })},${normalizeLootRecord.toString()});`;
+    })},${normalizeLootRecord.toString()},${normalizeOrderBook.toString()});`;
   }
   function source() { return app.marketBridge.source() + observerSource(); }
   function inject() {
@@ -2351,7 +2357,7 @@ SOFTWARE.
     }
     return true;
   }
-  app.bridge = Object.freeze({ normalizeLootRecord, pageBridgeInstaller, observerSource, source, inject,
+  app.bridge = Object.freeze({ normalizeLootRecord, normalizeOrderBook, pageBridgeInstaller, observerSource, source, inject,
     replay: () => root.document.dispatchEvent(new root.CustomEvent(app.config.bridgeReadyEvent)),
     openMarketplace: (itemHrid, level = 0) => app.marketBridge.openMarketplace(itemHrid, level)
   });
@@ -10246,6 +10252,7 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-material-stock-craft {color:#a78bfa;}
 .mwi-layu-panel .v3-material-stock-enhance {color:#38bdf8;}
 .mwi-layu-panel .v3-material-stock-remaining {color:#65738b;}
+.mwi-layu-panel .v3-material-stock-missing,.mwi-layu-panel .v3-material-missing-label {color:#f87171;}
 .mwi-layu-panel .v3-material-stock-segment + .v3-material-stock-segment::before {content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:#f1f5f9;}
 .mwi-layu-panel .v3-material-stock[data-unknown] .v3-material-stock-track {opacity:.45;}
 .mwi-layu-panel .v3-material-card progress.v3-material-stock-native {position:absolute;width:1px;height:1px;margin:0;clip-path:inset(50%);}
@@ -11551,27 +11558,30 @@ function getPriceTier(price, direction) {
               const craft = stock == null ? null : Math.min(stock, craftDemand);
               const enhance = stock == null ? null : Math.min(stock - craft, enhanceDemand);
               const remaining = stock == null ? null : Math.max(0, stock - craft - enhance);
+              const missing = stock == null ? null : Math.max(0, need - stock);
+              const scale = stock == null ? null : Math.max(stock, need);
               stockDisplay.dataset.inventory = stock ?? "";
               stockDisplay.dataset.craftDemand = craftDemand;
               stockDisplay.dataset.enhanceDemand = enhanceDemand;
               const labels = node("div", null, "v3-material-stock-labels");
-              labels.append(node("span", stock != null && craft < craftDemand ? t`自制可用 ${number(craft)}` : t`自制 ${number(craft)}`, "v3-material-craft-label"));
+              if (craftDemand > 0) labels.append(node("span", stock != null && craft < craftDemand ? t`自制可用 ${number(craft)}` : t`自制 ${number(craft)}`, "v3-material-craft-label"));
               labels.append(node("span", stock != null && enhance < enhanceDemand ? t`强化可用 ${number(enhance)}` : t`强化 ${number(enhance)}`, "v3-material-enhance-label"));
-              labels.append(node("span", t`剩余 ${number(remaining)}`, "v3-material-remaining-label"));
+              if (missing > 0) labels.append(node("span", t`库存缺口 ${number(missing)}`, "v3-material-missing-label"));
+              else labels.append(node("span", t`剩余 ${number(remaining)}`, "v3-material-remaining-label"));
               const track = node("div", null, "v3-material-stock-track"); track.setAttribute("aria-hidden", "true");
-              // The whole track is owned inventory. Shortfalls and incoming
-              // purchases must never extend it beyond the stock actually held.
-              for (const [kind, allocated] of [["craft", craft], ["enhance", enhance], ["remaining", remaining]]) {
+              // Stock plus its unmet demand share one scale. Incoming purchases
+              // reduce the purchase shortfall below, but are not stock yet.
+              for (const [kind, allocated] of [["craft", craft], ["enhance", enhance], ["remaining", remaining], ["missing", missing]]) {
                 if (!(allocated > 0)) continue;
                 const segment = node("span", null, `v3-material-stock-segment v3-material-stock-${kind}`);
-                segment.style.width = `${allocated / stock * 100}%`;
+                segment.style.width = `${allocated / scale * 100}%`;
                 segment.dataset.allocated = allocated;
                 track.append(segment);
               }
-              const description = t`整条表示库存 ${number(stock)}；自制需 ${number(craftDemand)}，可用 ${number(craft)}；强化需 ${number(enhanceDemand)}，可用 ${number(enhance)}；剩余 ${number(remaining)}。按先自制、后强化分配；不含待收货。`;
+              const description = t`库存 ${number(stock)}；自制需 ${number(craftDemand)}，可用 ${number(craft)}；强化需 ${number(enhanceDemand)}，可用 ${number(enhance)}；剩余 ${number(remaining)}；库存缺口 ${number(missing)}。条长按库存与总需求较大值计算，按先自制、后强化分配；红色缺口未扣待收货，下方缺少数量已扣待收货。`;
               stockDisplay.title = description; progress.setAttribute("aria-valuetext", description);
               progress.setAttribute("aria-label", t`${names[m.itemHrid] || m.name}库存分配`);
-              progress.max = stock > 0 ? stock : 1;
+              progress.max = scale > 0 ? scale : 1;
               if (stock == null) progress.removeAttribute("value"); else progress.value = stock;
               progress.className = "v3-material-stock-native";
               if (stock == null) stockDisplay.dataset.unknown = "true";
