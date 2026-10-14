@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.10
+// @version      0.3.11
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:en      Enhancement Assistant
@@ -15,6 +15,15 @@
 // @match        https://www.milkywayidle.com/*
 // @match        https://www.milkywayidlecn.com/*
 // @run-at       document-start
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_registerMenuCommand
+// @grant        GM_unregisterMenuCommand
+// @grant        GM_addValueChangeListener
+// @grant        GM_removeValueChangeListener
+// @grant        GM_xmlhttpRequest
+// @connect      ukpyedhl.cn-hk1.rainapp.top
+// @antifeature  tracking Optional installation and daily activity counts; disabled by default.
 // @grant        GM_addElement
 // @license      MIT
 // ==/UserScript==

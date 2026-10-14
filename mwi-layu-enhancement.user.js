@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.10
+// @version      0.3.11
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:en      Enhancement Assistant
@@ -15,9 +15,315 @@
 // @match        https://www.milkywayidle.com/*
 // @match        https://www.milkywayidlecn.com/*
 // @run-at       document-start
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_registerMenuCommand
+// @grant        GM_unregisterMenuCommand
+// @grant        GM_addValueChangeListener
+// @grant        GM_removeValueChangeListener
+// @grant        GM_xmlhttpRequest
+// @connect      ukpyedhl.cn-hk1.rainapp.top
+// @antifeature  tracking Optional installation and daily activity counts; disabled by default.
 // @grant        GM_addElement
 // @license      MIT
 // ==/UserScript==
+
+// LAYU_USAGE_START mwi_enhancement
+/* Shared opt-in telemetry. Vendored into each plugin; never loads remote code. */
+(function () {
+  "use strict";
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+  function createUsageClient({
+    pluginId,
+    version,
+    endpoint,
+    getValue,
+    setValue,
+    request,
+    crypto = globalThis.crypto,
+    now = Date.now,
+    locks = globalThis.navigator?.locks
+  }) {
+    const url = new URL(endpoint);
+    if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || url.pathname !== "/")
+      throw new Error("HTTPS origin required");
+    if (!/^[a-z][a-z0-9_]{0,47}$/.test(pluginId) || !/^[a-zA-Z0-9._+-]{1,32}$/.test(version))
+      throw new Error("Invalid plugin metadata");
+    const key = `layu_usage_v1_${pluginId}`;
+    let busy = false,
+      nextTry = 0,
+      failures = 0,
+      generation = 0,
+      stopped = false;
+    let settingsQueue = Promise.resolve();
+    const day = () => new Date(now() + 8 * 3600000).toISOString().slice(0, 10);
+    async function enabled() {
+      return !stopped && (await getValue(`${key}_consent`, false)) === true;
+    }
+    async function sendReport() {
+      if (stopped || busy || now() < nextTry) return false;
+      busy = true;
+      const ticket = generation;
+      try {
+        if (!(await enabled()) || (await getValue(`${key}_day`, "")) === day()) return false;
+        // Only the explicit enable action creates an identity. No background race to create UUIDs.
+        const id = await getValue(`${key}_id`, "");
+        if (!UUID.test(id)) return false;
+        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${pluginId}\0${id}`));
+        if (ticket !== generation || !(await enabled())) return false;
+        const sentDay = day();
+        const installationHash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+        const response = await request({
+          method: "POST",
+          url: new URL("/v1/heartbeat", url).href,
+          headers: { "Content-Type": "application/json" },
+          data: JSON.stringify({
+            plugin_id: pluginId,
+            installation_hash: installationHash,
+            version
+          }),
+          anonymous: true,
+          redirect: "error",
+          timeout: 10000
+        });
+        if (
+          response.status !== 200 ||
+          (response.finalUrl && response.finalUrl !== new URL("/v1/heartbeat", url).href) ||
+          JSON.parse(response.responseText).ok !== true
+        )
+          throw new Error("Usage request failed");
+        if (ticket === generation && (await enabled())) await setValue(`${key}_day`, sentDay);
+        failures = 0;
+        nextTry = now() + 60000;
+        return true;
+      } catch (_) {
+        failures += 1;
+        nextTry = now() + Math.min(6 * 3600000, 60000 * 2 ** Math.min(failures, 9));
+        return false;
+      } finally {
+        busy = false;
+      }
+    }
+    function invalidate() {
+      generation += 1;
+    }
+    function setEnabled(value) {
+      invalidate();
+      settingsQueue = settingsQueue
+        .catch(() => {})
+        .then(async () => {
+          if (value === true) {
+            if (!UUID.test(await getValue(`${key}_id`, ""))) await setValue(`${key}_id`, crypto.randomUUID());
+            if (!UUID.test(await getValue(`${key}_id`, ""))) throw new Error("Identity was not saved");
+          }
+          await setValue(`${key}_consent`, value === true);
+        });
+      return settingsQueue;
+    }
+    async function report() {
+      try {
+        return locks ? await locks.request(key, sendReport) : await sendReport();
+      } catch (_) {
+        return false;
+      }
+    }
+    return {
+      report,
+      setEnabled,
+      enabled,
+      invalidate,
+      key,
+      stop() {
+        stopped = true;
+        invalidate();
+      }
+    };
+  }
+
+  function boot(config, gm, env = globalThis) {
+    // The loader and page runtime are intentionally excluded from production counting.
+    if (
+      config.development ||
+      env.top !== env.self ||
+      !/^https:\/\/(www\.)?milkywayidle(cn)?\.com$/.test(env.location?.origin || "")
+    )
+      return null;
+    if (
+      ![gm.getValue, gm.setValue, gm.request, gm.menu, gm.unmenu, gm.listen, gm.unlisten].every(
+        (f) => typeof f === "function"
+      )
+    )
+      return null;
+    const guard = `__layuUsage_${config.pluginId}`;
+    if (env[guard]) return null;
+    env[guard] = true;
+    let disposed = false,
+      suspended = false,
+      timer = null,
+      menuId = null,
+      listenerId = null;
+    let commandBusy = false;
+    const pending = new Set();
+    const zh = /^zh/i.test(env.navigator?.language || "zh");
+    const failure = () =>
+      env.alert(
+        zh
+          ? "统计设置未能保存，请稍后重试。插件仍可正常使用。"
+          : "Could not save usage settings. Please retry later. The plugin remains usable."
+      );
+    const client = createUsageClient({
+      ...config,
+      crypto: env.crypto,
+      locks: env.navigator?.locks,
+      getValue: gm.getValue,
+      setValue: gm.setValue,
+      request(details) {
+        return new Promise((resolve, reject) => {
+          let handle,
+            finished = false;
+          const complete = (error, response) => {
+            if (finished) return;
+            finished = true;
+            env.clearTimeout(deadline);
+            pending.delete(cancel);
+            if (error) reject(new Error("Usage request failed"));
+            else resolve(response);
+          };
+          const cancel = () => {
+            complete(true);
+            try {
+              handle?.abort();
+            } catch (_) {
+              /* Best effort. */
+            }
+          };
+          const deadline = env.setTimeout(cancel, 12000);
+          pending.add(cancel);
+          try {
+            handle = gm.request({
+              ...details,
+              onload: (r) => complete(false, r),
+              onerror: () => complete(true),
+              ontimeout: () => complete(true),
+              onabort: () => complete(true)
+            });
+          } catch (_) {
+            complete(true);
+          }
+        });
+      }
+    });
+    const cancelPending = () => {
+      client.invalidate();
+      for (const cancel of [...pending]) cancel();
+    };
+    const report = () => {
+      if (!disposed && !suspended) void client.report();
+    };
+    function update() {
+      if (disposed) return;
+      try {
+        const on = gm.getValue(`${client.key}_consent`, false) === true;
+        if (menuId !== null) gm.unmenu(menuId);
+        const title = `${config.name}: ${zh ? "使用量统计" : "Usage statistics"} [${on ? (zh ? "已开启" : "on") : zh ? "已关闭" : "off"}]`;
+        menuId = gm.menu(title, async () => {
+          if (commandBusy || disposed) return;
+          commandBusy = true;
+          try {
+            const active = await client.enabled();
+            if (!active) {
+              const notice = zh
+                ? `${config.name}：开启使用量统计？\n\n每个北京时间自然日最多成功上报一次：插件 ID、版本、随机安装标识的 SHA-256 摘要。用于分别统计累计安装数与每日活跃安装数，不是物理设备数。\n不读取硬件编号、角色、账号、聊天、资产或交易，不发送 Cookie。\n接收方：柆雨的雨云中转 ${config.endpoint}\n服务器暂存后同步到开发者电脑，历史统计永久保存。关闭只停止后续上报，不删除已保存统计；网络服务仍会接收到连接 IP。\n可随时从此菜单关闭。确定开启？`
+                : `${config.name}: enable usage statistics?\n\nAt most one successful report per Shanghai calendar day: plugin ID, version and SHA-256 of a random installation ID. Counts installations and daily active installations, not physical devices.\nNo hardware ID, account, character, chat, assets, trades or cookies are sent.\nRecipient: LaYu's Rainyun relay ${config.endpoint}\nPending reports are transferred to the developer's computer and kept indefinitely. Disabling stops future reports, without deleting existing statistics. The network service still receives your IP address.\nYou can disable this from the menu anytime. Enable?`;
+              if (!env.confirm(notice)) return;
+            }
+            cancelPending();
+            await client.setEnabled(!active);
+            update();
+            if (!active) report();
+          } catch (_) {
+            failure();
+          } finally {
+            commandBusy = false;
+          }
+        });
+        if (timer !== null) {
+          env.clearInterval(timer);
+          timer = null;
+        }
+        if (on && !suspended) timer = env.setInterval(report, 15 * 60000);
+        if (!on) cancelPending();
+      } catch (_) {
+        /* Unavailable storage must never stop the game plugin. */
+      }
+    }
+    function changed() {
+      cancelPending();
+      update();
+      report();
+    }
+    function visible() {
+      if (env.document.visibilityState === "visible") report();
+    }
+    function pagehide(event) {
+      suspended = true;
+      cancelPending();
+      if (timer !== null) {
+        env.clearInterval(timer);
+        timer = null;
+      }
+      if (!event.persisted) dispose();
+    }
+    function pageshow() {
+      if (!disposed) {
+        suspended = false;
+        update();
+        report();
+      }
+    }
+    function dispose() {
+      if (disposed) return;
+      disposed = true;
+      client.stop();
+      cancelPending();
+      if (timer !== null) env.clearInterval(timer);
+      try {
+        if (menuId !== null) gm.unmenu(menuId);
+        if (listenerId !== null) gm.unlisten(listenerId);
+      } catch (_) {
+        /* Page closing. */
+      }
+      env.removeEventListener("online", report);
+      env.removeEventListener("pagehide", pagehide);
+      env.removeEventListener("pageshow", pageshow);
+      env.document.removeEventListener("visibilitychange", visible);
+      delete env[guard];
+    }
+    try {
+      listenerId = gm.listen(`${client.key}_consent`, changed);
+      env.addEventListener("online", report);
+      env.addEventListener("pagehide", pagehide);
+      env.addEventListener("pageshow", pageshow);
+      env.document.addEventListener("visibilitychange", visible);
+      update();
+      report();
+    } catch (_) {
+      dispose();
+    }
+    return { dispose, report, client };
+  }
+  if (typeof module !== "undefined" && module.exports) module.exports = { createUsageClient, boot };
+  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.11","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
+setValue: typeof GM_setValue === "function" ? GM_setValue : null,
+menu: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : null,
+unmenu: typeof GM_unregisterMenuCommand === "function" ? GM_unregisterMenuCommand : null,
+listen: typeof GM_addValueChangeListener === "function" ? GM_addValueChangeListener : null,
+unlisten: typeof GM_removeValueChangeListener === "function" ? GM_removeValueChangeListener : null,
+request: typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null}); } catch (_) { /* Telemetry is optional. */ }
+})();
+
+// LAYU_USAGE_END mwi_enhancement
 // MWI_LAYU_ENHANCEMENT_RUNTIME
 /*
 # 第三方代码与许可证
@@ -915,6 +1221,13 @@ SOFTWARE.
   "补齐总价：{0} × {1} = {2}；缺少数量已扣除库存与待收货": "Shortfall cost: {0} × {1} = {2}; inventory and incoming purchases already deducted",
   "缺少数量或当前单价未知": "Missing quantity or current unit price unknown",
   "{0}备料进度": "{0} preparation progress",
+  "自制 {0}": "Craft {0}",
+  "强化 {0}": "Enhance {0}",
+  "自制可用 {0}": "Craft available {0}",
+  "强化可用 {0}": "Enhance available {0}",
+  "剩余 {0}": "Remaining {0}",
+  "{0}库存分配": "{0} inventory allocation",
+  "整条表示库存 {0}；自制需 {1}，可用 {2}；强化需 {3}，可用 {4}；剩余 {5}。按先自制、后强化分配；不含待收货。": "Full bar: inventory {0}; craft needs {1}, available {2}; enhance needs {3}, available {4}; remaining {5}. Allocated to crafting first, then enhancement; incoming purchases excluded.",
   "缺：{0}": "Missing: {0}",
   "已扣除待收货数量 {0}": "Incoming quantity already deducted: {0}",
   "需：{0}": "Required: {0}",
@@ -9807,6 +10120,20 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-material-card progress::-webkit-progress-value {background:#38bdf8;border-radius:3px;}
 .mwi-layu-panel .v3-material-card progress::-moz-progress-bar {background:#38bdf8;}
 .mwi-layu-panel .v3-material-card progress:not([value]) {opacity:.45;}
+.mwi-layu-panel .v3-material-stock {position:relative;margin:3px 0 4px;}
+.mwi-layu-panel .v3-material-stock-labels {display:flex;flex-wrap:wrap;justify-content:space-between;gap:1px 8px;margin-bottom:3px;font-size:10px;line-height:1.4;font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-material-craft-label {color:#c4b5fd;}
+.mwi-layu-panel .v3-material-enhance-label {color:#38bdf8;}
+.mwi-layu-panel .v3-material-remaining-label {color:#a0aec2;}
+.mwi-layu-panel .v3-material-stock-labels > span {white-space:nowrap;}
+.mwi-layu-panel .v3-material-stock-track {display:flex;height:6px;overflow:hidden;border-radius:3px;background:#28364b;}
+.mwi-layu-panel .v3-material-stock-segment {display:block;flex-shrink:0;min-width:0;position:relative;background:currentColor;}
+.mwi-layu-panel .v3-material-stock-craft {color:#a78bfa;}
+.mwi-layu-panel .v3-material-stock-enhance {color:#38bdf8;}
+.mwi-layu-panel .v3-material-stock-remaining {color:#65738b;}
+.mwi-layu-panel .v3-material-stock-segment + .v3-material-stock-segment::before {content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:#f1f5f9;}
+.mwi-layu-panel .v3-material-stock[data-unknown] .v3-material-stock-track {opacity:.45;}
+.mwi-layu-panel .v3-material-card progress.v3-material-stock-native {position:absolute;width:1px;height:1px;margin:0;clip-path:inset(50%);}
 .mwi-layu-panel .v3-material-counts {display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:1px 6px;color:#a0aec2;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;}
 .mwi-layu-panel .v3-material-counts > * {white-space:nowrap;}
 .mwi-layu-panel .v3-enhancement-plan {margin-top:8px;padding:12px 12px 7px;background:#1b2638;border:1px solid #30415b;border-radius:5px;white-space:normal;}
@@ -10978,7 +11305,7 @@ function getPriceTier(price, direction) {
         const b = button(null, (el) => onOpen(material, el, purchaseMode), t`打开原材料市场：${label}`); b.append(identity); b.className = "mwi-layu-group-link"; b.title = label;
         return b;
       }
-      function materialCards(materials, simulation, enabled) {
+      function materialCards(materials, simulation, enabled, showCraftSegments) {
         if (!materials) return node("p", t("等待材料参数"), "mwi-layu-group-note");
         const list = node("div", null, "v3-material-cards"); list.setAttribute("aria-label", t("制造与强化备料合计"));
         const inputs = materials.inputs.filter(m => m.count !== 0 || m.expectedEnhancement > 0);
@@ -11022,11 +11349,45 @@ function getPriceTier(price, direction) {
             // Unknown inventory stays indeterminate; zero need is already fully stocked.
             if (ratio != null) progress.value = ratio;
             progress.setAttribute("aria-label", t`${names[m.itemHrid] || m.name}备料进度`);
+            let stockDisplay = progress;
+            if (showCraftSegments && !m.purchasedBase && Number.isFinite(m.count) && m.count >= 0 &&
+                Number.isFinite(m.enhancementCount) && m.enhancementCount >= 0 && Number.isFinite(need) && need >= 0) {
+              stockDisplay = node("div", null, "v3-material-stock");
+              const stock = Number.isFinite(m.inventoryCount) && m.inventoryCount >= 0 ? m.inventoryCount : null;
+              const craft = stock == null ? null : Math.min(stock, m.count);
+              const enhance = stock == null ? null : Math.min(stock - craft, m.enhancementCount);
+              const remaining = stock == null ? null : Math.max(0, stock - craft - enhance);
+              stockDisplay.dataset.inventory = stock ?? "";
+              stockDisplay.dataset.craftDemand = m.count;
+              stockDisplay.dataset.enhanceDemand = m.enhancementCount;
+              const labels = node("div", null, "v3-material-stock-labels");
+              labels.append(node("span", stock != null && craft < m.count ? t`自制可用 ${number(craft)}` : t`自制 ${number(craft)}`, "v3-material-craft-label"));
+              labels.append(node("span", stock != null && enhance < m.enhancementCount ? t`强化可用 ${number(enhance)}` : t`强化 ${number(enhance)}`, "v3-material-enhance-label"));
+              labels.append(node("span", t`剩余 ${number(remaining)}`, "v3-material-remaining-label"));
+              const track = node("div", null, "v3-material-stock-track"); track.setAttribute("aria-hidden", "true");
+              // The whole track is owned inventory. Shortfalls and incoming
+              // purchases must never extend it beyond the stock actually held.
+              for (const [kind, allocated] of [["craft", craft], ["enhance", enhance], ["remaining", remaining]]) {
+                if (!(allocated > 0)) continue;
+                const segment = node("span", null, `v3-material-stock-segment v3-material-stock-${kind}`);
+                segment.style.width = `${allocated / stock * 100}%`;
+                segment.dataset.allocated = allocated;
+                track.append(segment);
+              }
+              const description = t`整条表示库存 ${number(stock)}；自制需 ${number(m.count)}，可用 ${number(craft)}；强化需 ${number(m.enhancementCount)}，可用 ${number(enhance)}；剩余 ${number(remaining)}。按先自制、后强化分配；不含待收货。`;
+              stockDisplay.title = description; progress.setAttribute("aria-valuetext", description);
+              progress.setAttribute("aria-label", t`${names[m.itemHrid] || m.name}库存分配`);
+              progress.max = stock > 0 ? stock : 1;
+              if (stock == null) progress.removeAttribute("value"); else progress.value = stock;
+              progress.className = "v3-material-stock-native";
+              if (stock == null) stockDisplay.dataset.unknown = "true";
+              stockDisplay.append(labels, progress, track);
+            }
             const counts = node("div", null, "v3-material-counts");
             const shortage = node("span", t`缺：${number(lack)}`, lack > 0 ? "mwi-layu-shortage" : ""); shortage.dataset.value = lack ?? "";
             if (m.pendingPurchaseCount > 0) shortage.title = t`已扣除待收货数量 ${number(m.pendingPurchaseCount)}`;
             counts.append(node("span", t`需：${number(need)}`), node("span", t`库存：${number(m.inventoryCount)}`), shortage);
-            card.append(head, progress, counts); list.append(card);
+            card.append(head, stockDisplay, counts); list.append(card);
           }
         }
         const container = node("div");
@@ -11239,12 +11600,12 @@ function getPriceTier(price, direction) {
           }
           const projected = wages.materials(item, current, quantity);
           renderExperiencePlan(plan, wages.experiencePlan(item, current, quantity, projected));
-          const signature = JSON.stringify([projected, comparison?.materialPrices]);
+          const signature = JSON.stringify([projected, comparison?.materialPrices, selectedSource]);
           if (signature !== materialSignature) {
             materialSignature = signature;
             const focusKey = document.activeElement?.dataset.focusKey;
             simulation.clearMaterialControls();
-            combinedMaterials.replaceChildren(materialCards(projected, simulation, simulationEnabled.has(key)));
+            combinedMaterials.replaceChildren(materialCards(projected, simulation, simulationEnabled.has(key), selectedSource === "craft"));
             if (focusKey) [...combinedMaterials.querySelectorAll("[data-focus-key]")]
               .find(el => el.dataset.focusKey === focusKey)?.focus({ preventScroll: true });
           }

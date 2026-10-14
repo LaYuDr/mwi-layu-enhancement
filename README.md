@@ -43,3 +43,11 @@ The interface follows the game language by default. To override it, open **Setti
 项目代码采用 MIT；第三方组件与署名见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，同样包含在用户脚本中。
 
 反馈问题请使用 [GitHub Issues](https://github.com/LaYuDr/mwi-layu-enhancement/issues)，不要附带密码、账号凭据或完整玩家备份。
+
+## 可选使用量统计
+
+默认关闭。在 Tampermonkey 菜单点击本插件的「使用量统计 [已关闭]」，阅读说明并确认开启；再次点击可关闭。只上报插件 ID、版本和随机安装标识的 SHA-256 摘要，不读取硬件编号、账号、角色、聊天、资产或交易，不发送 Cookie。网络服务仍能接收到来源 IP。
+
+接收方为柆雨的雨云中转 `https://ukpyedhl.cn-hk1.rainapp.top`。未同步记录暂存在服务器，电脑保存并确认后删除队列；电脑上的历史统计及备份永久保留。关闭只停止后续上报，不删除已保存统计。
+
+分别统计本插件累计上报安装数与北京时间每日活跃安装数，不等于物理设备数、人数或全部下载量；只计主动开启并成功上报的安装。重装或清除脚本存储可能产生新安装标识。每天最多记录一次成功上报，失败退避重试，不补造离线历史。开发加载器不参与生产统计。本次接入尚未公开发布。
