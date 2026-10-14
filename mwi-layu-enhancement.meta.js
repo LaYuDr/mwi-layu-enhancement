@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.9
+// @version      0.3.10
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
+// @name:en      Enhancement Assistant
+// @description:en Enhancement routes, hourly profit, favorites and material planning
 // @name:zh-CN   强化助手
 // @description:zh-CN 强化路线、工时费、物品收藏与材料导航
 // @homepageURL  https://github.com/LaYuDr/mwi-layu-enhancement

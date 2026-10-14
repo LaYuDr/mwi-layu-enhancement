@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.9
+// @version      0.3.10
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
+// @name:en      Enhancement Assistant
+// @description:en Enhancement routes, hourly profit, favorites and material planning
 // @name:zh-CN   强化助手
 // @description:zh-CN 强化路线、工时费、物品收藏与材料导航
 // @homepageURL  https://github.com/LaYuDr/mwi-layu-enhancement
@@ -270,9 +272,981 @@ SOFTWARE.
   app.config = Object.freeze({
     appId: "mwi-layu-enhancement", version: "0.3.0",
     editableDefaultClothes: true,
-    bridgeMarker: "__MWI_LAYU_ENHANCEMENT_QUOTES_V3__",
+    bridgeMarker: "__MWI_LAYU_ENHANCEMENT_QUOTES_V4__",
+    lootEvent: "mwi-enhance:loot:v1", lootAckEvent: "mwi-enhance:loot-ack:v1",
     listingEvent: "mwi-enhance:listings:v1", listingAckEvent: "mwi-enhance:listings-ack:v1",
     bridgeEvent: "mwi-enhance:quotes:v1", bridgeReadyEvent: "mwi-enhance:quotes-ready:v1"
+  });
+})(globalThis);
+
+
+// ---- src/v3/translations-en.js ----
+(function initEnglishMessages(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  app.englishMessages = Object.freeze({
+  "挤奶": "Milking",
+  "采摘": "Foraging",
+  "伐木": "Woodcutting",
+  "奶酪": "Cheesemaker",
+  "工匠": "Crafter",
+  "裁缝": "Tailor",
+  "厨师": "Chef",
+  "饮品": "Brewer",
+  "炼金": "Alchemy",
+  "强化": "Enhancing",
+  "衣": " Top",
+  "裤": " Bottoms",
+  "强化助手": "Enhancement Assistant",
+  "刷新行情": "Refresh market",
+  "行情更新失败，已保留旧价格；角色与挂单状态见页面提示。": "Market update failed. Previous prices retained; see character and listing status above.",
+  "已更新买卖一价；本人挂单保存状态见上方提示。": "Best ask and bid updated. See your listing save status above.",
+  "已更新买卖一价并自动保存本人挂单；可直接查看价格比较结果。": "Best ask and bid updated; your listings saved. Price comparisons are ready.",
+  "柆雨强化助手": "LaYu Enhancement Assistant",
+  "设置与备份": "Settings & backup",
+  "管理预设": "Manage presets",
+  "掉落与经验": "Loot & XP",
+  "行情与角色状态": "Market & character status",
+  "无法读取或保存收藏，请检查浏览器存储设置后重试。": "Unable to read or save favorites. Check browser storage settings and retry.",
+  " 已取消收藏 ": " removed from favorites ",
+  "撤销取消收藏": "Undo removal",
+  "该项目已有新的收藏记录，保留现值。": "A newer favorite exists. Its current values were kept.",
+  "已恢复收藏及原参考售价。": "Favorite and original reference price restored.",
+  "撤销失败：{0}": "Undo failed: {0}",
+  "角色尚未就绪": "Character not ready",
+  "本地挂单不可用，请检查浏览器存储权限": "Local listings unavailable. Check browser storage permissions.",
+  "挂单保存失败，本次数据仅在当前页面有效；请检查浏览器存储空间或权限": "Could not save listings. Data is only available on this page; check browser storage space or permissions.",
+  "本地历史不可用，请检查浏览器存储权限后重试": "Local history unavailable. Check browser storage permissions and retry.",
+  "本人记录读取失败": "Could not read your records",
+  "市场快照 {0}{1}": "Market snapshot {0}{1}",
+  " · 更新失败，保留已有价格": " · Update failed; previous prices retained",
+  "行情读取失败：{0}": "Market read failed: {0}",
+  "正在获取市场快照…": "Fetching market snapshot…",
+  " 已保留 {0} 份订单簿。": " Order books retained: {0}.",
+  " 本人挂单 {0} 单 · {1}{2}。": " Your listings: {0} · {1}{2}.",
+  "本地保存，待更新": "Saved locally; awaiting update",
+  "尚未保存": "Not saved yet",
+  "已自动保存": "Saved automatically",
+  " · 数据变更于 {0}": " · Data changed at {0}",
+  "{0} · {1} 订单簿{2}": "{0} · Order books: {1}{2}",
+  "快照 {0}": "Snapshot {0}",
+  "行情待更新": "Market update pending",
+  " · 更新失败": " · Update failed",
+  "分区读取失败：{0}。原有数据保留。": "Could not read groups: {0}. Existing data retained.",
+  "正在打开制作页面…": "Opening production page…",
+  "正在打开强化页面并填写设置…": "Opening enhancement page and filling settings…",
+  "角色已切换，请在当前角色的方案中重新操作。": "Character changed. Repeat this action from the current character's plan.",
+  "材料不足，已打开白板物品市场。": "Insufficient materials. Opened the +0 item market.",
+  "已预填生产数量 {0}，请核对材料和用茶后手动开始。": "Production quantity set to {0}. Check materials and drinks, then start manually.",
+  "已填写强化目标和保护设置，请确认后手动开始。": "Enhancement target and protection settings filled. Review and start manually.",
+  "未能完成页面跳转或预填，请刷新游戏后重试。": "Could not navigate or fill settings. Refresh the game and retry.",
+  "读取库存或预填失败，请重试。": "Could not read inventory or fill settings. Please retry.",
+  "正在打开市场…": "Opening market…",
+  "角色已切换，请在当前角色的材料卡片重新打开市场。": "Character changed. Open the market again from the current character's material card.",
+  "已打开市场；需求、库存或待收货数量未知，本次不预填采购数量，请手动填写。": "Market opened. Requirements, inventory or incoming quantity are unknown; enter the purchase quantity manually.",
+  "采购数量尚未确定，请等待库存、挂单和行情更新后重试。": "Purchase quantity is not ready. Wait for inventory, listings and market data to update, then retry.",
+  "已打开市场；两分钟内打开该物品的购买表单将预填数量，超出当前价格可负担数量时自动减至上限，请核对后手动确认。": "Market opened. Open this item's buy form within two minutes to fill the quantity, capped at what you can afford at the current price. Review and confirm manually.",
+  "游戏桥接未响应，请确认脚本更新后已刷新游戏。": "Game bridge did not respond. Refresh the game after updating the script.",
+  "未找到游戏市场入口，请刷新游戏后重试。": "Game market entry not found. Refresh the game and retry.",
+  "打开市场失败，请重试。": "Could not open market. Please retry.",
+  "从柆雨收藏移除：{0}": "Remove from LaYu favorites: {0}",
+  "收藏到柆雨：{0}": "Add to LaYu favorites: {0}",
+  "从柆雨收藏移除": "Remove from LaYu favorites",
+  "收藏到柆雨": "Add to LaYu favorites",
+  "本地备份与恢复": "Local backup & restore",
+  "导出本地备份": "Export local backup",
+  "已生成本地备份文件。": "Local backup file created.",
+  "导出失败：{0}": "Export failed: {0}",
+  "选择备份文件 ": "Choose backup file ",
+  "选择本地备份文件": "Choose local backup file",
+  "文件超过 2 MiB，请选择插件导出的备份": "File exceeds 2 MiB. Choose a backup exported by this plugin.",
+  "将恢复 {0} 项本地数据。仅覆盖文件内同名数据；未包含的数据保留。备料车按文件中的角色 ID 恢复。": "Restore {0} local data entries. Only matching keys in the file will be overwritten; other data is retained. Carts use the character IDs in the file.",
+  "覆盖现有": "Overwrite existing",
+  "新增": "Add new",
+  " · 空数据将清空该项": " · Empty data will clear this entry",
+  "确认覆盖并刷新游戏": "Confirm overwrite and reload game",
+  "恢复成功，正在刷新游戏以载入设置。": "Restore succeeded. Reloading the game to load settings.",
+  "恢复失败：{0}": "Restore failed: {0}",
+  "取消恢复": "Cancel restore",
+  "已取消，数据未改动。": "Cancelled. Data unchanged.",
+  "校验通过，请检查覆盖范围后再恢复。": "Validation passed. Review the overwrite scope before restoring.",
+  "无法读取备份：{0}": "Could not read backup: {0}",
+  "强化经验": "Enhancing XP",
+  "制造经验 · 锻造": "Production XP · Cheesesmithing",
+  "制造经验 · 制作": "Production XP · Crafting",
+  "制造经验 · 缝纫": "Production XP · Tailoring",
+  "制造经验 · 烹饪": "Production XP · Cooking",
+  "制造经验 · 冲泡": "Production XP · Brewing",
+  "制造经验": "Production XP",
+  "虚拟角色没有可对应的实际经验进度": "Virtual characters have no actual XP progress to compare",
+  "经验所需的角色增益、游戏规则或路线数据未就绪": "Required character buffs, game rules or route data are not ready",
+  "按当前角色增益及路线估算，不预测途中升级或增益到期引起的变化": "Estimated using current buffs and route; changes from leveling up or expiring buffs are not predicted",
+  "制造配方、库存或经验增益未知": "Production recipe, inventory or XP buffs are unknown",
+  "按当前计划需实际制作的批次估算，扣除同名 +0 库存；含备料倍率对应的保护装备，不含另行加工原材料": "Estimated from actual production batches in this plan, after deducting matching +0 inventory; includes protection equipment at the preparation multiplier, excludes processing raw materials separately",
+  "管理收藏": "Manage favorites",
+  "名称或 HRID": "Name or HRID",
+  "搜索收藏": "Search favorites",
+  "收藏类别": "Favorite category",
+  "全部类别": "All categories",
+  "装备": "Equipment",
+  "材料": "Materials",
+  "其他": "Other",
+  "类别未知": "Unknown category",
+  "收藏分区": "Favorite group",
+  "全部分区": "All groups",
+  "最低强化等级": "Minimum enhancement",
+  "不限": "Any",
+  "最高强化等级": "Maximum enhancement",
+  "收藏来源": "Favorite source",
+  "全部来源": "All sources",
+  "明确由预设新增": "Added by a preset",
+  "手动或来源未记录": "Manual or unrecorded",
+  "收藏管理表格": "Favorite management table",
+  "保存失败，原数据保留，可重试：{0}": "Save failed. Existing data retained; retry: {0}",
+  "已删除 {0} 条收藏及其参考价；可撤销最近一次批量删除。": "Removed {0} favorites and their reference prices. You can undo the latest batch deletion.",
+  "全选筛选结果": "Select all matches",
+  "清空勾选": "Clear selection",
+  "删除勾选收藏": "Delete selected favorites",
+  "删除筛选结果": "Delete matching favorites",
+  "仅删除筛选结果中的预设新增收藏": "Delete preset-added matches only",
+  "一键删除所有预设新增收藏": "Delete all preset-added favorites",
+  "撤销最近一次批量删除": "Undo latest batch deletion",
+  "已恢复 {0} 条收藏及原参考价，保留 {1} 条后续新增或修改的记录。": "Restored {0} favorites and original reference prices; kept {1} records added or changed later.",
+  "管理现有收藏与批量清理": "Manage and clean up favorites",
+  "组合筛选物品、等级与来源，支持撤销最近一次删除。": "Filter by item, level and source. You can undo the latest deletion.",
+  "删除范围与撤销说明": "Deletion scope and undo",
+  "筛选条件同时生效；改变条件会清空勾选。删除同时移除参考价，可撤销最近一次删除。分区、备料车及游戏挂单保持原状。": "Filters apply together. Changing filters clears the selection. Deletion also removes reference prices; the latest deletion can be undone. Groups, carts and game listings remain unchanged.",
+  "一键清理覆盖全部分区与强化等级，仅删除明确由预设新增的收藏；旧收藏及预设复用的已有收藏保留。": "Bulk cleanup covers all groups and enhancement levels. Only favorites explicitly added by presets are removed; older and reused favorites are kept.",
+  "共 {0} 条收藏 · 筛选命中 {1} 条 · 已勾选 {2} 条": "Favorites: {0} · Matches: {1} · Selected: {2}",
+  " · 最低等级高于最高等级，请调整条件": " · Minimum level exceeds maximum; adjust the filters",
+  "选择": "Select",
+  "物品 / 强化等级": "Item / enhancement",
+  "所属分区": "Groups",
+  "参考售价": "Reference price",
+  "操作": "Actions",
+  "勾选收藏：{0} +{1}": "Select favorite: {0} +{1}",
+  "删除": "Delete",
+  "删除收藏：{0} +{1}": "Delete favorite: {0} +{1}",
+  "预设新增": "Preset-added",
+  "手动 / 未记录": "Manual / unrecorded",
+  "未设置": "Not set",
+  "没有匹配收藏，请调整条件或从预设添加。": "No matching favorites. Adjust filters or add from presets.",
+  "查看一键清理范围：{0} 条预设新增收藏": "Review bulk cleanup: {0} preset-added favorites",
+  "仅删除筛选结果中的预设新增收藏 ({0})": "Delete preset-added matches only ({0})",
+  "删除勾选收藏 ({0})": "Delete selected favorites ({0})",
+  "删除筛选结果 ({0})": "Delete matching favorites ({0})",
+  "一键删除所有预设新增收藏 ({0})": "Delete all preset-added favorites ({0})",
+  "收藏与参考售价": "Favorites & reference prices",
+  "分区与旧计划": "Groups & legacy plans",
+  "工时费与虚拟角色设置": "Hourly profit & virtual character settings",
+  "旧版目标数量": "Legacy target quantities",
+  "旧版收藏视图": "Legacy favorite view",
+  "界面排序、筛选与展开状态": "Sorting, filters & expanded sections",
+  "工作台页面与备料抽屉": "Workspace & preparation drawer",
+  "备份数据格式无效，未修改本地数据。": "Invalid backup data. Local data unchanged.",
+  "备份包含不支持的存储键或其他站点的备料车，未修改本地数据。": "Backup contains unsupported keys or carts from another site. Local data unchanged.",
+  "当前站点无效。": "Invalid current site.",
+  "备料车 · 角色 {0}": "Preparation cart · Character {0}",
+  "备份文件为空、格式不正确或超过 2 MiB。": "Backup is empty, invalid or exceeds 2 MiB.",
+  "备份不是有效 JSON，未修改本地数据。": "Backup is not valid JSON. Local data unchanged.",
+  "不支持该备份版本。": "Unsupported backup version.",
+  "备份站点与当前站点不同，请到原游戏站点恢复。": "Backup belongs to another site. Restore it on the original game site.",
+  "部分本地设置无法读取，请修复后再备份。": "Some local settings could not be read. Fix them before exporting a backup.",
+  "覆盖文件内同名设置；未包含的设置保持不变。空数组或空对象也会覆盖对应设置。成交历史不在备份范围内。": "Overwrite matching settings in the file; retain settings not included. Empty arrays and objects also overwrite their settings. Trade history is excluded.",
+  "请先选择备份并查看预览。": "Choose a backup and review the preview first.",
+  "预览后本地设置已变化，请重新预览后恢复。": "Local settings changed after preview. Preview again before restoring.",
+  "恢复失败，部分设置未能回滚。请保留备份文件并检查浏览器存储权限。": "Restore failed and some settings could not be rolled back. Keep the backup and check browser storage permissions.",
+  "恢复失败，已回滚本次写入；原有设置保留。": "Restore failed. Writes rolled back; original settings retained.",
+  "锻造": "Cheesesmithing",
+  "制作": "Crafting",
+  "缝纫": "Tailoring",
+  "烹饪": "Cooking",
+  "冲泡": "Brewing",
+  "战斗": "Combat",
+  "耐力": "Stamina",
+  "智力": "Intelligence",
+  "攻击": "Attack",
+  "力量": "Power",
+  "防御": "Defense",
+  "远程": "Ranged",
+  "魔法": "Magic",
+  "总经验": "Total XP",
+  "掉落与经验历史": "Loot & XP history",
+  "启用插件后，自动保存当前浏览器收到的记录，不限 20 条。同一活动保留最新累计值。打开游戏原生记录页或点击其刷新按钮可获取最新数据；已被游戏删除且从未采集的记录无法补回。": "Records received by this browser are saved while the plugin is enabled, without the 20-record limit. The latest cumulative values are kept for each activity. Open or refresh the game's native history page for new data. Records deleted by the game before collection cannot be recovered.",
+  "仅保存在当前浏览器，按服务器和角色隔离。清理网站数据会丢失存档，建议定期导出备份。": "Stored only in this browser, separately by server and character. Clearing site data deletes the archive. Export backups regularly.",
+  "读取本地记录": "Read local records",
+  "重试保存": "Retry save",
+  "导出全部记录": "Export all records",
+  "导出失败，请检查浏览器存储后重试。": "Export failed. Check browser storage and retry.",
+  "上一页": "Previous",
+  "下一页": "Next",
+  "未知": "Unknown",
+  "{0} · {1} 次": "{0} · Actions: {1}",
+  " · 队伍": " · Party",
+  "开始：{0}　持续：{1}　最近采集：{2}": "Started: {0}　Duration: {1}　Last collected: {2}",
+  "{0} 秒": "{0} s",
+  "掉落未知": "Unknown drops",
+  "无掉落": "No drops",
+  "经验未知": "Unknown XP",
+  "{0}经验 +{1}": "{0} XP +{1}",
+  "无经验": "No XP",
+  "等待游戏确认当前角色。若刚启用插件，请刷新游戏，再打开原生掉落与经验记录页。": "Waiting for the game to confirm the character. If you just enabled the plugin, refresh the game and open its native loot and XP history.",
+  "正在读取本地记录…": "Reading local records…",
+  "角色 {0} · 已保存 {1} 条{2}{3}": "Character {0} · Saved records: {1}{2}{3}",
+  " · 仍有数据待保存": " · Data still waiting to be saved",
+  "。请打开游戏原生掉落与经验记录页读取当前记录。": ". Open the game's native loot and XP history to read current records.",
+  "第 {0} / {1} 页": "Page {0} / {1}",
+  "本地记录读取失败，请检查浏览器存储设置后点击读取本地记录重试。": "Could not read local records. Check browser storage settings and click Read local records to retry.",
+  "装备底子": "Base equipment",
+  "强化材料": "Enhancement materials",
+  "当前保护物": "Selected protection",
+  "保护候选": "Protection candidate",
+  "贤者之镜": "Philosopher's Mirror",
+  "制作原料": "Crafting ingredients",
+  "目标数量须为 1 至 1,000,000 的整数": "Target quantity must be an integer from 1 to 1,000,000",
+  "强化等级": "Enhancement level",
+  "房屋": "House",
+  "饮品槽": "Drink slots",
+  "成就增益": "Achievement buffs",
+  "社区增益": "Community buffs",
+  "工时费已关闭": "Hourly profit disabled",
+  "等待游戏物品数据，请刷新游戏后重试": "Waiting for game item data. Refresh the game and retry.",
+  "角色读取超时，请更新 V3 脚本并刷新游戏后重试": "Character read timed out. Update the script, refresh the game and retry.",
+  "未找到当前角色状态，请等待角色加载后重试读取": "Current character state not found. Wait for the character to load and retry.",
+  "角色读取桥接不可用，请刷新游戏后重试": "Character bridge unavailable. Refresh the game and retry.",
+  "角色读取失败，请刷新游戏后重试": "Character read failed. Refresh the game and retry.",
+  "角色参数缺失：{0}，请重试读取": "Missing character parameters: {0}. Retry reading.",
+  "虚拟角色": "Virtual character",
+  "当前角色": "Current character",
+  "无效的底子取得方式": "Invalid base item source",
+  "角色尚未就绪，请重新读取角色后选择底子来源。": "Character not ready. Read the character again before choosing a base source.",
+  "已关闭": "Disabled",
+  "等待物品数据": "Waiting for item data",
+  "等待角色参数": "Waiting for character parameters",
+  "未强化": "Not enhanced",
+  "暂无售价": "No sale price",
+  "缺少材料、底子或保护物价格": "Missing material, base item or protection prices",
+  "请先开启工时费计算。": "Enable hourly profit calculation first.",
+  "等待游戏物品数据，请刷新游戏后重试。": "Waiting for game item data. Refresh the game and retry.",
+  "角色参数尚未就绪，请重新读取角色。": "Character parameters not ready. Read the character again.",
+  "请选择已强化的收藏项目。": "Choose an enhanced favorite item.",
+  "无效的准备路线": "Invalid preparation route",
+  "无效的计划数量": "Invalid planned quantity",
+  "生产需求或成品库存未知，请待数据就绪后重试。": "Production demand or finished-item inventory is unknown. Retry when data is ready.",
+  "所选路线包含镜子或精炼步骤，请按路线明细手动设置各步骤的生产数量。": "This route includes mirror or refinement steps. Set production quantities for each step manually.",
+  "同名 +0 成品库存已满足当前计划，无需继续生产。": "Matching +0 inventory already covers this plan. No further production needed.",
+  "所选路线包含镜子或精炼步骤，无法预填为一次普通强化。请按路线明细手动准备各步骤。": "This route includes mirror or refinement steps and cannot be filled as a single normal enhancement. Prepare each step manually.",
+  "制造配方或产出数量未知，无法计算完整备料。": "Production recipe or output quantity is unknown. Full requirements cannot be calculated.",
+  "强化方案未就绪": "Enhancement plan not ready",
+  "材料数据尚未就绪，请重新读取角色或刷新游戏。": "Material data not ready. Read the character again or refresh the game.",
+  "操作提示": "Notifications",
+  "删除提示": "Dismiss notification",
+  "生活衣裤": "Skilling clothing",
+  "各生活技能衣裤 · 按装备等级建分区": "Skilling tops and bottoms · Grouped by item level",
+  "生活工具": "Skilling tools",
+  "各生活技能工具 · 包含全部材料系列": "Tools for all skilling activities · All material tiers",
+  "武器": "Weapons",
+  "主手与双手武器 · 包含普通与精制": "Main-hand and two-handed weapons · Regular and refined",
+  "战斗防具": "Combat armor",
+  "战斗衣甲、头手足装备与副手": "Combat body, leg, head, hand, foot and off-hand equipment",
+  "配饰": "Accessories",
+  "首饰、背部、袋子及通用生活装备": "Jewelry, back, pouches and general skilling equipment",
+  "护符": "Charms",
+  "各技能护符 · 按装备等级建分区": "Skill charms · Grouped by item level",
+  "强化消耗与保护物 · 补充原材料分区": "Enhancement costs and protection · Added to Materials",
+  "等级未知": "Unknown level",
+  "{0}级": "Level {0}",
+  "请选择至少一个有效预设。": "Choose at least one valid preset.",
+  "强化等级须为 0 至 20 的整数。": "Enhancement level must be an integer from 0 to 20.",
+  "预设物品选择无效，请重新选择。": "Invalid preset selection. Select again.",
+  "预设物品已变化或不属于该分区，请重新选择。": "Preset items changed or no longer belong to this group. Select again.",
+  "请选择至少一件物品。": "Choose at least one item.",
+  "请选择至少一个强化等级。": "Choose at least one enhancement level.",
+  "目标分区不存在，请重新选择。": "Target group no longer exists. Select again.",
+  "{0}（预设{1}）": "{0} (preset {1})",
+  "添加后将超过 10,000 条收藏或 200 个分区，请减少所选等级或分区。": "This would exceed 10,000 favorites or 200 groups. Select fewer levels or groups.",
+  "设置已变化，请重试。": "Settings changed. Please retry.",
+  "添加失败，部分写入未能回滚。请检查浏览器存储权限后重新打开管理分区。": "Add failed; some writes could not be rolled back. Check browser storage permissions and reopen group management.",
+  "添加失败，已回滚本次写入。请检查浏览器存储空间或权限后重试。": "Add failed; writes rolled back. Check browser storage space or permissions and retry.",
+  "从预设添加": "Add from presets",
+  "按预设批量删除": "Delete by preset",
+  "批量添加": "Batch add",
+  "批量删除": "Batch delete",
+  "搜索预设物品": "Search preset items",
+  "隐藏普通装备": "Hide basic equipment",
+  "已开启 · 隐藏 {0} 件普通装备": "Enabled · Basic items hidden: {0}",
+  "未开启 · 显示全部装备": "Disabled · Showing all equipment",
+  "隐藏范围": "What is hidden",
+  "隐藏 1–65 级生活工具、基础奶酪与木材系列装备，以及粗糙、爬行动物、哥布林、野兽、暗影皮革系列装备；另隐藏 40 级哥布林装备及棉、亚麻、竹、丝绸、光辉基础布料装备，以及指定的 12 件低中阶装备及小、中、大、巨大四种袋子。保留高阶皮革装备、80/90 级工具及所有精制版。开启时取消被隐藏物品的本次勾选，关闭后不恢复勾选；已有收藏不变。": "Hides level 1–65 skilling tools; basic cheese and wood equipment; rough, reptile, gobo, beast and umbral leather equipment; level 40 gobo equipment; cotton, linen, bamboo, silk and radiant cloth equipment; 12 specified low/mid-tier items; and small, medium, large and giant pouches. Higher-tier leather, level 80/90 tools and all refined equipment remain. Enabling clears hidden selections; disabling does not reselect them. Existing favorites are unchanged.",
+  "商店": "Shop",
+  "打开商店：{0}": "Open shop: {0}",
+  "{0}装备等级": "{0} item levels",
+  "展开分类：{0}": "Expand category: {0}",
+  "预设：{0}": "Preset: {0}",
+  "全选": "Select all",
+  " · {0} 个分区 · {1} 件 · 已选 {2} 件": " · Groups: {0} · Items: {1} · Selected: {2}",
+  "筛选后暂无可添加物品，可关闭隐藏查看。": "No items remain after filtering. Disable hiding to see more.",
+  "当前物品表中无可添加物品": "No eligible items in the current catalog",
+  "预设分区：{0}": "Preset group: {0}",
+  "{0} · {1}/{2} 件": "{0} · Items: {1}/{2}",
+  "全部选中": "All selected",
+  "部分选中": "Partly selected",
+  "未选择": "Not selected",
+  "{0}预设物品": "{0} preset items",
+  "预设物品：{0}：{1}": "Preset item: {0}: {1}",
+  "官方预设目录分类树": "Official preset category tree",
+  "全 {0} 大主分类 · 逐件或按品阶勾选": "Categories: {0} · Select by item or tier",
+  "全选所有分类": "Select all categories",
+  "{0} 种装备类型尚未识别（不自动添加）": "Unrecognized equipment types: {0} (not added automatically)",
+  "清空选择": "Clear selection",
+  "已选分区与物品": "Selected groups & items",
+  "目标归属分区 ": "Target group ",
+  "目标归属分区": "Target group",
+  "按预设自动分区": "Group automatically by preset",
+  "删除哪些强化等级": "Enhancement levels to delete",
+  "加入哪些强化等级": "Enhancement levels to add",
+  "预设强化等级 +{0}": "Preset enhancement +{0}",
+  "快捷：": "Quick select:",
+  "全选 0–20": "Select 0–20",
+  "清空等级": "Clear levels",
+  "等级可多选；不可强化物品仅加入 +0。": "Multiple levels allowed; non-enhanceable items are added at +0 only.",
+  "删除所有匹配收藏": "Delete all matches",
+  "添加所选分区与物品": "Add selected groups & items",
+  "已删除 {0} 条收藏。": "Deleted {0} favorites.",
+  "已创建 {0} 个分区，新增 {1} 条收藏，复用 {2} 条收藏。": "Created {0} groups, added {1} favorites and reused {2} favorites.",
+  "撤销预设批量删除": "Undo preset batch deletion",
+  "已恢复 {0} 条收藏，保留 {1} 条后续新增或修改的记录。": "Restored {0} favorites; kept {1} records added or changed later.",
+  "仅删除预设新增收藏": "Delete preset-added only",
+  "已删除 {0} 条预设新增收藏，手动及来源未记录的收藏保留。": "Deleted {0} preset-added favorites; kept manual and unrecorded favorites.",
+  "预计执行结果": "Preview",
+  "两个按钮使用相同物品与强化等级条件：仅删预设新增，或删除全部匹配。删除同时移除参考价，可撤销；分区、备料车及游戏挂单保持原状。": "Both buttons use the same item and level filters: delete only preset-added favorites or all matches. Reference prices are also removed; deletion can be undone. Groups, carts and game listings stay unchanged.",
+  "仅添加所选物品；保留已有分区归属、收藏与参考价。": "Adds only selected items; preserves existing groups, favorites and reference prices.",
+  "已选 {0} 个分区 · {1} 件物品": "Selected groups: {0} · Items: {1}",
+  "尚无匹配收藏": "No matching favorites yet",
+  "全部匹配 {0} 条收藏 · 其中预设新增 {1} 条": "Matching favorites: {0} · Preset-added: {1}",
+  "仅删除预设新增收藏 ({0})": "Delete preset-added only ({0})",
+  "删除所有匹配收藏 ({0})": "Delete all matches ({0})",
+  "查看匹配收藏：{0} 条 · 其中预设新增 {1} 条": "Review matches: {0} · Preset-added: {1}",
+  "来源未记录": "Source unrecorded",
+  "{0} 个新分区": "New groups: {0}",
+  "{0} 条新收藏": "New favorites: {0}",
+  "复用已有 {0} 条收藏": "Reused favorites: {0}",
+  "请展开分类，选择需要的物品。": "Expand a category and select items.",
+  "匹配": "Match",
+  "加入": "Add",
+  "取消选择：{0}：{1}": "Deselect: {0}: {1}",
+  "移除": "Remove",
+  "尚未选择物品。": "No items selected.",
+  "采购": "Buy",
+  "制造": "Produce",
+  "{0}材料模拟单价：{1}": "{0} material simulated unit price: {1}",
+  "降低一档": "One tick lower",
+  "提高一档": "One tick higher",
+  "{0}材料{1}：{2}": "{0} material {1}: {2}",
+  "左一": "Best ask",
+  "暂无有效左一价格，请先读取该材料行情": "No valid best ask. Read this material's market data first.",
+  "{0}材料恢复当前左一价格：{1}": "{0} material: reset to current best ask: {1}",
+  "右一": "Best bid",
+  "{0}材料使用当前右一价格：{1}": "{0} material: use current best bid: {1}",
+  "请输入大于 0 且不超过 1,000,000,000,000 的单价": "Enter a unit price greater than 0 and at most 1,000,000,000,000",
+  "强化计价": "Enhancement cost basis",
+  "底子采购计价": "Base purchase cost basis",
+  "自制材料计价": "Production material cost basis",
+  "镜子计价": "Mirror cost basis",
+  "保护计价": "Protection cost basis",
+  "模拟报价：{0} · {1}：{2}": "Simulated quote: {0} · {1}: {2}",
+  "{0}{1}{2}左一：{3}": "{0}{1}{2}Best ask: {3}",
+  "缓存 · ": "Cached · ",
+  "旧报价 · ": "Old quote · ",
+  "已有行情": "Available market data",
+  "暂无有效右一价格": "No valid best bid",
+  "用当前右一 {0} 模拟本项成本": "Simulate this cost at the current best bid {0}",
+  "无可用更低档位": "No lower price tick available",
+  "模拟{0}：{1}": "Simulate {0}: {1}",
+  "无可用更高档位": "No higher price tick available",
+  "计算未就绪，请重新展开项目重试": "Calculation not ready. Reopen the item details and retry.",
+  "无市场报价，请先读取该材料行情": "No market quote. Read this material's market data first.",
+  " · 自制未启用、缺价或组合分摊未知": " · Production disabled, missing prices or unknown allocation",
+  "模拟报价：{0} · 制造计价：{1} · 强化计价：{2}": "Simulated quote: {0} · Production cost basis: {1} · Enhancement cost basis: {2}",
+  "模拟报价无效，请修正": "Invalid simulated quote. Please correct it.",
+  "亏损／持平": "Loss / break-even",
+  "低工时": "Low hourly profit",
+  "一般工时": "Fair hourly profit",
+  "中等工时": "Medium hourly profit",
+  "较高工时": "High hourly profit",
+  "高工时": "Top hourly profit",
+  "不使用": "Disabled",
+  "左一退一档": "One tick below best ask",
+  "右一进一档": "One tick above best bid",
+  "强化计算设置": "Enhancement calculation settings",
+  "计算与显示": "Calculation & display",
+  "自动收藏挂单": "Auto-favorite listings",
+  "自动收藏读取到的本人买卖挂单，同物品、同等级去重；手动移除后，同一挂单不会重复加入。保存后在下一次读取挂单时生效。": "Automatically favorite your observed buy and sell listings, deduplicated by item and level. Manually removed listings are not added again. Takes effect on the next listing read after saving.",
+  "显示工时费": "Show hourly profit",
+  "计入当前社区强化增益": "Include current community enhancing buff",
+  "制造时使用工匠茶": "Use Artisan Tea for production",
+  "强化路线选择": "Enhancement route objective",
+  "最高工时费": "Highest hourly profit",
+  "最低成本": "Lowest cost",
+  "标准时薪": "Standard hourly rate",
+  "标准时薪（M／小时）": "Standard hourly rate (M/h)",
+  "强化备料倍率": "Preparation multiplier",
+  "期望成功率（%）": "Expected success rate (%)",
+  "按 1 − e^(−备料倍率) 估算，保留两位小数；接近 100% 时显示 99.99%。": "Estimated as 1 − e^(−preparation multiplier), rounded to two decimals; capped at 99.99% for display.",
+  "100% 需要无限备料倍率，请输入小于 100% 的成功率。": "100% requires an infinite preparation multiplier. Enter a rate below 100%.",
+  "底子取得成本": "Base item cost",
+  "材料第 {0} 顺位": "Material price priority {0}",
+  "成品 +0 报价": "Finished +0 item quote",
+  "工时费颜色": "Hourly profit colors",
+  "分档阈值": "Tier thresholds",
+  "第 {0} 档阈值（M／小时）": "Tier {0} threshold (M/h)",
+  "显示颜色": "Display colors",
+  "启用虚拟配置": "Enable virtual configuration",
+  "强化技能等级": "Enhancing skill level",
+  "天文台等级": "Observatory level",
+  "强化器等级": "Enhancer level",
+  "强化上衣等级": "Enhancer's Top level",
+  "强化下装等级": "Enhancer's Bottoms level",
+  "项链等级": "Necklace level",
+  "附魔手套等级": "Enchanted Gloves level",
+  "机缘披风等级": "Chance Cape level",
+  "暴饮之囊等级": "Guzzling Pouch level",
+  "技能与建筑": "Skills & buildings",
+  "强化器类型": "Enhancer type",
+  "星空强化器": "Celestial Enhancer",
+  "神圣强化器": "Holy Enhancer",
+  "机缘披风类型": "Chance Cape type",
+  "不装备": "Unequipped",
+  "普通": "Normal",
+  "精炼": "Refined",
+  "茶与增益": "Drinks & buffs",
+  "强化茶": "Enhancing Tea",
+  "普通强化茶": "Enhancing Tea",
+  "超级强化茶": "Super Enhancing Tea",
+  "究极强化茶": "Ultra Enhancing Tea",
+  "冠军成就": "Champion achievement",
+  "虚拟社区增益等级": "Virtual community buff level",
+  "跟随当前社区增益开关": "Follow community buff toggle",
+  "虚拟参数无效，尚未应用。请修正标记的输入。": "Invalid virtual parameters; not applied. Correct the highlighted input.",
+  "虚拟配置已生效，计算已更新。": "Virtual configuration applied. Calculations updated.",
+  "已切回当前角色，计算已更新。": "Switched to current character. Calculations updated.",
+  "虚拟配置保存失败，仍使用原设置，请重试。": "Could not save virtual configuration. Previous settings retained; retry.",
+  "保存并应用": "Save & apply",
+  "恢复默认值": "Restore defaults",
+  "重新读取角色": "Read character again",
+  "无法读取已保存设置，暂用默认值。请检查浏览器存储后重新保存。": "Could not read saved settings. Using defaults temporarily; check browser storage and save again.",
+  "颜色阈值必须依次递增，设置尚未保存。": "Color thresholds must increase in order. Settings not saved.",
+  "已保存，工时费已更新。": "Saved. Hourly profit updated.",
+  "保存失败，请检查浏览器存储设置后重试。": "Save failed. Check browser storage settings and retry.",
+  "已填入默认值，点击保存并应用后生效。": "Defaults filled. Click Save & apply to use them.",
+  "制造原料": "Production ingredients",
+  "底子": "Base item",
+  "镜子路线候选": "Mirror route candidate",
+  "缺少可用的材料、底子或保护物价格，请先读取对应行情后刷新页面。": "Missing material, base item or protection prices. Read the relevant market data, then refresh the page.",
+  "模拟报价格式无效": "Invalid simulated quote format",
+  "模拟物品不在当前成本候选中": "Simulated item is not a current cost candidate",
+  "模拟报价须大于 0 且不超过 1,000,000,000,000": "Simulated quote must be greater than 0 and at most 1,000,000,000,000",
+  "暂无有效售价": "No valid sale price",
+  "页面状态读取失败，已使用默认视图，原记录保留。": "Could not read page state. Using the default view; original record retained.",
+  "页面状态保存失败，当前操作仍可继续，刷新后可能无法恢复。": "Could not save page state. You can continue, but the view may not restore after reload.",
+  "0秒": "0s",
+  "不足1秒": "Less than 1s",
+  "{0}秒": "{0}s",
+  "{0}天": "{0}d",
+  "{0}小时": "{0}h",
+  "{0}分": "{0}m",
+  "{0} 次": "{0} actions",
+  "{0} + 未知": "{0} + unknown",
+  "保存失败，请重试": "Save failed. Please retry.",
+  "拖动改变分区顺序（触屏长按）；Alt + 左右方向键排序": "Drag to reorder groups (hold on touch screens); Alt + Left/Right to reorder",
+  "数量为 1，点击后再次点击可移除规划": "Quantity is 1. Click, then click again to remove the plan.",
+  "继续下拉收起": "Pull farther down to collapse",
+  "调整备料抽屉高度": "Resize preparation drawer",
+  "上下拖动调整高度，最低处继续下拉可收起；方向键微调，双击或 Enter 恢复默认": "Drag vertically to resize; pull below the minimum to collapse. Arrow keys adjust; double-click or Enter resets.",
+  "{0} 像素": "{0} pixels",
+  "{0} 像素，继续下拉收起": "{0} pixels; pull farther down to collapse",
+  "调整列宽：{0}": "Resize column: {0}",
+  "列宽保存失败，已恢复原宽度，请重试。": "Could not save column width. Previous width restored; retry.",
+  "返回强化项目": "Back to enhancement projects",
+  "分区筛选": "Group filters",
+  "全部": "All",
+  "分区内物品排序": "Sort items within groups",
+  "工时费": "Hourly profit",
+  "利润": "Profit",
+  "利润率": "Profit margin",
+  "物品名称 / 等级": "Item name / level",
+  "市场左一": "Market best ask",
+  "我的挂单价格": "My listing price",
+  "降序": "Descending",
+  "升序": "Ascending",
+  "收藏顺序": "Favorite order",
+  "搜索物品或等级": "Search items or levels",
+  "搜索收藏与原材料": "Search favorites & materials",
+  "清除搜索": "Clear search",
+  "挂单快速筛选": "Quick listing filters",
+  "全部项目": "All projects",
+  "我的挂单": "My listings",
+  "被压价": "Undercut",
+  "需要更新": "Needs update",
+  "管理功能": "Management",
+  "预设批量添加 / 删除": "Preset batch add / delete",
+  "自定义分区与归属": "Custom groups & membership",
+  "收藏批量管理": "Batch manage favorites",
+  "返回选品主表": "Back to item table",
+  "{0} 个项目": "Projects: {0}",
+  "没有符合搜索或挂单筛选的项目。": "No projects match the search or listing filters.",
+  "所选分区暂无项目。": "No projects in the selected groups.",
+  "物品 / 等级": "Item / level",
+  "工时费 / h": "Profit / h",
+  "备料": "Prepare",
+  "收藏项目列表": "Favorite project list",
+  "原材料": "Materials",
+  "{0} 种材料": "Material types: {0}",
+  "请勾选上方分区，可同时选择多个。": "Select groups above. Multiple groups can be selected.",
+  "备料抽屉": "Preparation drawer",
+  "备料车 · {0} 项 / {1} 件": "Cart · Projects: {0} / Quantity: {1}",
+  "采购预算 {0}{1}": "Purchase budget {0}{1}",
+  " · 数据待完整": " · Incomplete data",
+  "收起备料清单": "Collapse preparation list",
+  "展开备料清单": "Expand preparation list",
+  "等 {0} 项": "and more · Total: {0}",
+  "缺料 {0} 种": "Missing material types: {0}",
+  "{0}：点击{1}排列": "{0}: sort {1}",
+  "原材料统一核算看板": "Combined material requirements",
+  "需求仅按备料车累计，制造与强化共用材料统一扣减库存。": "Demand is totaled from the cart; shared production and enhancement inventory is deducted once.",
+  "查看采购清单": "View purchase list",
+  "角色尚未就绪，备料需求未知。": "Character not ready. Requirements unknown.",
+  "暂无可显示的材料，请添加收藏并读取角色与配方。": "No materials to show. Add favorites and read character and recipe data.",
+  "原材料 / 等级": "Material / level",
+  "库存": "Inventory",
+  "需备合计": "Total required",
+  "还缺": "Missing",
+  "采购预算": "Purchase budget",
+  "快捷采购": "Quick purchase",
+  "原材料分区列表": "Material group list",
+  "{0} 项": "Entries: {0}",
+  "预填采购": "Fill purchase",
+  "预填采购：{0}": "Fill purchase: {0}",
+  "材料范围可能不完整：": "Material scope may be incomplete: ",
+  "等待计算": "Waiting for calculation",
+  "暂无利润": "Profit unavailable",
+  "暂无利润率": "Margin unavailable",
+  "自定义价格：{0}": "Custom price: {0}",
+  "参考售价请输入非负整数金币，清空表示未设置。": "Enter a non-negative integer reference price in coins; clear to leave unset.",
+  "计划备料数量：{0}": "Planned quantity: {0}",
+  "输入整数数量，0 表示移出备料计划": "Enter an integer; 0 removes it from the plan",
+  "备料数量须为 0 至 {0} 的整数；同物品各等级合计最多 1,000,000 件": "Quantity must be an integer from 0 to {0}; total across levels of the same item is capped at 1,000,000",
+  "同物品各等级合计最多 1,000,000 件": "Total across levels of the same item is capped at 1,000,000",
+  "减少计划备料数量：{0}": "Decrease planned quantity: {0}",
+  "增加计划备料数量：{0}": "Increase planned quantity: {0}",
+  "减少 1 件，减到 0 移出计划": "Decrease by 1; reaching 0 removes it from the plan",
+  "增加 1 件": "Increase by 1",
+  "项目明细：{0}": "Project details: {0}",
+  "本地缓存 · ": "Local cache · ",
+  "等待行情": "Waiting for market data",
+  "旧": "Old",
+  "缓存": "Cached",
+  "市场快照": "Market snapshot",
+  "快照": "Snapshot",
+  "订单簿": "Order book",
+  "；报价超过 5 分钟，请打开市场复核": "; quote is over 5 minutes old. Open the market to verify.",
+  "未读取": "Not read",
+  "{0} {1} · {2}单": "{0} {1} · Listings: {2}",
+  "卖": "Sell",
+  "买": "Buy",
+  "旧 · ": "Old · ",
+  " · 另{0}单被压价": " · Other undercut listings: {0}",
+  "暂无行情": "No market data",
+  "模拟": "Simulated",
+  "材料价格模拟 · 固定售价 {0}": "Material price simulation · Fixed sale price {0}",
+  "按当前行情计算": "Using current market data",
+  "备料车": "Preparation cart",
+  "备料计划与采购清单核算": "Preparation plan & purchase list",
+  "{0} 项 · {1} 件": "Projects: {0} · Quantity: {1}",
+  "角色尚未就绪，读取后即可加入项目。": "Character not ready. Read the character to add projects.",
+  "在强化项目中加入备料后，统一计算材料需求。": "Add projects to the preparation cart to calculate combined requirements.",
+  "备料数量：{0}": "Preparation quantity: {0}",
+  "备料数量须为 1 至 {0} 的整数；同物品各等级合计最多 1,000,000 件": "Quantity must be an integer from 1 to {0}; total across levels of the same item is capped at 1,000,000",
+  "项目已移出备料车，请重新加入": "Project is no longer in the cart. Add it again.",
+  "请先输入有效的整数数量": "Enter a valid integer quantity first",
+  "{0}备料数量：{1}": "{0} preparation quantity: {1}",
+  "减少": "Decrease",
+  "增加": "Increase",
+  "再次点击移除该规划": "Click again to remove this plan",
+  "减少 1 件": "Decrease by 1",
+  "移出备料车：{0}": "Remove from cart: {0}",
+  "{0} {1} 金币 · 无需再购 {2}/{3} 种": "{0} {1} coins · No purchase needed: {2}/{3} types",
+  "缺口预算": "Shortfall budget",
+  "缺口预算未计全": "Incomplete shortfall budget",
+  "收起预算采购清单": "Collapse budget purchase list",
+  "按当前金币分配采购": "Allocate purchases to available coins",
+  "可用 {0} · 采购 {1} · 预留消耗 {2} · 余额 {3}": "Available {0} · Purchase {1} · Reserved consumption {2} · Remaining {3}",
+  "金币不足以备齐制造材料；本次仅分配制造材料，暂不分配强化材料。": "Not enough coins for all production materials. Only production materials are allocated; enhancement materials are deferred.",
+  "建议购买": "Suggested purchase",
+  "金额": "Amount",
+  "预算采购清单": "Budget purchase list",
+  "当前预算下无须或无法追加采购。": "No additional purchases needed or affordable under this budget.",
+  "未计入金额：": "Excluded from total: ",
+  "备料车只看缺料": "Cart: show shortages only",
+  "只看缺料（含未知）": "Shortages only (including unknown)",
+  "合计材料 · 单价降序": "Combined materials · Unit price descending",
+  "数量中的「+ 未知」表示尚有项目未算入；已算部分保留，完整缺口和预算待方案就绪后计算。": "“+ unknown” means some projects are not included yet. Known requirements are retained; full shortages and budget await complete plans.",
+  "总需": "Required",
+  "缺口": "Shortfall",
+  "左一单价": "Best ask unit price",
+  "预算小计": "Budget subtotal",
+  "备料车材料合计": "Combined cart materials",
+  "{0} · {1}；采购 {2} 份": "{0} · {1}; purchase quantity: {2}",
+  "金币直接消耗或报价未知": "Direct coin consumption or quote unknown",
+  "{0}（待收 {1}）": "{0} (incoming {1})",
+  "制造 {0}；强化备料 {1}": "Production {0}; enhancement preparation {1}",
+  "制造 / 强化用量拆分": "Production / enhancement breakdown",
+  "备料用量拆分": "Preparation breakdown",
+  "未算全：": "Incomplete: ",
+  "备料路线：": "Preparation route: ",
+  "打开原材料市场：{0}": "Open material market: {0}",
+  "等待材料参数": "Waiting for material parameters",
+  "制造与强化备料合计": "Combined production & enhancement requirements",
+  "单价": "Unit price",
+  "补齐总价": "Shortfall cost",
+  "暂无报价": "No quote",
+  "当前单价：{0}": "Current unit price: {0}",
+  "无需补齐，补齐总价为 0；已扣除库存与待收货": "No shortfall; cost is 0 after deducting inventory and incoming purchases",
+  "补齐总价：{0} × {1} = {2}；缺少数量已扣除库存与待收货": "Shortfall cost: {0} × {1} = {2}; inventory and incoming purchases already deducted",
+  "缺少数量或当前单价未知": "Missing quantity or current unit price unknown",
+  "{0}备料进度": "{0} preparation progress",
+  "缺：{0}": "Missing: {0}",
+  "已扣除待收货数量 {0}": "Incoming quantity already deducted: {0}",
+  "需：{0}": "Required: {0}",
+  "库存：{0}": "Inventory: {0}",
+  "无需此类材料。": "No materials of this type needed.",
+  "强化方案未就绪，合计需备未知。": "Enhancement plan not ready. Total requirements unknown.",
+  "计划经验预估": "Planned XP estimate",
+  "{0}{1}，预计 {2}；预计增加 {3} 经验": "{0}{1}, projected {2}; estimated gain {3} XP",
+  "跨级，": "Level up, ",
+  "实心表示已有经验，斜纹表示预计新增经验。{0}": "Solid fill shows current XP; hatching shows estimated added XP. {0}",
+  "跨级": "Level up",
+  "预计经验未知": "Estimated XP unknown",
+  "预计 +{0} 经验": "Estimated +{0} XP",
+  "期望时间": "Expected time",
+  "期望次数": "Expected actions",
+  "单件期望强化耗时，不含制造、采购或等待；期望值不保证本次完成时间": "Expected enhancement time per item, excluding production, purchases and waiting; an expectation is not a completion guarantee",
+  "单件期望强化动作次数，不是保护材料消耗量": "Expected enhancement actions per item, not protection material consumption",
+  "强化方案": "Enhancement plan",
+  "方案尚未就绪，请先读取所需行情。": "Plan not ready. Read the required market data first.",
+  "保护之镜": "Mirror Of Protection",
+  "打开市场：{0}": "Open market: {0}",
+  "无需强化": "No enhancement needed",
+  "无需保护": "No protection needed",
+  "· +{0} 精炼继承": "· +{0} refinement carryover",
+  "组成装备与数量": "Component equipment & quantities",
+  "需另备组成装备，镜子合成与精炼步骤需手动操作。": "Prepare component equipment separately. Mirror combination and refinement steps require manual actions.",
+  "先强化未精炼底子，再按标示等级精炼继承；需分步手动操作。": "Enhance the unrefined base first, then refine at the indicated level for carryover. Perform each step manually.",
+  "下方强化预填按当前行情方案执行；模拟方案仅用于比较。": "Enhancement prefill below uses the current market plan; the simulated plan is for comparison only.",
+  "底子取得方式": "Base item source",
+  "自制": "Craft",
+  "{0}底子：{1}": "{0} base: {1}",
+  "{0}底子及同物品保护；同角色的该物品各强化等级共用此选择{1}": "{0} base and same-item protection; shared across this item's enhancement levels for the current character{1}",
+  "；采购报价缺失时使用自制成本": "; use production cost if the purchase quote is missing",
+  "同物品保护：": "Same-item protection: ",
+  "同步自制": "Craft as well",
+  "同步采购": "Buy as well",
+  "保护：": "Protection: ",
+  "保护随组成装备来源": "Protection follows component source",
+  "方案未就绪": "Plan not ready",
+  "普通保护 · +{0} 起保": "Normal protection · Start at +{0}",
+  "普通路线 · 无需保护": "Normal route · No protection needed",
+  "贤者之镜路线": "Philosopher's Mirror route",
+  "精炼继承路线": "Refinement carryover route",
+  "缺价，按自制": "No quote; using production cost",
+  "工时费差未知": "Hourly profit difference unknown",
+  "工时费相同": "Same hourly profit",
+  "{0}{1}/h收益": "{0} {1}/h profit",
+  "获得": "Gain",
+  "失去": "Lose",
+  "采购报价缺失，底子及同物品保护按自制成本计算；采购报价恢复后按采购成本计算。": "Purchase quote missing. Base and same-item protection use production cost until a purchase quote is available again.",
+  "当前{0}方案相对{1}方案的预计工时费差；使用相同售价、角色参数和当前模拟报价，分别计算完整强化方案。{2}": "Estimated hourly profit difference for {0} compared with {1}, using the same sale price, character parameters and simulated quotes to calculate both full routes. {2}",
+  "缺少有效售价或可比较的方案。": "No valid sale price or comparable plan.",
+  "按未缩写数值计算。": "Calculated using unrounded values.",
+  "等待路线计算；采购报价缺失时使用自制成本，自制成本也缺失时无法估算": "Waiting for route calculation; production cost is used if the purchase quote is missing. Cannot estimate when both are missing.",
+  "无有效售价 · 最低成本强化方案 · 单件预计成本 {0} · 预计耗时 {1} 小时": "No valid sale price · Lowest-cost plan · Expected cost per item {0} · Expected time {1} hours",
+  "配方材料与调价模拟": "Recipe materials & price simulation",
+  "恢复左一": "Reset to ask",
+  "恢复全部材料当前报价": "Reset all material quotes",
+  "重新读取已收到的当前行情，清除全部模拟调价": "Read current received market data again and clear all simulated prices",
+  "价格模拟": "Price simulation",
+  "关闭价格模拟": "Disable price simulation",
+  "开启价格模拟": "Enable price simulation",
+  "关闭并清除模拟调价，恢复当前行情计算": "Disable and clear simulated prices; return to current market calculations",
+  "开启后显示材料调价按钮": "Enable to show material price controls",
+  "计划 {0} 件": "Planned quantity: {0}",
+  "单件备料预览 · 未加入计划": "Single-item preview · Not in plan",
+  "{0} · 库存同等级 {1} 件": "{0} · Inventory at this level: {1}",
+  "强化：{0}": "Enhance: {0}",
+  "前往强化并预填，请在游戏中确认后开始": "Open enhancement and fill settings; confirm in the game before starting",
+  "市场": "Market",
+  "市场：{0}": "Market: {0}",
+  "计划": "Plan",
+  "角色尚未就绪，请先刷新角色。": "Character not ready. Refresh character data first.",
+  "计划：{0}": "Plan: {0}",
+  "加入备料并查看采购": "Add to cart & view purchases",
+  "市场卖单深度与本人在售状态": "Sell order depth & your active listings",
+  "本地缓存 · 待复核 · ": "Local cache · Needs verification · ",
+  "已过期 · ": "Expired · ",
+  "订单簿 · ": "Order book · ",
+  "尚未读取订单簿": "Order book not read yet",
+  "模拟收益 · 以下各售价按当前模拟材料成本重算": "Simulated profit · Recalculated at each sale price using simulated material costs",
+  "{0}价格档位工时费": "{0} hourly profit by price tick",
+  "各售价对应工时费、利润和利润率，售价从高到低": "Hourly profit, profit and margin at each sale price, highest price first",
+  "售价档位": "Price tick",
+  "单件利润": "Profit per item",
+  "售价：{0}": "Sale price: {0}",
+  "左一 · 非现档": "Best ask · Off tick",
+  "右一 · 非现档": "Best bid · Off tick",
+  "区间外": "Out of range",
+  "工时费：{0} / h": "Hourly profit: {0} / h",
+  "工时费 / h：{0}": "Profit / h: {0}",
+  "利润：{0}": "Profit: {0}",
+  "利润率：{0}": "Margin: {0}",
+  "存在区间外报价": "Some quotes are outside the trading range",
+  "可交易区间尚未读取，以游戏挂单窗口为准。": "Trading range not read yet. Check the game's listing form.",
+  "左一非现档": "Best ask off tick",
+  "右一非现档": "Best bid off tick",
+  "方向": "Side",
+  "我的价格": "My price",
+  "左一／右一": "Best ask / bid",
+  "价格比较": "Price comparison",
+  "本人挂单价格比较": "Your listing price comparison",
+  "出售": "Sell",
+  "购买": "Buy",
+  "本人完整挂单价格比较": "Full listing price comparison",
+  "本人在售 {0} 单 · 剩余 {1} 件；等待成交时间未知。": "Your sell listings: {0} · Remaining quantity: {1}; time until sale is unknown.",
+  "位置": "Position",
+  "售价": "Sale price",
+  "挂单量": "Listed quantity",
+  "{0}卖单": "{0} sell orders",
+  "其余本人订单 · 公开订单簿未给出位置": "Other own orders · Position not provided by public order book",
+  "省略第 {0}–{1} 条": "Omitted rows {0}–{1}",
+  "本人 · {0}": "Yours · {0}",
+  "待复核": "Needs verification",
+  "旧 {0}": "Old {0}",
+  "旧订单簿中的位置；请打开该物品市场更新": "Position in an old order book; open this item's market to update",
+  "本人订单：与我的左一订单同价": "Your order: same price as your best-ask order",
+  "本人订单：前方有其他玩家订单或售价高于左一": "Your order: other players ahead or price above best ask",
+  "本人订单：左一归属未知，请读取最新订单簿": "Your order: best-ask ownership unknown; read a fresh order book",
+  "该等级暂无卖单。": "No sell orders at this level.",
+  "打开该物品市场后读取前三卖单。": "Open this item's market to read the top three sell orders.",
+  "本人挂单尚未读取，归属暂不可确认。": "Your listings have not been read; ownership cannot be confirmed.",
+  "{0} · 估算工时费 {1}": "{0} · Estimated hourly profit {1}",
+  "模拟固定售价 {0}": "Simulated fixed sale price {0}",
+  "无有效售价 · 最低成本模拟": "No valid sale price · Lowest-cost simulation",
+  "{0}{1}{2}左一 {3}": "{0}{1}{2}Best ask {3}",
+  "{0} · 本人已成交历史订单记录": "{0} · Your filled order history",
+  "原挂单价": "Original price",
+  "累计成交": "Total filled",
+  "挂单时间": "Listed at",
+  "成交耗时上限": "Fill time upper bound",
+  "记录时间": "Recorded at",
+  "{0}本人成交记录": "{0} own trade records",
+  "本人卖出订单 #{0}": "Your sell order #{0}",
+  "收起历史": "Collapse history",
+  "查看全部 {0} 条": "View all {0} records",
+  "历史读取失败：{0}": "History read failed: {0}",
+  "正在读取本人记录…": "Reading your records…",
+  "尚未记录到该等级的本人卖出成交。": "No recorded filled sell orders at this level yet.",
+  "分区分类管理": "Manage groups",
+  "新分区名称": "New group name",
+  "新增分区": "Add group",
+  "{0} 件": "Items: {0}",
+  "重命名分区：{0}": "Rename group: {0}",
+  "保存名称": "Save name",
+  "合并分区": "Merge groups",
+  "再次点击，将“{0}”的物品归属合并到“{1}”，并移除当前分区": "Click again to merge items from “{0}” into “{1}” and remove the current group",
+  "删除分区并移出物品": "Delete group & remove memberships",
+  "系统兜底": "Fallback",
+  "内置分区": "Built-in group",
+  "物品多分区归属矩阵": "Item group membership matrix",
+  "同物品各强化等级共享归属；全部取消后退回未分区。": "All enhancement levels share membership. Clearing all groups returns the item to Ungrouped.",
+  "快速过滤物品": "Filter items",
+  "搜索分区归属物品": "Search group items",
+  "物品": "Item",
+  "{0}所属分区：{1}": "{0} group: {1}",
+  "移出": "Remove",
+  "移出所有分区：{0}": "Remove from all groups: {0}",
+  "收藏与分区": "Favorites & groups",
+  "点击刷新价格与库存即可更新全市场买卖一价；本人挂单在打开游戏我的挂单时自动保存。": "Refresh prices and inventory to update best asks and bids across the market. Your listings are saved automatically when you open My Listings in the game.",
+  "收藏中的资源材料默认归入此区，同时汇集备料车及收藏项目的直接制造、强化和保护材料；相同物品和等级合并。未加入备料车的项目不计入需备数量。": "Favorited resource materials appear here, together with direct production, enhancement and protection materials from the cart and favorites. Matching items and levels are combined. Projects outside the cart do not contribute to required quantities.",
+  "点击物品旁的收藏按钮保存物品与等级；参考售价可以单独填写。收藏已有挂单商品可导入现有挂单，以后新挂单会自动收藏。": "Use the favorite button beside an item to save its item and level. Reference prices can be entered separately. Existing listings can be imported as favorites; new listings are favorited automatically when enabled.",
+  "物品可同时属于多个分区，分区归属适用于全部收藏等级。全部取消则归入未分区；删除分区保留其他归属。管理列表按游戏编号升序排列。": "Items may belong to multiple groups; membership applies to all favorited enhancement levels. Clearing all memberships returns an item to Ungrouped. Deleting one group retains other memberships. Management lists follow ascending game sort order.",
+  "点击表头切换升降序，未知值始终置底；我的挂单按本人最低挂单价排序。": "Click a column header to toggle ascending or descending order. Unknown values always sort last. My listings sort by your lowest listing price.",
+  "拖动调节列宽；双击或 Enter 恢复默认；方向键调节，Esc 取消拖动。": "Drag to resize columns; double-click or Enter resets. Arrow keys adjust and Esc cancels dragging.",
+  "计算与路线": "Calculation & routes",
+  "与月饼相同的强化计算口径：售价扣除 5% 税，再减期望成本、除以强化小时。材料按市场机会成本计价，库存不抵扣；不包含交易等待时间。": "Uses Mooncake's enhancement calculation: subtract 5% tax and expected costs from the sale price, then divide by enhancement hours. Materials use market opportunity cost, without inventory deductions. Trade waiting time is excluded.",
+  "自制材料依次尝试以下报价，与成品 +0 报价比较，取较低完整路径。全部选择“不使用”可停用自制路线。": "Production materials try the configured quote priorities. The full production cost is compared with the finished +0 item quote, and the cheaper complete route is used. Disable all priorities to turn off production routes.",
+  "按当前价格与角色参数选择最低总成本方案；次数为期望值，可能与工时费所选方案不同。": "The lowest-total-cost preparation plan uses current prices and character parameters. Action counts are expectations and may differ from the route selected for hourly profit.",
+  "耗时不含制造、排队与等待成交；利润和成本沿用当前路线。": "Time excludes production, queues and waiting for trades. Profit and costs follow the current route.",
+  "列表默认按市场左一出售价估算。利润 = 税后售价 − 总成本；利润率 = 税后利润 ÷ 总成本。价格阶梯按每一档售价和当前角色参数重新估算。": "The list defaults to the market best ask. Profit = after-tax sale price − total cost; margin = after-tax profit ÷ total cost. Each price tick is recalculated using its sale price and current character parameters.",
+  "项目明细的材料名称下显示当前模拟单价。左右按钮按该材料 +0 的价格档位减一档、加一档，悬停可看下一档报价；点击后立即更新展开区的利润、利润率、工时费及模拟路线备料。不同收藏等级独立模拟；收藏主行、展开摘要、售价档位和卖单工时费同步标注模拟收益。备料车仍按真实行情计算。": "Material controls show simulated unit prices. Left and right buttons move one +0 price tick; hover to see the next quote. Changes update profit, margin, hourly profit and simulated requirements. Each favorite level has an independent simulation. Project rows, details, price ticks and sell-order profit are marked as simulated. The cart still uses real market prices.",
+  "首次打开项目明细截取行情、成品售价和角色参数。材料行可点击“恢复当前左一价格”，将该计价使用的报价恢复为插件最新已读取的 +0 左一价格，仅影响当前材料；缺少有效左一价时按钮不可用。强化与保护按实际单价显示，自制材料按直接配方采用的计价显示；报价与计价可能因自制比较而不同，复杂组合配方无法逐项分摊时显示未知。引擎按原有报价顺位、制造/购买比较和路线目标重新选择方案，候选材料调价可能不影响最终成本。": "Opening details captures market quotes, sale price and character parameters. Reset to current best ask updates only that material's cost basis to the latest received +0 ask; it is unavailable without a valid ask. Enhancement and protection show actual unit costs; production materials show costs used by the direct recipe. Quotes and cost allocation can differ after production comparisons; complex combinations may remain unknown. The engine keeps its quote priorities, buy/produce comparison and route objective, so changing a candidate quote may not affect the final cost.",
+  "模拟仅计算单件期望值，不使用备料倍率或向上取整的备料数量。变化含重新选择路线的影响。零价不表示免费，缺价显示未知。金币等固定成本沿用原公式。": "Simulation calculates expected cost per item, without preparation multipliers or rounded preparation quantities. Changes include route reselection effects. Zero is not a free price; missing prices are unknown. Fixed costs such as Coins retain the original formulas.",
+  "模拟不会修改真实行情、参考售价、库存或挂单；输入仅保留在当前页面，刷新游戏或确认切换角色后清空。自动刷新角色参数、库存、行情不会清空当前模拟；新角色参数在刷新页面后重新截取。恢复左一只更新对应材料报价，保留其他材料调整、成品售价与基准参数。缺价或达到档位边界时，对应换档按钮不可用。": "Simulation does not change real quotes, reference prices, inventory or listings. Inputs last only for this page and clear on reload or confirmed character change. Automatic character, inventory and market updates do not clear simulations; new character parameters are captured after reloading. Reset to ask affects the selected material only, retaining other edits, sale price and baseline parameters. Tick buttons are disabled at boundaries or without a valid quote.",
+  "备料与库存": "Preparation & inventory",
+  "强化备料 = 单件路线期望消耗 × 目标数量 × 倍率，按材料汇总后向上取整。包含实际保护物和贤者之镜；默认 1.2，期望值不保证实际够用。": "Enhancement preparation = expected route consumption per item × target quantity × multiplier, totaled by material and rounded up. Includes actual protection items and Philosopher's Mirror. The default multiplier is 1.2; expected quantities do not guarantee enough materials.",
+  "按当前左一估算路线的期望消耗备料，非保证用量；不同等级独立对照库存。": "Preparation uses expected consumption at current best asks and is not guaranteed sufficient. Different enhancement levels compare against inventory independently.",
+  "备料车将同装备各目标等级的件数合并，统一抵扣未强化（+0）库存，只为不足的件数计算制造用量；已有强化装备不抵扣。项目明细仍显示新增制作的配方用量，未加入备料车时按 1 件预览。": "The cart combines target quantities across levels of the same equipment and deducts unenhanced (+0) inventory once. Only the remaining quantity needs production materials; enhanced equipment is not deducted. Details still show requirements for new production, previewing one item when not in the cart.",
+  "制造按直接配方和整批次数计算，保留小数用量；详情按物品合并制造与强化用量，需备显示合计，还缺统一扣除一次库存。制造与强化初始计价相同时共用调价控件，不同时在同一行分别显示；已显示的调价控件在本次模拟中保持可见。镜子路线的组成装备需另行备齐，制造用量仍为目标装备的直接配方。": "Production uses direct recipes and whole batches while retaining fractional consumption. Details combine production and enhancement by material and deduct inventory once from total requirements. Identical starting cost bases share price controls; different ones are separate. Controls already shown remain visible during the simulation. Prepare mirror-route components separately; production requirements cover the target equipment's direct recipe.",
+  "没有目标售价时，备料和准备强化按最低成本路线计算，利润与工时费仍保持售价未知；有售价时恢复所选路线目标。材料、底子或保护物价格缺失时仍可能无法计算。": "Without a target sale price, preparation and enhancement prefill use the lowest-cost route; profit and hourly profit still show an unknown sale price. A valid sale price restores the selected route objective. Missing material, base or protection prices can still prevent calculation.",
+  "备料车中某个项目方案未就绪时，已算出的材料仍会保留；数量中的「+ 未知」表示还有未计入部分，不是完整需求。库存足够覆盖已算部分也不代表整车备齐。": "If a cart project is not ready, known materials remain visible. “+ unknown” means some requirements are excluded. Enough inventory for the known portion does not mean the whole cart is ready.",
+  "启用工匠茶时按角色饮料浓度估算制造减耗，可在设置关闭；升级底子不减耗。": "When enabled, Artisan Tea reduces production consumption using the character's drink concentration. Disable it in settings if needed. Base-item upgrades do not receive this reduction.",
+  "备料车与预算": "Cart & budget",
+  "按当前左一估算缺口，采购数量向上取整；金币直接消耗只计一次。预算不改变工时费成本。": "Shortfalls use current best asks; purchase quantities round up. Direct Coin consumption is counted once. Budget calculations do not alter hourly profit costs.",
+  "制造按直接配方，强化为期望备料；同材料合并，库存统一扣一次。": "Production uses direct recipes and enhancement uses expected preparation. Matching materials are combined; inventory is deducted once.",
+  "金币不足时，可点击「按当前金币分配采购」查看整数采购数量。先备齐缺少装备的制造材料，再按各项目路线的强化期望消耗同比例分配余额；普通强化材料保持每次强化的用量比例，保护物按期望消耗参与。现有库存优先使用，并为制造、强化直接消耗的金币预留额度。": "If coins are insufficient, Allocate purchases to available coins suggests whole purchase quantities. Missing-equipment production materials take priority; remaining coins are distributed in proportion to expected enhancement consumption. Normal materials retain per-action ratios, while protection follows expected usage. Existing inventory is used first, with coins reserved for direct production and enhancement consumption.",
+  "制造材料也买不齐时，仅按制造用量比例分配；取整后无法利用的余额保留。清单随库存、行情和备料数量更新，只提供采购建议，不执行购买。缺价、未知库存或不完整路线无法分配；当前左一报价不保证实际可成交数量。": "If production materials alone exceed the budget, only production materials receive proportional allocation. Unusable rounding remainders stay unspent. Suggestions update with inventory, market prices and quantities and never execute purchases. Missing quotes, unknown inventory or incomplete routes block allocation. Best-ask quotes do not guarantee available volume.",
+  "从预算采购清单点击材料进入市场，两分钟内打开该物品同等级的购买表单，会一次性预填本次建议数量并保留制造、强化消耗金币；从合计材料进入，则预填全部剩余缺口，金币不够时按表单当前价格填最大可负担数量。卖单不预填，填写后仍需自行确认购买。": "Open a material from the budget list, then open its same-level buy form within two minutes to fill the suggested quantity once, reserving coins for direct production and enhancement costs. Opening from combined materials fills the remaining shortfall, capped by affordability at the form's current price. Sell forms are not filled. Purchases still require your confirmation.",
+  "挂单成功后，未成交买单和已成交未领取材料计入待收货，与当前库存共同抵扣采购缺口；已扣金币不会再次计作可用余额。部分成交、领取和撤单后自动更新，避免对已下单材料重复分配。待收货不代表已经可以用于制造或强化。": "After a buy listing is placed, unfilled orders and filled but unclaimed materials count as incoming and reduce the purchase shortfall alongside inventory. Spent coins are not counted again. Partial fills, claims and cancellations update the plan to avoid duplicate purchases. Incoming materials are not yet available for production or enhancement.",
+  "项目和材料按市场左一单价降序排列；金币按 1，未知价格置底。只看缺料会同时保留未知项。": "Projects and materials sort by best-ask unit price, highest first. Coins use 1; unknown prices sort last. Shortages-only filtering also keeps unknown requirements.",
+  "数量减至 1 后，再次点击减号进入移除确认，再点一次移除；也可直接使用移除按钮。": "At quantity 1, click minus once to enter removal confirmation and again to remove. The Remove button is also available.",
+  "市场制作与强化": "Market, production & enhancement",
+  "打开市场查看当前物品及等级；打开制作进入该物品的直接配方。开始强化会选择背包中低于目标等级的最高等级同物品，并按当前展示路线填写目标等级、保护物和保护起始等级，仍需手动确认开始。缺少物品或保护材料时会提示；多段路线按明细手动准备。制造请自行核对材料与游戏茶槽。": "Market opens the selected item and level; production opens its direct recipe. Enhancement chooses the highest-level matching inventory item below the target and fills target level, protection item and protection start according to the displayed route. You must still confirm Start manually. Missing equipment or protection is reported; multi-step routes require manual preparation. Check production materials and game drink slots yourself.",
+  "行情与挂单": "Market & listings",
+  "左一／右一价格可对照买卖挂单；同价只表示价格相同，不代表同价队列第一。完整订单可在项目明细查看。": "Best ask and bid can be compared with your listings. Equal price does not mean first in the queue. Full orders are available in project details.",
+  "旧报价保留来源和时间；旧订单簿位置需要重新打开物品市场更新。区间外按报价估算，低于下限的卖单实际按区间下限执行。左一非现档时保留原价参考。": "Old quotes retain their source and time. Reopen an item's market to refresh old order-book positions. Out-of-range quotes are used as quoted for estimates; sell orders below the lower bound execute at that bound. Off-tick best asks retain their original quote for reference.",
+  "成交历史": "Trade history",
+  "每行对应一个已有成交的本人订单，包含部分成交，记录原挂单价与累计成交量。挂单时间取自订单创建时间；成交耗时上限为挂单至记录时间的间隔，用 ≤ 表示，仅针对已成交部分，不代表整单售罄耗时。缺少挂单时间或时间异常时显示未知；旧记录再次读取到同一订单的创建时间后可补齐，已从游戏移除且未保存创建时间的订单无法恢复。数据源未提供实际成交价和成交时间；原挂单价仅供对照，记录时间不是成交时间，离线或后续订单更新可能使耗时上限偏大。": "Each row is one of your orders with recorded fills, including partial fills, showing the original listing price and cumulative filled quantity. Listed at comes from order creation. The fill-time upper bound is the interval from creation to observation, marked ≤; it covers observed fills and is not the time to sell the entire order. Missing or invalid creation times show Unknown. Old records can be backfilled when the same order is observed with a creation time; removed orders whose creation time was never saved cannot be recovered. The source provides neither actual execution price nor execution time. The original price is for reference, and observation time is not execution time. Offline periods or later updates may widen the bound.",
+  "设置与虚拟角色": "Settings & virtual character",
+  "排序、筛选、搜索词及各区块展开状态会自动保存在当前浏览器与站点，刷新后恢复，并包含在本地备份中。未提交输入、删除确认和页面滚动位置不跨刷新恢复。": "Sorting, filters, searches and expanded sections are saved for this browser and site, restored after reload and included in local backups. Unsubmitted inputs, deletion confirmations and scroll positions do not persist across reloads.",
+  "阈值须依次递增。颜色仅按工时费分档，达到阈值进入下一档；亏损或持平使用对应颜色，不受利润率评级影响。": "Thresholds must increase. Colors depend only on hourly profit; reaching a threshold enters the next tier. Loss or break-even uses its own color, independently of profit-margin ratings.",
+  "切换后立即生效；启用时修改下方参数会自动保存并重算。关闭时读取当前角色已装备物品、技能、建筑、茶与成就。装备等级 -1 表示未装备；虚拟模式按月饼默认计入祝福茶。": "Virtual mode takes effect immediately. While enabled, parameter changes save and recalculate automatically. When disabled, current equipment, skills, buildings, drinks and achievements are read. Equipment level −1 means unequipped. Virtual mode includes Blessed Tea by the upstream defaults.",
+  "本地备份": "Local backup",
+  "导出收藏、参考售价、分区、设置和本服务器各角色的备料车。文件仅保存在本机，不含行情缓存、游戏账号凭据或成交历史。": "Exports favorites, reference prices, groups, settings and each character's cart on this server. Files stay local and exclude market caches, game credentials and trade history.",
+  "恢复只覆盖文件内同名数据，未包含的数据保留；备料车按文件中的角色 ID 恢复。恢复前会显示覆盖范围，确认后刷新游戏。": "Restore overwrites only matching data included in the file and preserves other data. Carts restore under the file's character IDs. Review the overwrite preview, then confirm to restore and reload the game.",
+  "帮助": "Help",
+  "未分区": "Ungrouped",
+  "分区数据格式异常，原数据已保留": "Invalid group data. Original data retained.",
+  "收藏数据异常，无法迁移默认分区，原数据已保留": "Invalid favorite data prevents default-group migration. Original data retained.",
+  "生活衣裤（{0}）": "Skilling clothing ({0})",
+  "物品分区数据异常，原数据已保留": "Invalid item membership data. Original data retained.",
+  "分区选择数据异常，原数据已保留": "Invalid group selection data. Original data retained.",
+  "分区名称须为 1 至 40 个字": "Group names must contain 1 to 40 characters",
+  "无效的列或列宽": "Invalid column or width",
+  "无效分区选择": "Invalid group selection",
+  "无效物品或分区": "Invalid item or group",
+  "计划数量须为 1 至 1,000,000 的整数": "Planned quantity must be an integer from 1 to 1,000,000",
+  "已有同名分区": "A group with this name already exists",
+  "默认分区不可重命名": "Default groups cannot be renamed",
+  "合并分区已变化，请重新选择": "Groups changed. Select the merge target again.",
+  "默认分区不可删除": "Default groups cannot be deleted",
+  "{0}未知": "{0} unknown",
+  "{0}同价": "Same as {0}",
+  "优于快照": "Better than snapshot",
+  "备料车数据异常，原数据已保留": "Invalid cart data. Original data retained.",
+  "同物品各等级的总件数不能超过 1,000,000": "Total quantity across levels of the same item cannot exceed 1,000,000",
+  "角色尚未就绪，请重新读取角色": "Character not ready. Read the character again.",
+  "无目标售价，按最低成本路线备料": "No target sale price; preparing the lowest-cost route",
+  "强化方案未就绪{0}": "Enhancement plan not ready{0}",
+  "镜子路线组成装备需另外备齐": "Prepare mirror-route component equipment separately",
+  "未强化装备库存未知，制造用量待确认": "Unenhanced inventory unknown; production requirements unconfirmed",
+  "制造配方未就绪": "Production recipe not ready",
+  "材料范围尚未完整": "Material scope incomplete",
+  "金币": "Coins",
+  "金币库存未知，暂不能分配。": "Coin inventory unknown; allocation unavailable.",
+  "备料方案未算全，暂不能分配。": "Preparation plan incomplete; allocation unavailable.",
+  "材料库存或用量未知，暂不能分配。": "Material inventory or consumption unknown; allocation unavailable.",
+  "缺少材料报价，暂不能分配。": "Material quotes missing; allocation unavailable.",
+  "预算超出可计算范围，暂不能分配。": "Budget exceeds the supported calculation range; allocation unavailable.",
+  "暂无有效左一价格": "No valid best ask",
+  "工时费未知": "Hourly profit unknown",
+  "已到最低报价，尚未出现负工时费": "Lowest price reached without negative hourly profit",
+  "档位过多，计算已暂停，尚未找到负工时费": "Too many price ticks. Calculation paused before finding negative hourly profit.",
+  "市场缓存读取失败，已保留本次内存数据": "Could not read market cache. Current in-memory data retained.",
+  "市场缓存保存失败，本次数据仅在当前页面有效，请检查浏览器存储空间或权限": "Could not save market cache. Data is available only on this page; check browser storage space or permissions.",
+  "请求超时": "Request timed out",
+  "市场快照保存失败，本次快照仅在当前页面有效": "Could not save market snapshot. It is available only on this page.",
+  "IndexedDB 不可用": "IndexedDB unavailable",
+  "市场缓存打开超时": "Opening market cache timed out",
+  "市场缓存被其他页面阻塞": "Market cache blocked by another page",
+  "市场缓存读取失败": "Could not read market cache",
+  "市场缓存保存失败": "Could not save market cache",
+  "[柆雨强化助手] 挂单记录保存失败，将重试；原有记录保留。": "[LaYu Enhancement Assistant] Could not save listings; will retry. Existing records retained.",
+  "掉落与经验记录保存失败，待保存数据暂留当前页面；请检查浏览器存储空间并点击重试，成功前不要关闭或刷新页面。": "Could not save loot and XP records. Pending data is kept on this page; check browser storage space and click Retry save. Do not close or refresh until saving succeeds.",
+  "部分界面偏好无效，已使用默认显示；原存储暂未修改。": "Some view preferences are invalid. Using default display; stored data unchanged for now.",
+  "界面偏好读取失败，暂用默认显示；请检查浏览器存储权限。": "Could not read view preferences. Using defaults; check browser storage permissions.",
+  "无效的界面偏好": "Invalid view preference",
+  "界面选择仅在本次页面有效，保存失败；请检查浏览器存储空间或权限。": "Could not save view preferences. Changes apply only to this page; check browser storage space or permissions.",
+  "无效的展开区域": "Invalid expandable section",
+  "强化上衣": "Enhancer's Top",
+  "强化下装": "Enhancer's Bottoms",
+  "附魔手套": "Enchanted Gloves",
+  "界面语言": "Interface language",
+  "应用语言": "Apply language",
+  "切换语言会重建插件界面，请先保存其他设置和未提交的输入。": "Changing language rebuilds the plugin interface. Save other settings and unfinished inputs first.",
+  "语言设置已保存。": "Language preference saved.",
+  "工匠茶": "Artisan Tea",
+  "祝福茶": "Blessed Tea",
+  "暴饮之囊": "Guzzling Pouch",
+  "机缘披风": "Chance Cape",
+  "生产数量无效，请核对当前计划后重试。": "Invalid production quantity. Check the current plan and retry.",
+  "未找到该物品的制作配方，无法打开制作页面。": "Recipe not found. Cannot open production for this item.",
+  "该路线需分步准备，请按路线明细手动设置。": "This route requires separate steps. Set them manually using the route details.",
+  "目标等级为 +0，无需强化。": "Target is +0. No enhancement needed.",
+  "背包中没有低于目标等级的该物品，请先准备可强化的物品。": "No matching inventory item is below the target level. Prepare an eligible item first.",
+  "制作所需参数尚未完整，已打开白板市场，请先核对配方与用茶设置。": "Production parameters are incomplete. Opened the +0 market; check the recipe and drink settings.",
+  "库存中已有达到目标等级的物品，无需继续强化。": "Inventory already contains an item at the target level. No more enhancement needed.",
+  "已填目标等级；所选方案的保护物不足，请补齐后选择保护物。": "Target level filled. Protection is insufficient; obtain it and select it manually.",
+  "已填目标等级；保护方案暂不可用，请手动确认保护设置。": "Target level filled. Protection plan unavailable; review protection settings manually."
+});
+})(globalThis);
+
+
+// ---- src/v3/i18n.js ----
+(function initLanguage(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const storageKey = "mwi-layu:language:v1";
+  const normalize = value => /^en(?:[-_]|$)/i.test(String(value || "")) ? "en" : /^zh(?:[-_]|$)/i.test(String(value || "")) ? "zh" : null;
+  let preference = "auto", gameLanguage = null;
+  try { const raw = root.localStorage?.getItem(storageKey); const saved = raw?.startsWith('"') ? JSON.parse(raw) : raw; if (["auto", "zh", "en"].includes(saved)) preference = saved; } catch (_) { /* Continue with the game language when storage is unavailable. */ }
+  const listeners = new Set();
+  function detectedLanguage() {
+    // Read language metadata only. No account or credential storage is inspected.
+    const explicit = normalize(root.i18next?.resolvedLanguage || root.i18next?.language || root.i18n?.language);
+    if (explicit) return explicit;
+    try { const saved = normalize(root.localStorage?.getItem("i18nextLng")); if (saved) return saved; } catch (_) { /* Optional metadata. */ }
+    const labels = [...(root.document?.querySelectorAll('[role="tab"]') || [])].map(el => el.textContent.trim());
+    if (labels.includes("Inventory") && labels.includes("Skills")) return "en";
+    if (labels.includes("库存") && labels.includes("技能")) return "zh";
+    return normalize(root.document?.documentElement?.lang);
+  }
+  let active = preference === "auto" ? detectedLanguage() || "zh" : preference;
+  function resolve() {
+    const next = preference === "auto" ? gameLanguage || detectedLanguage() || "zh" : preference;
+    if (next !== active) { active = next; for (const listener of listeners) listener(); }
+  }
+  function setPreference(value) {
+    if (!["auto", "zh", "en"].includes(value)) throw new RangeError("Invalid language");
+    root.localStorage.setItem(storageKey, JSON.stringify(value)); // Do not apply an unsaved preference on failure.
+    preference = value; resolve();
+  }
+  function t(text, ...values) {
+    if (text == null) return text;
+    const key = typeof text === "string" ? text : text.map((part, i) => part + (i < values.length ? `{${i}}` : "")).join("");
+    const translated = active === "en" ? app.englishMessages?.[key] ?? key : key;
+    // Replace placeholders once: user text is never recursively translated or interpreted as markup.
+    return values.length ? translated.replace(/\{(\d+)\}/g, (match, index) => Number(index) < values.length ? String(values[index]) : match) : translated;
+  }
+  function itemFallback(hrid) {
+    return String(hrid || "").replace(/^\/items\//, "").split("_").map(word => word ? word[0].toUpperCase() + word.slice(1) : "").join(" ");
+  }
+  app.i18n = Object.freeze({ t, storageKey, normalize, itemFallback,
+    get language() { return active; }, get locale() { return active === "en" ? "en-US" : "zh-CN"; },
+    get preference() { return preference; }, setPreference,
+    setGameLanguage(value) { gameLanguage = normalize(value); resolve(); },
+    subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+    async refresh() {
+      const response = await app.marketBridge?.request({ action: "language" });
+      gameLanguage = normalize(response?.language) || detectedLanguage(); resolve();
+    }
   });
 })(globalThis);
 
@@ -310,7 +1284,7 @@ SOFTWARE.
       return names;
     }
 
-    function itemNameMapsFromI18n(root) {
+    function itemNameMapsFromI18n(root, language = "zh") {
       if (!root || typeof root !== "object") return [];
       const resourceRoots = [
         root.resources,
@@ -323,7 +1297,7 @@ SOFTWARE.
       ].filter((value) => value && typeof value === "object");
       const maps = [];
       for (const resources of resourceRoots) {
-        for (const localeKey of ["zh", "zh-CN", "zh_CN", "zh-Hans", "zh-Hans-CN"]) {
+        for (const localeKey of (language === "en" ? ["en", "en-US", "en_US", "en-GB"] : ["zh", "zh-CN", "zh_CN", "zh-Hans", "zh-Hans-CN"])) {
           const locale = resources[localeKey];
           if (!locale || typeof locale !== "object") continue;
           const translation = locale.translation && typeof locale.translation === "object" ? locale.translation : locale;
@@ -348,12 +1322,12 @@ SOFTWARE.
       ].filter((value) => value && typeof value === "object");
     }
 
-    function extractOfficialItemNameCatalog(roots) {
+    function extractOfficialItemNameCatalog(roots, language = "zh") {
       const candidates = Array.isArray(roots) ? roots : [roots];
       const names = Object.create(null);
       for (const root of candidates) {
         for (const candidate of i18nVariants(root)) {
-          for (const itemNames of itemNameMapsFromI18n(candidate)) {
+          for (const itemNames of itemNameMapsFromI18n(candidate, language)) {
             Object.assign(names, catalogFromItemNames(itemNames));
           }
         }
@@ -407,6 +1381,7 @@ SOFTWARE.
               .replaceAll("_", "-");
             if (locale === "zh" || locale === "zh-cn" || locale === "zh-hans" || locale.startsWith("zh-hans-"))
               moduleMap.set("zh-CN", String(match[2]));
+            if (locale === "en" || locale === "en-us") moduleMap.set("en", String(match[2]));
           }
         }
       }
@@ -455,10 +1430,11 @@ SOFTWARE.
       );
     }
 
-    function extractWebpackItemNameCatalog(pageWindow) {
+    function extractWebpackItemNameCatalog(pageWindow, language = "zh") {
       const entries = webpackChunkEntries(pageWindow);
       if (!entries.length) return { names: Object.create(null), entryCount: 0, valid: false, source: "webpack-locale" };
-      const expectedModuleId = webpackLocaleModuleMap(entries).get("zh-CN");
+      const expectedModuleId = webpackLocaleModuleMap(entries).get(language === "en" ? "en" : "zh-CN");
+      if (language === "en" && !expectedModuleId) return { names: Object.create(null), entryCount: 0, valid: false, source: "webpack-locale" };
       const preferred = [];
       const fallback = [];
       let scanned = 0;
@@ -543,6 +1519,7 @@ SOFTWARE.
     window.__mwiEnhancementMarketBridgeV1 = true;
     const catalog = catalogFactory();
     let webpackNames = {};
+    let webpackLanguage = "";
     let lastWebpackRead = 0;
     let purchaseTimer = null;
     function cancelPurchasePrefill() {
@@ -622,38 +1599,39 @@ SOFTWARE.
       }
       return null;
     }
-    function namesFor(hrids) {
+    function namesFor(hrids, language = "zh") {
       const names = {};
       const merge = (values) => {
         for (const hrid of hrids) {
           const value = values?.[hrid];
-          if (typeof value === "string" && /[\u3400-\u9fff]/.test(value)) names[hrid] = value.slice(0, 160);
+          if (typeof value === "string" && (language === "en" ? value.trim() && !/[\u3400-\u9fff]/.test(value) : /[\u3400-\u9fff]/.test(value))) names[hrid] = value.slice(0, 160);
         }
       };
-      merge(catalog.extractOfficialItemNameCatalog([window.i18next, window.i18n, window.mwi?.lang]).names);
+      merge(catalog.extractOfficialItemNameCatalog([window.i18next, window.i18n, window.mwi?.lang], language).names);
       find((fiber) => {
         const props = [fiber.memoizedProps, fiber.pendingProps, fiber.memoizedState,
           fiber.stateNode?.state, fiber.stateNode?.props, fiber.stateNode];
-        merge(catalog.extractOfficialItemNameCatalog(props).names);
+        merge(catalog.extractOfficialItemNameCatalog(props, language).names);
         for (const propsValue of props) {
           const i18n = propsValue?.i18n;
           if (!i18n) continue;
-          for (const locale of ["zh", "zh-CN", "zh_CN", "zh-Hans"]) {
+          for (const locale of (language === "en" ? ["en", "en-US", "en_US", "en-GB"] : ["zh", "zh-CN", "zh_CN", "zh-Hans"])) {
             const resources = i18n.getResourceBundle?.(locale, "translation") ||
               i18n.services?.resourceStore?.data?.[locale]?.translation ||
               i18n.store?.data?.[locale]?.translation || i18n.options?.resources?.[locale]?.translation;
             for (const hrid of hrids) {
               const value = resources?.itemNames?.[hrid];
-              if (typeof value === "string" && /[\u3400-\u9fff]/.test(value)) names[hrid] = value.slice(0, 160);
+              if (typeof value === "string" && (language === "en" ? value.trim() && !/[\u3400-\u9fff]/.test(value) : /[\u3400-\u9fff]/.test(value))) names[hrid] = value.slice(0, 160);
             }
           }
         }
         return Object.keys(names).length === hrids.length ? names : null;
       });
       if (Object.keys(names).length < hrids.length) {
-        if (!lastWebpackRead || Date.now() - lastWebpackRead > 60000) {
+        if (webpackLanguage !== language || !lastWebpackRead || Date.now() - lastWebpackRead > 60000) {
           lastWebpackRead = Date.now();
-          webpackNames = catalog.extractWebpackItemNameCatalog(window).names;
+          webpackLanguage = language;
+          webpackNames = catalog.extractWebpackItemNameCatalog(window, language).names;
         }
         merge(webpackNames);
       }
@@ -666,6 +1644,7 @@ SOFTWARE.
       let accepted = false;
       let error = "invalid_request";
       let names = {};
+      let language = null;
       let destination = "";
       let notice = "";
       let preparationInfo = null;
@@ -674,6 +1653,19 @@ SOFTWARE.
       let listingCharacterId = null;
       try {
         if (request.action === "ping") {
+          accepted = true;
+        } else if (request.action === "language") {
+          const read = candidate => {
+            const lang = candidate?.resolvedLanguage || candidate?.language;
+            return typeof lang === "string" && /^(en|zh)(?:[-_]|$)/i.test(lang) ? lang.slice(0, 16) : null;
+          };
+          language = read(window.i18next) || read(window.i18n) || find(fiber => {
+            for (const value of [fiber.memoizedProps, fiber.pendingProps, fiber.memoizedState, fiber.stateNode?.props]) {
+              const result = read(value?.i18n) || read(value?.value?.i18n) || read(value?.value) || read(value?.memoizedState?.i18n);
+              if (result) return result;
+            }
+            return null;
+          });
           accepted = true;
         } else if (request.action === "my-listings") {
           listingCharacterId = find((fiber) => fiber.stateNode?.state?.character?.id || null, false);
@@ -684,7 +1676,7 @@ SOFTWARE.
             return null;
           }, false);
           if (records) {
-            const fields = ["id", "itemHrid", "enhancementLevel", "isSell", "price", "workingPrice", "orderQuantity", "filledQuantity", "status", "isInstantOrder", "unclaimedItemCount", "unclaimedCoinCount", "createdAt", "updatedAt", "expireAt", "expiresAt"];
+            const fields = ["id", "itemHrid", "enhancementLevel", "isSell", "price", "workingPrice", "orderQuantity", "filledQuantity", "status", "isInstantOrder", "unclaimedItemCount", "unclaimedCoinCount", "createdTimestamp", "createdAt", "updatedAt", "expireAt", "expiresAt"];
             listings = [...records.values()].map((item) => Object.fromEntries(fields.filter((key) =>
               item[key] === null || typeof item[key] === "boolean" || typeof item[key] === "string" ||
               (typeof item[key] === "number" && Number.isFinite(item[key]))).map((key) => [key, item[key]])));
@@ -775,7 +1767,7 @@ SOFTWARE.
           accepted = true;
         } else if (request.action === "names" && Array.isArray(request.hrids) && request.hrids.length <= 1000) {
           const hrids = [...new Set(request.hrids.filter(validHrid))];
-          names = hrids.length ? namesFor(hrids) : {};
+          names = hrids.length ? namesFor(hrids, request.language === "en" ? "en" : "zh") : {};
           accepted = true;
         } else if (request.action === "open-summary" && validHrid(request.itemHrid)) {
           const controller = find(fiber => typeof fiber.stateNode?.handleGoToMarketplace === "function" ? fiber.stateNode : null, false);
@@ -809,7 +1801,7 @@ SOFTWARE.
         }
       } catch (_error) { accepted = false; error = "page_error"; }
       window.document.dispatchEvent(new CustomEvent(options.responseEvent, {
-        detail: JSON.stringify({ requestId: request.requestId, accepted, names, enhancementState, listings, listingCharacterId, destination, notice, preparationInfo, error: accepted ? "" : error })
+        detail: JSON.stringify({ requestId: request.requestId, accepted, names, language, enhancementState, listings, listingCharacterId, destination, notice, preparationInfo, error: accepted ? "" : error })
       }));
     });
   }
@@ -844,7 +1836,7 @@ SOFTWARE.
     openPurchase: async (item, quantity, reservedCoins = 0) => (await request({ action: "open", itemHrid: item.itemHrid,
       enhancementLevel: item.enhancementLevel || 0, purchaseQuantity: quantity, reservedCoins })).accepted === true,
     prepareItem: (item, plan, destination) => request({ ...plan, action: "prepare-item", itemHrid: item.itemHrid, enhancementLevel: item.enhancementLevel, destination }, 5000),
-    itemNames: async (hrids) => (await request({ action: "names", hrids })).names || {},
+    itemNames: async (hrids, language = app.i18n?.language || "zh") => (await request({ action: "names", hrids, language })).names || {},
     lastError: () => lastError
   });
 })(globalThis);
@@ -855,23 +1847,52 @@ SOFTWARE.
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
 
+  // Whitelist the official LootLog record only; never forward the surrounding character payload.
+  function normalizeLootRecord(value) {
+    if (!value || !/^\/actions\/[a-z0-9_/]+$/.test(value.actionHrid || "") ||
+        typeof value.startTime !== "string" || !Number.isFinite(Date.parse(value.startTime))) return null;
+    const row = { actionHrid: value.actionHrid, startTime: new Date(value.startTime).toISOString() };
+    for (const key of ["endTime", "primaryItemHash", "secondaryItemHash", "partyId"]) {
+      if (value[key] === null || typeof value[key] === "string" && value[key].length <= 300 ||
+          key === "partyId" && Number.isSafeInteger(value[key])) row[key] = value[key];
+    }
+    for (const key of ["actionCount", "totalActiveMillis", "difficultyTier"]) {
+      if (typeof value[key] === "number" && Number.isFinite(value[key]) && value[key] >= 0) row[key] = value[key];
+    }
+    for (const key of ["drops", "xpGains"]) {
+      const source = value[key];
+      if (source && typeof source === "object" && !Array.isArray(source)) {
+        row[key] = Object.fromEntries(Object.entries(source).filter(([hrid, count]) =>
+          (key === "drops" ? /^\/items\/[a-z0-9_]+(?:::\d+)?$/.test(hrid) : /^\/skills\/[a-z0-9_]+$/.test(hrid)) &&
+          typeof count === "number" && Number.isFinite(count) && count >= 0));
+      }
+    }
+    return row;
+  }
+
   // Serialized into MAIN at document-start by both the production script and loader.
   // Observe incoming order books and own listings; never replace send or request data.
-  function pageBridgeInstaller(options) {
+  function pageBridgeInstaller(options, normalizeLoot) {
     if (window[options.marker]) return;
     const NativeWebSocket = window.WebSocket;
     if (typeof NativeWebSocket !== "function") return;
     window[options.marker] = true;
     const latest = new Map();
     const pendingListings = new Map();
+    const pendingLoot = new Map();
+    let currentOwner = null;
     const session = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
     let sequence = 0;
     const listingFields = ["id", "itemHrid", "enhancementLevel", "isSell", "price", "workingPrice", "orderQuantity",
-      "filledQuantity", "status", "unclaimedItemCount", "unclaimedCoinCount", "createdAt", "updatedAt",
+      "filledQuantity", "status", "unclaimedItemCount", "unclaimedCoinCount", "createdTimestamp", "createdAt", "updatedAt",
       "expireAt", "expiresAt", "isInstantOrder"];
     document.addEventListener(options.listingAckEvent, (event) => {
       if (typeof event.detail === "string") pendingListings.delete(event.detail);
     });
+    document.addEventListener(options.lootAckEvent, event => pendingLoot.delete(event.detail));
+    function publishLoot(envelope) {
+      document.dispatchEvent(new CustomEvent(options.lootEvent, { detail: JSON.stringify(envelope) }));
+    }
     function publishListing(envelope) {
       document.dispatchEvent(new CustomEvent(options.listingEvent, { detail: JSON.stringify(envelope) }));
     }
@@ -879,6 +1900,8 @@ SOFTWARE.
       document.dispatchEvent(new CustomEvent(options.eventName, { detail: JSON.stringify(envelope) }));
     }
     document.addEventListener(options.readyEvent, () => {
+      if (currentOwner) publishLoot(currentOwner);
+      for (const envelope of pendingLoot.values()) publishLoot(envelope);
       for (const envelope of latest.values()) publish(envelope);
       for (const envelope of pendingListings.values()) publishListing(envelope);
     });
@@ -886,8 +1909,20 @@ SOFTWARE.
       if (typeof event.data !== "string") return;
       let message;
       try { message = JSON.parse(event.data); } catch (_) { return; }
+
       if (message?.type === "init_character_data") {
         owner.characterId = Number.isSafeInteger(message.character?.id) && message.character.id > 0 ? message.character.id : null;
+        currentOwner = { server: owner.server, characterId: owner.characterId, type: "owner" };
+        publishLoot(currentOwner);
+      }
+      if (owner.characterId && message?.type === "loot_log_updated" && Array.isArray(message.lootLog) && normalizeLoot) {
+        const records = message.lootLog.map(normalizeLoot).filter(Boolean);
+        if (records.length) {
+          const envelope = { eventId: `${session}:${++sequence}`, server: owner.server, characterId: owner.characterId,
+            observedAt: new Date().toISOString(), records };
+          pendingLoot.set(envelope.eventId, envelope);
+          publishLoot(envelope);
+        }
       }
       const rows = message?.type === "init_character_data" ? message.myMarketListings
         : message?.type === "market_listings_updated" ? message.endMarketListings : null;
@@ -957,8 +1992,9 @@ SOFTWARE.
   function observerSource() {
     return `;(${pageBridgeInstaller.toString()})(${JSON.stringify({
       marker: app.config.bridgeMarker, eventName: app.config.bridgeEvent, readyEvent: app.config.bridgeReadyEvent,
-      listingEvent: app.config.listingEvent, listingAckEvent: app.config.listingAckEvent
-    })});`;
+      listingEvent: app.config.listingEvent, listingAckEvent: app.config.listingAckEvent,
+      lootEvent: app.config.lootEvent, lootAckEvent: app.config.lootAckEvent
+    })},${normalizeLootRecord.toString()});`;
   }
   function source() { return app.marketBridge.source() + observerSource(); }
   function inject() {
@@ -973,7 +2009,7 @@ SOFTWARE.
     }
     return true;
   }
-  app.bridge = Object.freeze({ pageBridgeInstaller, observerSource, source, inject,
+  app.bridge = Object.freeze({ normalizeLootRecord, pageBridgeInstaller, observerSource, source, inject,
     replay: () => root.document.dispatchEvent(new root.CustomEvent(app.config.bridgeReadyEvent)),
     openMarketplace: (itemHrid, level = 0) => app.marketBridge.openMarketplace(itemHrid, level)
   });
@@ -984,6 +2020,7 @@ SOFTWARE.
 (function initViewPreferences(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:view-preferences:v1";
   const errorEvent = "mwi-layu:view-preferences-error";
   const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -1034,9 +2071,9 @@ SOFTWARE.
       const raw = backend().getItem(storageKey);
       if (raw !== null) {
         const value = JSON.parse(raw); state = normalize(value);
-        if (!valid(value)) report("部分界面偏好无效，已使用默认显示；原存储暂未修改。");
+        if (!valid(value)) report(t("部分界面偏好无效，已使用默认显示；原存储暂未修改。"));
       }
-    } catch (_) { report("界面偏好读取失败，暂用默认显示；请检查浏览器存储权限。"); }
+    } catch (_) { report(t("界面偏好读取失败，暂用默认显示；请检查浏览器存储权限。")); }
     function refreshSaved() {
       // Merge unrelated preferences from other tabs, except while local writes are failing.
       if (!unsaved) try {
@@ -1045,7 +2082,7 @@ SOFTWARE.
       } catch (_) { /* Retain the last usable in-memory state. */ }
     }
     function update(patch) {
-      if (!valid(patch)) throw new TypeError("无效的界面偏好");
+      if (!valid(patch)) throw new TypeError(t("无效的界面偏好"));
       refreshSaved();
       const next = { ...state, ...clone(patch) };
       if (!unsaved && JSON.stringify(next) === JSON.stringify(state)) return true;
@@ -1055,12 +2092,12 @@ SOFTWARE.
         if (error) report("");
         return true;
       } catch (_) {
-        unsaved = true; report("界面选择仅在本次页面有效，保存失败；请检查浏览器存储空间或权限。");
+        unsaved = true; report(t("界面选择仅在本次页面有效，保存失败；请检查浏览器存储空间或权限。"));
         return false;
       }
     }
     function setDisclosure(key, open) {
-      if (!disclosureKey(key)) throw new TypeError("无效的展开区域");
+      if (!disclosureKey(key)) throw new TypeError(t("无效的展开区域"));
       refreshSaved();
       const entries = Object.entries(state.disclosures).filter(([name]) => name !== key).slice(-1999);
       return update({ disclosures: Object.fromEntries([...entries, [key, Boolean(open)]]) });
@@ -1098,6 +2135,7 @@ SOFTWARE.
     "暴饮之囊": "/items/guzzling_pouch", "机缘披风": "/items/chance_cape",
     "星空强化器": "/items/celestial_enhancer", "神圣强化器": "/items/holy_enhancer",
     "强化茶": "/items/enhancing_tea", "普通强化茶": "/items/enhancing_tea",
+    "强化上衣": "/items/enhancers_top", "强化下装": "/items/enhancers_bottoms", "附魔手套": "/items/enchanted_gloves",
     "超级强化茶": "/items/super_enhancing_tea", "究极强化茶": "/items/ultra_enhancing_tea"
   };
   function icon(itemHrid, spriteBase) {
@@ -1131,6 +2169,7 @@ SOFTWARE.
   // Decorate actual item mentions in explanatory copy; leave editable fields and native SVGs alone.
   function decorate(container, spriteBase, names = {}) {
     const catalog = new Map(Object.entries(references));
+    if (app.i18n?.language === "en") for (const [name, hrid] of Object.entries(references)) catalog.set(app.i18n.t(name), hrid);
     for (const [hrid, name] of Object.entries(names)) if (/^\/items\/[a-z0-9_]+$/.test(hrid) && name) catalog.set(name, hrid);
     for (const el of container.querySelectorAll(".mwi-layu-item-label")) {
       const current = el.querySelector(".mwi-layu-item-icon");
@@ -1708,6 +2747,7 @@ SOFTWARE.
 (function initMarketPartitions(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:partitions:v1";
   const projectColumns = Object.freeze(Object.entries({ name: 180, market: 100, profit: 80, wage: 90,
     margin: 80, own: 130, reference: 100, prepare: 110 }).map(([key, width]) => Object.freeze({
@@ -1717,7 +2757,7 @@ SOFTWARE.
   const columnWidths = state => Object.fromEntries(projectColumns.map(column => [column.key,
     validColumnWidth(column, state.projectColumnWidths?.[column.key]) ? state.projectColumnWidths[column.key] : column.width]));
   const editableDefaultClothes = app.config?.editableDefaultClothes === true;
-  const builtins = [...(editableDefaultClothes ? [] : [{ id: "clothes", name: "生活衣裤" }]), { id: "materials", name: "原材料" }, { id: "unassigned", name: "未分区" }];
+  const builtins = [...(editableDefaultClothes ? [] : [{ id: "clothes", get name() { return t("生活衣裤"); } }]), { id: "materials", get name() { return t("原材料"); } }, { id: "unassigned", get name() { return t("未分区"); } }];
   const isClothing = (hrid) => /^\/items\/(dairyhands|foragers|lumberjacks|cheesemakers|crafters|tailors|chefs|brewers|alchemists|enhancers)_(top|bottoms)(?:_refined)?$/.test(hrid);
   const validItem = (hrid) => /^\/items\/[a-z0-9_]+$/.test(hrid);
   function create(storage = root.localStorage) {
@@ -1725,13 +2765,13 @@ SOFTWARE.
     function read() {
       const raw = storage.getItem(storageKey);
       const value = raw ? JSON.parse(raw) : { groups: [], assignments: {}, quantities: {}, collapsed: {}, selected: "clothes" };
-      if (!Array.isArray(value?.groups) || !value.assignments || !value.quantities || !value.collapsed) throw new Error("分区数据格式异常，原数据已保留");
+      if (!Array.isArray(value?.groups) || !value.assignments || !value.quantities || !value.collapsed) throw new Error(t("分区数据格式异常，原数据已保留"));
       if (editableDefaultClothes && value.clothesInitialized !== true) {
         // Preserve the legacy ID, explicit memberships and selected groups.
         // Convert only existing favorites' implicit clothing memberships into saved assignments.
         const favoriteKey = storageKey.replace(":partitions:", ":market-favorites:");
         const favorites = JSON.parse(storage.getItem(favoriteKey) || "[]");
-        if (!Array.isArray(favorites)) throw new Error("收藏数据异常，无法迁移默认分区，原数据已保留");
+        if (!Array.isArray(favorites)) throw new Error(t("收藏数据异常，无法迁移默认分区，原数据已保留"));
         if (!value.groups.some(group => group.id === "clothes")) {
           let name = "生活衣裤", suffix = 1;
           while (value.groups.some(group => group.name === name)) name = `生活衣裤（${suffix++}）`;
@@ -1748,14 +2788,16 @@ SOFTWARE.
       storage.setItem(storageKey, JSON.stringify(value));
     }
     function groups() {
-      const saved = read().groups;
+      // Translate only the untouched built-in title, never arbitrary user group names.
+      const saved = read().groups.map(group => group.id === "clothes" && ["生活衣裤", "Skilling clothing"].includes(group.name)
+        ? { ...group, name: t("生活衣裤") } : group);
       return editableDefaultClothes ? [...saved.filter(group => group.id === "clothes"), ...builtins, ...saved.filter(group => group.id !== "clothes")] : [...builtins, ...saved];
     }
     function groupsOf(hrid) {
       const state = read(); const assigned = state.assignments[hrid];
       if (assigned != null) {
         const ids = typeof assigned === "string" ? [assigned] : assigned;
-        if (!Array.isArray(ids) || ids.some(id => typeof id !== "string")) throw new Error("物品分区数据异常，原数据已保留");
+        if (!Array.isArray(ids) || ids.some(id => typeof id !== "string")) throw new Error(t("物品分区数据异常，原数据已保留"));
         const available = [...builtins, ...state.groups].map(group => group.id);
         const valid = [...new Set(ids)].filter(id => available.includes(id));
         return valid.length ? valid : ["unassigned"];
@@ -1765,42 +2807,42 @@ SOFTWARE.
     function groupOf(hrid) { return groupsOf(hrid)[0]; }
     function selectedGroups() {
       const state = read(); const ids = groups().map(group => group.id);
-      if (state.selectedGroups != null && (!Array.isArray(state.selectedGroups) || state.selectedGroups.some(id => typeof id !== "string"))) throw new Error("分区选择数据异常，原数据已保留");
+      if (state.selectedGroups != null && (!Array.isArray(state.selectedGroups) || state.selectedGroups.some(id => typeof id !== "string"))) throw new Error(t("分区选择数据异常，原数据已保留"));
       return [...new Set(state.selectedGroups ?? (state.selected === "all" ? ids : [state.selected || "clothes"]))].filter(id => ids.includes(id));
     }
     function name(value) {
       const text = String(value).trim();
-      if (!text || text.length > 40) throw new Error("分区名称须为 1 至 40 个字");
+      if (!text || text.length > 40) throw new Error(t("分区名称须为 1 至 40 个字"));
       return text;
     }
     return Object.freeze({ read, groups, groupOf, groupsOf, selectedGroups,
       columnWidths() { return columnWidths(read()); },
       setColumnWidth(key, value) {
         const column = projectColumns.find(column => column.key === key);
-        if (!validColumnWidth(column, value)) throw new RangeError("无效的列或列宽");
+        if (!validColumnWidth(column, value)) throw new RangeError(t("无效的列或列宽"));
         mutate(state => {
           state.projectColumnWidths = { ...columnWidths(state), [key]: value };
           delete state.projectWidth;
         });
       },
       setSelectedGroups(ids) {
-        if (!Array.isArray(ids) || ids.some(id => !groups().some(group => group.id === id))) throw new Error("无效分区选择");
+        if (!Array.isArray(ids) || ids.some(id => !groups().some(group => group.id === id))) throw new Error(t("无效分区选择"));
         mutate(state => { state.selectedGroups = [...new Set(ids)]; });
       },
       setMaterialHrids(hrids) { materialHrids = new Set(hrids.filter(validItem)); },
       setGroups(hrid, ids) {
-        if (!validItem(hrid) || !Array.isArray(ids) || ids.some(id => !groups().some(group => group.id === id))) throw new Error("无效物品或分区");
+        if (!validItem(hrid) || !Array.isArray(ids) || ids.some(id => !groups().some(group => group.id === id))) throw new Error(t("无效物品或分区"));
         mutate(state => { state.assignments[hrid] = [...new Set(ids.length ? ids : ["unassigned"])]; });
       },
       quantity(hrid) { const n = read().quantities[hrid]; return Number.isSafeInteger(n) && n >= 1 && n <= 1000000 ? n : 1; },
       setQuantity(hrid, value) {
-        if (!validItem(hrid) || !Number.isSafeInteger(value) || value < 1 || value > 1000000) throw new Error("计划数量须为 1 至 1,000,000 的整数");
+        if (!validItem(hrid) || !Number.isSafeInteger(value) || value < 1 || value > 1000000) throw new Error(t("计划数量须为 1 至 1,000,000 的整数"));
         mutate((state) => { state.quantities[hrid] = value; });
       },
       add(value) {
         const label = name(value); const id = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         mutate((state) => {
-          if ([...builtins, ...state.groups].some((g) => g.name === label)) throw new Error("已有同名分区");
+          if ([...builtins, ...state.groups].some((g) => g.name === label)) throw new Error(t("已有同名分区"));
           state.groups.push({ id, name: label });
         }); return id;
       },
@@ -1808,15 +2850,15 @@ SOFTWARE.
         const label = name(value);
         mutate((state) => {
           const group = state.groups.find((g) => g.id === id);
-          if (!group) throw new Error("默认分区不可重命名");
-          if ([...builtins, ...state.groups].some((g) => g.id !== id && g.name === label)) throw new Error("已有同名分区");
+          if (!group) throw new Error(t("默认分区不可重命名"));
+          if ([...builtins, ...state.groups].some((g) => g.id !== id && g.name === label)) throw new Error(t("已有同名分区"));
           group.name = label;
         });
       },
       merge(id, targetId) {
         mutate(state => {
           if (id === targetId || !state.groups.some(group => group.id === id) ||
-              ![...builtins, ...state.groups].some(group => group.id === targetId)) throw new Error("合并分区已变化，请重新选择");
+              ![...builtins, ...state.groups].some(group => group.id === targetId)) throw new Error(t("合并分区已变化，请重新选择"));
           for (const hrid of Object.keys(state.assignments)) {
             const assigned = state.assignments[hrid];
             const ids = Array.isArray(assigned) ? assigned : [assigned];
@@ -1829,7 +2871,7 @@ SOFTWARE.
       },
       remove(id) {
         mutate((state) => {
-          if (!state.groups.some((g) => g.id === id)) throw new Error("默认分区不可删除");
+          if (!state.groups.some((g) => g.id === id)) throw new Error(t("默认分区不可删除"));
           state.groups = state.groups.filter((g) => g.id !== id);
           for (const hrid of Object.keys(state.assignments)) {
             const assigned = state.assignments[hrid];
@@ -1844,7 +2886,7 @@ SOFTWARE.
         });
       },
       move(hrid, id) {
-        if (!validItem(hrid) || !groups().some((g) => g.id === id)) throw new Error("无效物品或分区");
+        if (!validItem(hrid) || !groups().some((g) => g.id === id)) throw new Error(t("无效物品或分区"));
         mutate((state) => { state.assignments[hrid] = id; });
       },
       select(id) { if (id === "all" || groups().some((g) => g.id === id)) mutate((state) => { state.selected = id; state.selectedGroups = id === "all" ? groups().map(group => group.id) : [id]; }); },
@@ -1890,9 +2932,9 @@ SOFTWARE.
       const best = row.isSell ? quote?.price : quote?.bid;
       const valid = Number.isFinite(price) && price > 0 && Number.isFinite(best) && best > 0;
       const standing = !valid ? "unknown" : price === best ? "leading" : (row.isSell ? price > best : price < best) ? "behind" : "ahead";
-      const side = row.isSell ? "左一" : "右一";
-      return { ...row, price, best, standing, label: standing === "unknown" ? `${side}未知` : standing === "leading" ? `${side}同价` :
-        standing === "behind" ? "被压价" : "优于快照", stale: Boolean(quote?.stale || quote?.cached) };
+      const side = row.isSell ? t("左一") : t("右一");
+      return { ...row, price, best, standing, label: standing === "unknown" ? t`${side}未知` : standing === "leading" ? t`${side}同价` :
+        standing === "behind" ? t("被压价") : t("优于快照"), stale: Boolean(quote?.stale || quote?.cached) };
     });
   }
   const collator = new Intl.Collator("zh-CN", { numeric: true });
@@ -1910,14 +2952,15 @@ SOFTWARE.
 (function initV3PartitionPresets(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const definitions = Object.freeze([
-    { id: "clothes", name: "生活衣裤", description: "各生活技能衣裤 · 按装备等级建分区" },
-    { id: "tools", name: "生活工具", description: "各生活技能工具 · 包含全部材料系列" },
-    { id: "weapons", name: "武器", description: "主手与双手武器 · 包含普通与精制" },
-    { id: "armor", name: "战斗防具", description: "战斗衣甲、头手足装备与副手" },
-    { id: "accessories", name: "配饰", description: "首饰、背部、袋子及通用生活装备" },
-    { id: "charms", name: "护符", description: "各技能护符 · 按装备等级建分区" },
-    { id: "materials", name: "强化材料", groupId: "materials", description: "强化消耗与保护物 · 补充原材料分区" }
+    { id: "clothes", get name() { return t("生活衣裤"); }, get description() { return t("各生活技能衣裤 · 按装备等级建分区"); } },
+    { id: "tools", get name() { return t("生活工具"); }, get description() { return t("各生活技能工具 · 包含全部材料系列"); } },
+    { id: "weapons", get name() { return t("武器"); }, get description() { return t("主手与双手武器 · 包含普通与精制"); } },
+    { id: "armor", get name() { return t("战斗防具"); }, get description() { return t("战斗衣甲、头手足装备与副手"); } },
+    { id: "accessories", get name() { return t("配饰"); }, get description() { return t("首饰、背部、袋子及通用生活装备"); } },
+    { id: "charms", get name() { return t("护符"); }, get description() { return t("各技能护符 · 按装备等级建分区"); } },
+    { id: "materials", get name() { return t("强化材料"); }, groupId: "materials", get description() { return t("强化消耗与保护物 · 补充原材料分区"); } }
   ]);
   const validHrid = value => /^\/items\/[a-z0-9_]+$/.test(value);
   const equipmentTypes = new Set(["head", "body", "legs", "hands", "feet", "off_hand"]);
@@ -1948,7 +2991,7 @@ SOFTWARE.
   }
   function catalog(rules) {
     if (!rules?.itemDetailMap || !Object.keys(rules.itemDetailMap).length) return { ready: false, groups: [], unknown: [] };
-    if (cache.has(rules)) return cache.get(rules);
+    if (cache.has(rules) && cache.get(rules).language === app.i18n?.language) return cache.get(rules).value;
     const groups = definitions.map(group => ({ ...group, items: [] }));
     const byId = new Map(groups.map(group => [group.id, group]));
     const unknown = [], materialHrids = new Set(["/items/mirror_of_protection"]);
@@ -1991,36 +3034,36 @@ SOFTWARE.
         }
         group.tiers = [...buckets].sort(([a], [b]) => app.marketPartitions.compare(a, b)).map(([level, items]) => ({
           id: `${group.id}-level-${level ?? "unknown"}`, categoryId: group.id,
-          name: `${group.name} · ${level == null ? "等级未知" : `${level}级`}`, itemLevel: level, items
+          name: `${group.name} · ${level == null ? t("等级未知") : t`${level}级`}`, itemLevel: level, items
         }));
       }
       presets.push(...group.tiers);
     }
     const result = { ready: true, groups, presets, unknown };
-    cache.set(rules, result); return result;
+    cache.set(rules, { language: app.i18n?.language, value: result }); return result;
   }
   function create({ storage = root.localStorage, getCatalog }) {
     const partitions = app.marketPartitions.create(storage), favorites = app.marketFavoritesStore.createStore(storage);
     const partitionKey = app.marketPartitions.storageKey, favoriteKey = app.marketFavoritesStore.storageKey;
     function choose(ids, levels, itemsByPreset) {
       const source = getCatalog();
-      if (!source.ready) throw Error("等待游戏物品数据，请刷新游戏后重试。");
-      if (!Array.isArray(ids) || !ids.length || ids.some(id => !source.presets.some(group => group.id === id))) throw Error("请选择至少一个有效预设。");
-      if (!Array.isArray(levels) || levels.some(level => !Number.isInteger(level) || level < 0 || level > 20)) throw Error("强化等级须为 0 至 20 的整数。");
+      if (!source.ready) throw Error(t("等待游戏物品数据，请刷新游戏后重试。"));
+      if (!Array.isArray(ids) || !ids.length || ids.some(id => !source.presets.some(group => group.id === id))) throw Error(t("请选择至少一个有效预设。"));
+      if (!Array.isArray(levels) || levels.some(level => !Number.isInteger(level) || level < 0 || level > 20)) throw Error(t("强化等级须为 0 至 20 的整数。"));
       // Omitted selections retain the whole-preset API. Explicit selections never fall back to all items.
       if (itemsByPreset !== undefined && (!itemsByPreset || typeof itemsByPreset !== "object" || Array.isArray(itemsByPreset) ||
-        Object.keys(itemsByPreset).some(id => !ids.includes(id)))) throw Error("预设物品选择无效，请重新选择。");
+        Object.keys(itemsByPreset).some(id => !ids.includes(id)))) throw Error(t("预设物品选择无效，请重新选择。"));
       const chosen = source.presets.filter(group => ids.includes(group.id)).map(group => {
         if (itemsByPreset === undefined) return group;
         const hrids = Object.hasOwn(itemsByPreset, group.id) ? itemsByPreset[group.id] : null;
         if (!Array.isArray(hrids) || hrids.some(hrid => !group.items.some(item => item.itemHrid === hrid))) {
-          throw Error("预设物品已变化或不属于该分区，请重新选择。");
+          throw Error(t("预设物品已变化或不属于该分区，请重新选择。"));
         }
         const selected = new Set(hrids);
         return { ...group, items: group.items.filter(item => selected.has(item.itemHrid)) };
       }).filter(group => group.items.length);
-      if (!chosen.length) throw Error("请选择至少一件物品。");
-      if (!levels.length && chosen.some(group => group.items.some(item => item.enhanceable))) throw Error("请选择至少一个强化等级。");
+      if (!chosen.length) throw Error(t("请选择至少一件物品。"));
+      if (!levels.length && chosen.some(group => group.items.some(item => item.enhanceable))) throw Error(t("请选择至少一个强化等级。"));
       return chosen;
     }
     function plan(ids, levels, names = {}, itemsByPreset, targetGroup = "") {
@@ -2029,7 +3072,7 @@ SOFTWARE.
       const before = new Map([partitionKey, favoriteKey].map(key => [key, storage.getItem(key)]));
       const rows = favorites.list(), known = new Set(rows.map(app.marketFavoritesStore.key));
       const available = partitions.groups(), targets = [], incoming = new Map();
-      if (targetGroup && !available.some(group => group.id === targetGroup && group.id !== "unassigned")) throw new Error("目标分区不存在，请重新选择。");
+      if (targetGroup && !available.some(group => group.id === targetGroup && group.id !== "unassigned")) throw new Error(t("目标分区不存在，请重新选择。"));
       let newGroups = 0, memberships = 0;
       for (const group of chosen) {
         const presetId = `custom-preset-${group.id}`;
@@ -2037,7 +3080,7 @@ SOFTWARE.
         if (!target) {
           let name = group.name, suffix = 1;
           while (available.some(entry => entry.name === name)) {
-            name = `${group.name}（预设${suffix === 1 ? "" : suffix}）`; suffix += 1;
+            name = t`${group.name}（预设${suffix === 1 ? "" : suffix}）`; suffix += 1;
           }
           target = { id: presetId, name }; state.groups.push(target); available.push(target); newGroups += 1;
         }
@@ -2061,7 +3104,7 @@ SOFTWARE.
         }
       }
       const fresh = [...incoming].filter(([key]) => !known.has(key)).map(([, row]) => ({ ...row, presetAdded: true }));
-      if (rows.length + fresh.length > 10000 || state.groups.length > 200) throw Error("添加后将超过 10,000 条收藏或 200 个分区，请减少所选等级或分区。");
+      if (rows.length + fresh.length > 10000 || state.groups.length > 200) throw Error(t("添加后将超过 10,000 条收藏或 200 个分区，请减少所选等级或分区。"));
       const selected = partitions.selectedGroups();
       state.selectedGroups = [...new Set([...selected, ...targets.map(target => target.id)])];
       return { before, state, rows: [...rows, ...fresh], newGroups, added: fresh.length, reused: incoming.size - fresh.length,
@@ -2074,7 +3117,7 @@ SOFTWARE.
       const written = [];
       try {
         for (const [key, value] of writes) {
-          if (storage.getItem(key) !== result.before.get(key)) throw Error("设置已变化，请重试。");
+          if (storage.getItem(key) !== result.before.get(key)) throw Error(t("设置已变化，请重试。"));
           if (value !== result.before.get(key)) { storage.setItem(key, value); written.push(key); }
         }
       } catch (_) {
@@ -2083,8 +3126,8 @@ SOFTWARE.
           const previous = result.before.get(key);
           if (previous === null) storage.removeItem(key); else storage.setItem(key, previous);
         } catch (_) { failed = true; }
-        throw Error(failed ? "添加失败，部分写入未能回滚。请检查浏览器存储权限后重新打开管理分区。" :
-          "添加失败，已回滚本次写入。请检查浏览器存储空间或权限后重试。");
+        throw Error(failed ? t("添加失败，部分写入未能回滚。请检查浏览器存储权限后重新打开管理分区。") :
+          t("添加失败，已回滚本次写入。请检查浏览器存储空间或权限后重试。"));
       }
       return result;
     }
@@ -2109,6 +3152,7 @@ SOFTWARE.
 (function initMaterialCart(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:material-cart:v1";
   const key = (item) => `${item.itemHrid}:${item.enhancementLevel}`;
   function pendingPurchases(listings, item) {
@@ -2132,20 +3176,20 @@ SOFTWARE.
     return Number.isSafeInteger(characterId) && characterId > 0 ? `${root.location.hostname}:${characterId}` : null;
   }
   function validate(rows) {
-    if (!Array.isArray(rows)) throw new Error("备料车数据异常，原数据已保留");
+    if (!Array.isArray(rows)) throw new Error(t("备料车数据异常，原数据已保留"));
     const seen = new Set(); const totals = new Map();
     for (const row of rows) {
       if (!/^\/items\/[a-z0-9_]+$/.test(row?.itemHrid || "") || !Number.isInteger(row.enhancementLevel) || row.enhancementLevel < 0 || row.enhancementLevel > 20 ||
-          !Number.isSafeInteger(row.quantity) || row.quantity < 1 || row.quantity > 1000000 || typeof row.name !== "string" || seen.has(key(row))) throw new Error("备料车数据异常，原数据已保留");
+          !Number.isSafeInteger(row.quantity) || row.quantity < 1 || row.quantity > 1000000 || typeof row.name !== "string" || seen.has(key(row))) throw new Error(t("备料车数据异常，原数据已保留"));
       seen.add(key(row)); totals.set(row.itemHrid, (totals.get(row.itemHrid) || 0) + row.quantity);
-      if (totals.get(row.itemHrid) > 1000000) throw new Error("同物品各等级的总件数不能超过 1,000,000");
+      if (totals.get(row.itemHrid) > 1000000) throw new Error(t("同物品各等级的总件数不能超过 1,000,000"));
     }
     return rows;
   }
   function create(storage = root.localStorage) {
     function read(owner) { return owner ? validate(JSON.parse(storage.getItem(`${storageKey}:${owner}`) || "[]")) : []; }
     function save(owner, rows) {
-      if (!owner) throw new Error("角色尚未就绪，请重新读取角色");
+      if (!owner) throw new Error(t("角色尚未就绪，请重新读取角色"));
       storage.setItem(`${storageKey}:${owner}`, JSON.stringify(validate(rows)));
     }
     return Object.freeze({ read,
@@ -2157,7 +3201,7 @@ SOFTWARE.
       },
       setQuantity(owner, item, quantity) {
         const rows = read(owner); const row = rows.find(row => key(row) === key(item));
-        if (!row) throw new Error("项目已移出备料车，请重新加入");
+        if (!row) throw new Error(t("项目已移出备料车，请重新加入"));
         row.quantity = quantity; save(owner, rows);
       },
       remove(owner, item) { save(owner, read(owner).filter(row => key(row) !== key(item))); }
@@ -2197,10 +3241,10 @@ SOFTWARE.
         if (!products.has(item.itemHrid)) products.set(item.itemHrid, { ...item, quantity:0 });
         products.get(item.itemHrid).quantity += item.quantity;
       }
-      if (plan.preparationBasis === "minCostWithoutSale") minimumCostItems.push({ item, message: "无目标售价，按最低成本路线备料", includeLevel: true });
+      if (plan.preparationBasis === "minCostWithoutSale") minimumCostItems.push({ item, message: t("无目标售价，按最低成本路线备料"), includeLevel: true });
       if (!plan.enhancementReady) { enhancementReady = false; addWarning(warnings, warningItems, item,
-        `强化方案未就绪${plan.enhancementReason || result?.reason ? `（${plan.enhancementReason || result.reason}）` : ""}`); }
-      if (plan.mirrorRoute && !plan.directInputs) addWarning(warnings, warningItems, item, "镜子路线组成装备需另外备齐");
+        t`强化方案未就绪${plan.enhancementReason || result?.reason ? `（${plan.enhancementReason || result.reason}）` : ""}`); }
+      if (plan.mirrorRoute && !plan.directInputs) addWarning(warnings, warningItems, item, t("镜子路线组成装备需另外备齐"));
       for (const input of plan.directInputs || plan.inputs) {
         const row = ensure(input);
         if (plan.directInputs) {
@@ -2218,7 +3262,7 @@ SOFTWARE.
       const stock = info.inventoryCount == null || info.pendingPurchaseCount === null ? null : info.inventoryCount + (info.pendingPurchaseCount || 0);
       if (!Number.isFinite(stock) || stock < 0) {
         manufacturingReady = false;
-        addWarning(warnings, warningItems, item, "未强化装备库存未知，制造用量待确认", false);
+        addWarning(warnings, warningItems, item, t("未强化装备库存未知，制造用量待确认"), false);
         continue;
       }
       const reserved = Math.min(item.quantity, Math.floor(stock));
@@ -2226,7 +3270,7 @@ SOFTWARE.
       const quantity = item.quantity - reserved;
       if (!quantity) continue;
       const plan = wages.materials({ ...item, enhancementLevel: 0 }, null, quantity);
-      if (plan.batches == null) { manufacturingReady = false; addWarning(warnings, warningItems, item, "制造配方未就绪", false); }
+      if (plan.batches == null) { manufacturingReady = false; addWarning(warnings, warningItems, item, t("制造配方未就绪"), false); }
       for (const input of plan.inputs) {
         const row = ensure(input);
         if (!Number.isFinite(input.count) || input.count < 0) manufacturingReady = false;
@@ -2258,7 +3302,7 @@ SOFTWARE.
     const products = new Map([...items, ...cartItems].map(item => [key(item), item]));
     for (const item of products.values()) {
       const plan = wages.materials(item, wages.calculate(item, prices.quote(item)), 1);
-      if (plan.batches == null || !plan.enhancementReady || (plan.mirrorRoute && !plan.directInputs)) addWarning(warnings, warningItems, item, "材料范围尚未完整");
+      if (plan.batches == null || !plan.enhancementReady || (plan.mirrorRoute && !plan.directInputs)) addWarning(warnings, warningItems, item, t("材料范围尚未完整"));
       for (const input of plan.inputs) {
         const id = key(input);
         if (!rows.has(id)) rows.set(id, { ...input, sources: [], manufacturing: 0, enhancement: 0, required: 0, shortage: 0 });
@@ -2284,7 +3328,7 @@ SOFTWARE.
     const missing = [];
     const rows = summary.rows.map(row => {
       const quantity = Number.isFinite(row.shortage) && row.shortage >= 0 ? Math.ceil(row.shortage) : null;
-      const quote = row.itemHrid === "/items/coin" ? { price: 1, source: "金币", at: null } : prices.quote(row);
+      const quote = row.itemHrid === "/items/coin" ? { price: 1, source: t("金币"), at: null } : prices.quote(row);
       const price = Number.isFinite(quote?.price) && quote.price >= 0 ? quote.price : null;
       const cost = quantity === 0 ? 0 : quantity != null && price != null && Number.isFinite(quantity * price) ? quantity * price : null;
       if (quantity === 0) ready++;
@@ -2297,14 +3341,14 @@ SOFTWARE.
   }
   function allocate(summary, prices, coins) {
     const unavailable = reason => ({ available: false, reason });
-    if (!Number.isFinite(coins) || coins < 0) return unavailable("金币库存未知，暂不能分配。");
-    if (!summary.complete) return unavailable("备料方案未算全，暂不能分配。");
+    if (!Number.isFinite(coins) || coins < 0) return unavailable(t("金币库存未知，暂不能分配。"));
+    if (!summary.complete) return unavailable(t("备料方案未算全，暂不能分配。"));
     const rows = summary.rows.map(row => ({ ...row, inventoryCount: Object.hasOwn(row, "availableCount") ? row.availableCount : row.inventoryCount,
       price: row.itemHrid === "/items/coin" ? 1 : prices.quote(row)?.price }));
     if (rows.some(row => !Number.isFinite(row.inventoryCount) || row.inventoryCount < 0 ||
-        !Number.isFinite(row.manufacturing) || !Number.isFinite(row.expectedEnhancement))) return unavailable("材料库存或用量未知，暂不能分配。");
+        !Number.isFinite(row.manufacturing) || !Number.isFinite(row.expectedEnhancement))) return unavailable(t("材料库存或用量未知，暂不能分配。"));
     if (rows.some(row => row.itemHrid !== "/items/coin" && row.shortage > 0 && !(Number.isFinite(row.price) && row.price > 0))) {
-      return unavailable("缺少材料报价，暂不能分配。");
+      return unavailable(t("缺少材料报价，暂不能分配。"));
     }
     // Use unrounded expected consumption so ordinary enhancement inputs retain their per-action ratio.
     // Integer purchases cover a common fraction after stock, rather than dividing cash by each gap.
@@ -2332,7 +3376,7 @@ SOFTWARE.
       return low;
     }
     const full = plan(1, 1);
-    if (!Number.isFinite(full.amount)) return unavailable("预算超出可计算范围，暂不能分配。");
+    if (!Number.isFinite(full.amount)) return unavailable(t("预算超出可计算范围，暂不能分配。"));
     const manufacturingFraction = fit(fraction => plan(fraction, 0));
     const enhancementFraction = manufacturingFraction === 1 ? fit(fraction => plan(1, fraction)) : 0;
     const result = plan(manufacturingFraction, enhancementFraction);
@@ -2347,6 +3391,7 @@ SOFTWARE.
 (function initMarketCache(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const databaseName = "mwi-layu:market-cache:v1";
   const price = value => typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
   const validTime = (at, now) => Number.isFinite(at) && at > 0 && at <= now + 60000;
@@ -2379,17 +3424,17 @@ SOFTWARE.
     function open() {
       if (closed) return Promise.reject(new Error("market_cache_closed"));
       if (!connection) connection = new Promise((resolve, reject) => {
-        if (!indexedDB) { reject(new Error("IndexedDB 不可用")); return; }
+        if (!indexedDB) { reject(new Error(t("IndexedDB 不可用"))); return; }
         const request = indexedDB.open(databaseName, 1);
         let finished = false;
-        const timer = root.setTimeout(() => fail(new Error("市场缓存打开超时")), 5000);
+        const timer = root.setTimeout(() => fail(new Error(t("市场缓存打开超时"))), 5000);
         function fail(error) { if (!finished) { finished = true; root.clearTimeout(timer); reject(error); } }
         request.onupgradeneeded = () => {
           const store = request.result.createObjectStore("items", { keyPath: ["server", "key"] });
           store.createIndex("server", "server");
         };
         request.onerror = () => fail(request.error);
-        request.onblocked = () => fail(new Error("市场缓存被其他页面阻塞"));
+        request.onblocked = () => fail(new Error(t("市场缓存被其他页面阻塞")));
         request.onsuccess = () => {
           const db = request.result;
           if (finished || closed) { db.close(); fail(new Error("market_cache_closed")); return; }
@@ -2406,7 +3451,7 @@ SOFTWARE.
         const tx = db.transaction("items", "readonly");
         const request = tx.objectStore("items").index("server").getAll(server);
         tx.oncomplete = () => resolve(request.result.map(value => normalize(value, server, now())).filter(Boolean));
-        tx.onabort = () => reject(tx.error || new Error("市场缓存读取失败"));
+        tx.onabort = () => reject(tx.error || new Error(t("市场缓存读取失败")));
         tx.onerror = () => {};
       });
     }
@@ -2418,7 +3463,7 @@ SOFTWARE.
         // Read/merge/write in one transaction also prevents older tabs from overwriting newer observations.
         const tx = db.transaction("items", "readwrite"); const store = tx.objectStore("items");
         tx.oncomplete = () => resolve();
-        tx.onabort = () => reject(tx.error || new Error("市场缓存保存失败"));
+        tx.onabort = () => reject(tx.error || new Error(t("市场缓存保存失败")));
         tx.onerror = () => {};
         for (const value of values) {
           const request = store.get([server, value.key]);
@@ -2439,6 +3484,7 @@ SOFTWARE.
 (function initMarketPrices(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const refreshMs = 60_000;
   const liveMaxAgeMs = 5 * 60_000;
 
@@ -2488,9 +3534,11 @@ SOFTWARE.
   function priceLadder(item, quote, calculate, { vendorPrice = 0 } = {}) {
     const rows = [];
     let price = quote?.price;
-    if (!priceStep(price, item.enhancementLevel)) return { rows, reason: "暂无有效左一价格" };
-    // A finite safety bound also protects against unexpected future price rules.
-    for (let index = 0; index < 2048; index++) {
+    if (!priceStep(price, item.enhancementLevel)) return { rows, reason: t("暂无有效左一价格") };
+    const bid = priceStep(quote?.bid, item.enhancementLevel) ? quote.bid : null;
+    let bidShown = bid == null;
+    let unknownReason = "";
+    function addRow(price) {
       const metric = calculate(item, { ...quote, price });
       const hourlyWage = Number.isFinite(metric?.hourlyWage) ? metric.hourlyWage : null;
       const evaluation = metric?.evaluation;
@@ -2498,15 +3546,27 @@ SOFTWARE.
         profit: Number.isFinite(evaluation?.profit) ? evaluation.profit : null,
         profitMargin: Number.isFinite(evaluation?.profitMargin) ? evaluation.profitMargin : null,
         marginColor: evaluation?.marginColor || null,
-        hourlyColor: metric?.evaluation?.hourlyColor || null, current: index === 0,
-        offGrid: price % priceStep(price, item.enhancementLevel) !== 0 });
-      if (hourlyWage == null) return { rows: rows.reverse(), reason: metric?.reason || "工时费未知" };
-      if (hourlyWage < 0) return { rows: rows.reverse(), reason: "", complete: true };
-      const next = previousPrice(price, item.enhancementLevel, vendorPrice);
-      if (next == null) return { rows: rows.reverse(), reason: "已到最低报价，尚未出现负工时费" };
+        hourlyColor: evaluation?.hourlyColor || null, current: price === quote.price,
+        bid: price === bid, offGrid: price % priceStep(price, item.enhancementLevel) !== 0 });
+      if (price === bid) bidShown = true;
+      if (hourlyWage == null) unknownReason ||= metric?.reason || t("工时费未知");
+      return hourlyWage;
+    }
+    // A simulated ask or an old quote can lie below the observed best bid.
+    if (bid > price) addRow(bid);
+    // A finite safety bound also protects against unexpected future price rules.
+    for (let index = 0; index < 2048; index++) {
+      const hourlyWage = addRow(price);
+      if (bidShown && unknownReason) return { rows: rows.reverse(), reason: unknownReason };
+      if (bidShown && hourlyWage < 0) return { rows: rows.reverse(), reason: "", complete: true };
+      let next = previousPrice(price, item.enhancementLevel, vendorPrice);
+      // Retain the exact observed bid, including legacy off-grid/below-floor quotes.
+      if (!bidShown && (next == null || next < bid)) next = bid;
+      if (next == null) return { rows: rows.reverse(), reason: t("已到最低报价，尚未出现负工时费") };
       price = next;
     }
-    return { rows: rows.reverse(), reason: "档位过多，计算已暂停，尚未找到负工时费" };
+    if (!bidShown) addRow(bid);
+    return { rows: rows.reverse(), reason: t("档位过多，计算已暂停，尚未找到负工时费") };
   }
 
   function create({ fetch = root.fetch.bind(root), now = () => Date.now(), onChange = () => {}, storage = root.localStorage,
@@ -2550,7 +3610,7 @@ SOFTWARE.
       }
       revision += 1; onChange();
     }).catch(() => {
-      cacheReadError = "市场缓存读取失败，已保留本次内存数据";
+      cacheReadError = t("市场缓存读取失败，已保留本次内存数据");
       if (!destroyed) onChange();
     }) : Promise.resolve();
     function persist(keys) {
@@ -2559,7 +3619,7 @@ SOFTWARE.
       cacheWrites = cacheWrites.then(() => cache.write(entries)).then(() => {
         if (cacheWriteError) { cacheWriteError = ""; if (!destroyed) onChange(); }
       }).catch(() => {
-        cacheWriteError = "市场缓存保存失败，本次数据仅在当前页面有效，请检查浏览器存储空间或权限";
+        cacheWriteError = t("市场缓存保存失败，本次数据仅在当前页面有效，请检查浏览器存储空间或权限");
         if (!destroyed) onChange();
       });
     }
@@ -2602,18 +3662,18 @@ SOFTWARE.
     function quote(item) {
       const current = live.get(app.marketFavoritesStore.key(item));
       if (current && now() - current.at < liveMaxAgeMs && current.at >= snapshotAt) {
-        return { price: current.price, bid: current.bid, at: current.at, source: "订单簿", cached: Boolean(current.cached), stale: false };
+        return { price: current.price, bid: current.bid, at: current.at, source: t("订单簿"), cached: Boolean(current.cached), stale: false };
       }
       const level = snapshot?.marketData?.[item.itemHrid]?.[String(item.enhancementLevel)];
       // Old observations remain usable as explicitly dated reference prices when no newer source exists.
       if (current && (!level || current.at >= snapshotAt)) {
-        return { price: current.price, bid: current.bid, at: current.at, source: "订单簿", cached: Boolean(current.cached), stale: now() - current.at >= liveMaxAgeMs };
+        return { price: current.price, bid: current.bid, at: current.at, source: t("订单簿"), cached: Boolean(current.cached), stale: now() - current.at >= liveMaxAgeMs };
       }
       if (!level) return null;
       return {
         price: positivePrice(level.a), bid: positivePrice(level.b),
         at: snapshotAt,
-        source: "市场快照", cached: snapshotCached, stale: now() - snapshotAt >= liveMaxAgeMs
+        source: t("市场快照"), cached: snapshotCached, stale: now() - snapshotAt >= liveMaxAgeMs
       };
     }
 
@@ -2629,7 +3689,7 @@ SOFTWARE.
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return response.json();
         }),
-        new Promise((_resolve, reject) => { timeout = root.setTimeout(() => { reject(new Error("请求超时")); controller?.abort(); }, 15000); })
+        new Promise((_resolve, reject) => { timeout = root.setTimeout(() => { reject(new Error(t("请求超时"))); controller?.abort(); }, 15000); })
       ])
         .then((data) => {
           const at = timestampOf(data);
@@ -2638,7 +3698,7 @@ SOFTWARE.
           snapshotAt = at;
           snapshotCached = false;
           try { storage?.setItem(cacheKey, JSON.stringify(data)); snapshotCacheError = ""; }
-          catch (_error) { snapshotCacheError = "市场快照保存失败，本次快照仅在当前页面有效"; }
+          catch (_error) { snapshotCacheError = t("市场快照保存失败，本次快照仅在当前页面有效"); }
           error = false;
           errorMessage = "";
           revision += 1;
@@ -2674,9 +3734,10 @@ SOFTWARE.
 (function initListingHistory(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const databaseName = "mwi-layu:listing-history:v1";
   const fields = ["id", "itemHrid", "enhancementLevel", "isSell", "price", "workingPrice", "orderQuantity", "filledQuantity",
-    "status", "unclaimedItemCount", "unclaimedCoinCount", "createdAt", "updatedAt", "expireAt", "expiresAt", "isInstantOrder"];
+    "status", "unclaimedItemCount", "unclaimedCoinCount", "createdTimestamp", "createdAt", "updatedAt", "expireAt", "expiresAt", "isInstantOrder"];
   function normalize(envelope) {
     if (!envelope || !Number.isSafeInteger(envelope.characterId) || envelope.characterId <= 0 ||
         !/^api(?:-test)?\.milkywayidle(?:cn)?\.com$/.test(envelope.server || "") ||
@@ -2797,24 +3858,34 @@ SOFTWARE.
       });
     } finally { db.close(); }
   }
+  function listingCreationTime(state) {
+    // The game uses createdTimestamp; retain createdAt compatibility for older records.
+    // Numeric timestamps are milliseconds, never guessed seconds or observation times.
+    for (const value of [state.createdTimestamp, state.createdAt]) {
+      const milliseconds = typeof value === "string" ? Date.parse(value)
+        : typeof value === "number" && Number.isFinite(value) && value > 0 ? new Date(value).getTime() : NaN;
+      if (Number.isFinite(milliseconds)) return typeof value === "string" ? value : new Date(milliseconds).toISOString();
+    }
+    return null;
+  }
   function completedSales(records) {
     return records.filter((record) => record.state?.isSell === true &&
       typeof record.state.filledQuantity === "number" && record.state.filledQuantity > 0)
-      .map((record) => ({
-        id: record.id, itemHrid: record.state.itemHrid, enhancementLevel: record.state.enhancementLevel,
-        // A listing can execute at multiple prices, and updatedAt is not a fill timestamp.
-        executionPrice: null, executedAt: null,
-        listedAt: typeof record.state.createdAt === "string" && Number.isFinite(Date.parse(record.state.createdAt))
-          ? record.state.createdAt : null,
-        // Observation is only an upper bound, including for partially filled orders.
-        waitUpperBoundMs: typeof record.state.createdAt === "string" &&
-          Number.isFinite(Date.parse(record.state.createdAt)) &&
-          Date.parse(record.lastChangedAt) >= Date.parse(record.state.createdAt)
-          ? Date.parse(record.lastChangedAt) - Date.parse(record.state.createdAt) : null,
-        listingPrice: typeof record.state.price === "number" && record.state.price > 0 ? record.state.price : null,
-        filledQuantity: record.state.filledQuantity, observedAt: record.lastChangedAt,
-        status: record.state.status
-      })).sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt) || b.id - a.id);
+      .map((record) => {
+        const listedAt = listingCreationTime(record.state);
+        const listedMs = Date.parse(listedAt), observedMs = Date.parse(record.lastChangedAt);
+        return {
+          id: record.id, itemHrid: record.state.itemHrid, enhancementLevel: record.state.enhancementLevel,
+          // A listing can execute at multiple prices, and updatedAt is not a fill timestamp.
+          executionPrice: null, executedAt: null,
+          listedAt,
+          // Observation is only an upper bound, including for partially filled orders.
+          waitUpperBoundMs: Number.isFinite(listedMs) && observedMs >= listedMs ? observedMs - listedMs : null,
+          listingPrice: typeof record.state.price === "number" && record.state.price > 0 ? record.state.price : null,
+          filledQuantity: record.state.filledQuantity, observedAt: record.lastChangedAt,
+          status: record.state.status
+        };
+      }).sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt) || b.id - a.id);
   }
   async function readOwn(server, characterId) {
     if (!/^api(?:-test)?\.milkywayidle(?:cn)?\.com$/.test(server || "") || !Number.isSafeInteger(characterId) || characterId <= 0) throw new Error("character_unknown");
@@ -2846,7 +3917,7 @@ SOFTWARE.
           root.document.dispatchEvent(new root.CustomEvent(app.config.listingAckEvent, { detail: envelope.eventId }));
         } catch (cause) {
           error = String(cause?.message || cause);
-          root.console.error("[柆雨强化助手] 挂单记录保存失败，将重试；原有记录保留。", error);
+          root.console.error(t("[柆雨强化助手] 挂单记录保存失败，将重试；原有记录保留。"), error);
         }
       });
     };
@@ -2864,6 +3935,226 @@ SOFTWARE.
     });
   }
   app.listingHistory = Object.freeze({ databaseName, normalize, open, record, create, completedSales, readOwn, saveCurrent, readSaved });
+})(globalThis);
+
+
+// ---- src/runtime/loot-history.js ----
+(function initLootHistory(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
+  const databaseName = "mwi-layu:loot-history:v1";
+  const changeEvent = "mwi-enhance:loot-saved:v1";
+  const validOwner = value => /^api(?:-test)?\.milkywayidle(?:cn)?\.com$/.test(value?.server || "") &&
+    Number.isSafeInteger(value.characterId) && value.characterId > 0;
+  // Mutable cumulative totals must never be part of a record's identity.
+  const key = row => JSON.stringify([row.startTime, row.actionHrid, row.primaryItemHash ?? null,
+    row.secondaryItemHash ?? null, row.difficultyTier ?? null, row.partyId ?? null]);
+  function itemFromHash(hash) {
+    if (typeof hash !== "string") return null;
+    const parts = hash.split("::"), offset = parts.length === 4 ? 2 : 0;
+    const itemHrid = parts[offset], level = parts[offset + 1] ?? "0";
+    if (!/^\/items\/[a-z0-9_]+$/.test(itemHrid || "") || !/^\d+$/.test(level)) return null;
+    return { itemHrid, enhancementLevel: Number(level) };
+  }
+  function open() {
+    return new Promise((resolve, reject) => {
+      const request = root.indexedDB.open(databaseName, 1);
+      request.onupgradeneeded = () => {
+        const store = request.result.createObjectStore("records", { keyPath: ["server", "characterId", "key"] });
+        store.createIndex("owner", ["server", "characterId"]);
+        store.createIndex("time", ["server", "characterId", "startTime", "key"]);
+      };
+      request.onerror = () => reject(request.error);
+      request.onblocked = () => reject(new Error("database_blocked"));
+      request.onsuccess = () => { request.result.onversionchange = () => request.result.close(); resolve(request.result); };
+    });
+  }
+  function record(db, envelope) {
+    if (!validOwner(envelope) || !Array.isArray(envelope.records) || !Number.isFinite(Date.parse(envelope.observedAt))) {
+      return Promise.reject(new Error("invalid_loot_envelope"));
+    }
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("records", "readwrite"), store = tx.objectStore("records");
+      for (const raw of envelope.records) {
+        const row = app.bridge.normalizeLootRecord(raw);
+        if (!row) continue;
+        const identity = key(row), request = store.get([envelope.server, envelope.characterId, identity]);
+        request.onsuccess = () => {
+          const previous = request.result;
+          // Replayed and delayed snapshots must not roll a running activity backwards.
+          if (previous && (Date.parse(previous.observedAt) > Date.parse(envelope.observedAt) ||
+              previous.record.actionCount > row.actionCount ||
+              Date.parse(previous.record.endTime) > Date.parse(row.endTime))) return;
+          store.put({ server: envelope.server, characterId: envelope.characterId, key: identity, startTime: row.startTime,
+            firstSeenAt: previous?.firstSeenAt || envelope.observedAt, observedAt: envelope.observedAt,
+            record: { ...previous?.record, ...row } });
+        };
+      }
+      tx.oncomplete = () => resolve();
+      tx.onabort = () => reject(tx.error || new Error("save_aborted"));
+      tx.onerror = () => {}; // The transaction abort is the only failure completion.
+    });
+  }
+  async function read(owner, { offset = 0, limit = 50 } = {}) {
+    if (!validOwner(owner)) throw new Error("character_unknown");
+    const db = await open();
+    try {
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction("records"), store = tx.objectStore("records"), rows = [];
+        const count = store.index("owner").count(root.IDBKeyRange.only([owner.server, owner.characterId]));
+        const range = root.IDBKeyRange.bound([owner.server, owner.characterId, ""], [owner.server, owner.characterId, "\uffff"]);
+        const request = store.index("time").openCursor(range, "prev");
+        let skipped = false;
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor || rows.length >= limit) return;
+          if (!skipped && offset > 0) { skipped = true; cursor.advance(offset); return; }
+          rows.push(cursor.value); cursor.continue();
+        };
+        tx.oncomplete = () => resolve({ total: count.result, rows });
+        tx.onabort = () => reject(tx.error || new Error("read_aborted"));
+      });
+    } finally { db.close(); }
+  }
+  function create() {
+    let owner = null, error = "", destroyed = false, flushing = false;
+    const pending = new Map();
+    const notify = () => root.document.dispatchEvent(new root.CustomEvent(changeEvent));
+    async function flush() {
+      if (flushing || destroyed || !pending.size) return;
+      flushing = true;
+      let db;
+      try {
+        db = await open();
+        for (const [id, envelope] of pending) {
+          if (destroyed) break;
+          await record(db, envelope);
+          pending.delete(id);
+          root.document.dispatchEvent(new root.CustomEvent(app.config.lootAckEvent, { detail: id }));
+        }
+        error = "";
+      } catch (_) {
+        error = t("掉落与经验记录保存失败，待保存数据暂留当前页面；请检查浏览器存储空间并点击重试，成功前不要关闭或刷新页面。");
+      } finally { db?.close(); flushing = false; if (!destroyed) notify(); }
+    }
+    const receive = event => {
+      let data;
+      try { data = JSON.parse(event.detail); } catch (_) { return; }
+      if (data?.type === "owner") { owner = validOwner(data) ? { server: data.server, characterId: data.characterId } : null; notify(); return; }
+      if (!validOwner(data) || !Array.isArray(data.records) || typeof data.eventId !== "string") return;
+      pending.set(data.eventId, data); flush();
+    };
+    root.document.addEventListener(app.config.lootEvent, receive);
+    const timer = root.setInterval(flush, 15000);
+    return Object.freeze({ state: () => ({ owner: owner && { ...owner }, error, pending: pending.size }), retry: flush,
+      destroy() { destroyed = true; root.clearInterval(timer); root.document.removeEventListener(app.config.lootEvent, receive); } });
+  }
+  app.lootHistory = Object.freeze({ databaseName, changeEvent, validOwner, key, itemFromHash, open, record, read, create });
+})(globalThis);
+
+
+// ---- src/v3/loot-history-ui.js ----
+(function initLootHistoryUI(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
+  const skills = { get milking() { return t("挤奶"); }, get foraging() { return t("采摘"); }, get woodcutting() { return t("伐木"); }, get cheesesmithing() { return t("锻造"); }, get crafting() { return t("制作"); }, get tailoring() { return t("缝纫"); }, get cooking() { return t("烹饪"); }, get brewing() { return t("冲泡"); }, get alchemy() { return t("炼金"); }, get enhancing() { return t("强化"); }, get combat() { return t("战斗"); }, get stamina() { return t("耐力"); }, get intelligence() { return t("智力"); }, get attack() { return t("攻击"); }, get power() { return t("力量"); }, get defense() { return t("防御"); }, get ranged() { return t("远程"); }, get magic() { return t("魔法"); }, get total_level() { return t("总经验"); } };
+  function create({ onError } = {}) {
+    const document = root.document, recorder = app.lootRecorder;
+    const node = (tag, text) => { const el = document.createElement(tag); if (text != null) el.textContent = text; return el; };
+    const button = (text, fn) => { const el = node("button", text); el.type = "button"; el.onclick = fn; return el; };
+    const element = node("section"); element.className = "v3-loot-history"; element.setAttribute("aria-label", t("掉落与经验历史"));
+    const heading = node("h2", t("掉落与经验")), status = node("p"), message = node("p"), list = node("div");
+    status.setAttribute("role", "status"); message.setAttribute("role", "alert");
+    const help = node("p", t("启用插件后，自动保存当前浏览器收到的记录，不限 20 条。同一活动保留最新累计值。打开游戏原生记录页或点击其刷新按钮可获取最新数据；已被游戏删除且从未采集的记录无法补回。"));
+    const privacy = node("p", t("仅保存在当前浏览器，按服务器和角色隔离。清理网站数据会丢失存档，建议定期导出备份。"));
+    let page = 0, ownerKey = "", generation = 0, total = 0, spriteBase = "", names = {}, destroyed = false;
+    const size = 50;
+    const refresh = button(t("读取本地记录"), () => load());
+    const retry = button(t("重试保存"), () => recorder?.retry());
+    const download = button(t("导出全部记录"), async () => {
+      const owner = recorder?.state().owner;
+      if (!owner) return;
+      download.disabled = true;
+      try {
+        const data = await app.lootHistory.read(owner, { limit: Infinity });
+        const blob = new root.Blob([JSON.stringify({ format:"mwi-layu-loot-history", version:1, exportedAt:new Date().toISOString(), ...owner, records:data.rows }, null, 2)], { type:"application/json" });
+        const url = root.URL.createObjectURL(blob), link = node("a");
+        link.href = url; link.download = `layu-loot-${owner.characterId}-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.append(link); link.click(); link.remove(); root.setTimeout(() => root.URL.revokeObjectURL(url), 1000);
+      } catch (_) {
+        const text = t("导出失败，请检查浏览器存储后重试。");
+        if (onError) onError(text); else message.textContent = text;
+      }
+      finally { download.disabled = !recorder?.state().owner; }
+    });
+    const previous = button(t("上一页"), () => { page--; load(); });
+    const next = button(t("下一页"), () => { page++; load(); });
+    const pagination = node("div"), pageLabel = node("span"); pagination.className = "mwi-layu-group-toolbar";
+    const toolbar = node("div"); toolbar.className = "mwi-layu-group-toolbar"; toolbar.append(refresh, retry, download);
+    pagination.append(previous, pageLabel, next); element.append(heading, help, privacy, toolbar, status, message, pagination, list);
+    const time = value => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(app.i18n?.locale) : t("未知");
+    const amount = value => typeof value === "number" ? value.toLocaleString(app.i18n?.locale || "zh-CN", { maximumFractionDigits:2 }) : t("未知");
+    function target(row) {
+      const primary = app.lootHistory.itemFromHash(row.primaryItemHash);
+      if (primary) return primary;
+      const itemHrid = `/items/${row.actionHrid.split("/").pop()}`;
+      return Object.keys(row.drops || {}).map(app.lootHistory.itemFromHash).find(item => item?.itemHrid === itemHrid) || null;
+    }
+    function identity(hash) {
+      const { itemHrid, enhancementLevel: level } = typeof hash === "object" ? hash : app.lootHistory.itemFromHash(hash);
+      return app.itemUI.identity({ itemHrid }, spriteBase, `${names[itemHrid] || itemHrid.slice(7)}${Number(level) > 0 ? ` +${level}` : ""}`);
+    }
+    function draw(rows) {
+      list.replaceChildren();
+      for (const { record: row, observedAt } of rows) {
+        const article = node("article"); article.className = "v3-loot-record";
+        const title = node("h3", t`${skills[row.actionHrid.split("/")[2]] || row.actionHrid} · ${amount(row.actionCount)} 次`);
+        const item = target(row);
+        if (item) title.append(" · ", identity(item));
+        else title.append(` · ${row.actionHrid}`);
+        if (row.difficultyTier > 0) title.append(` · T${row.difficultyTier}`);
+        if (row.partyId) title.append(t(" · 队伍"));
+        const duration = Number.isFinite(row.totalActiveMillis) && row.totalActiveMillis >= 0 ? row.totalActiveMillis : Date.parse(row.endTime) - Date.parse(row.startTime);
+        const timing = node("p", t`开始：${time(row.startTime)}　持续：${Number.isFinite(duration) && duration >= 0 ? t`${amount(duration / 1000)} 秒` : t("未知")}　最近采集：${time(observedAt)}`);
+        const drops = node("div"); drops.className = "v3-loot-drops";
+        if (row.drops == null) drops.append(node("span", t("掉落未知")));
+        else if (!Object.keys(row.drops).length) drops.append(node("span", t("无掉落")));
+        for (const [hash, count] of Object.entries(row.drops || {})) {
+          const item = node("span"); item.append(identity(hash), ` × ${amount(count)}`); drops.append(item);
+        }
+        const xp = node("p", row.xpGains == null ? t("经验未知") : Object.entries(row.xpGains).map(([hrid, value]) => t`${skills[hrid.split("/").pop()] || hrid}经验 +${amount(value)}`).join("　") || t("无经验"));
+        article.append(title, timing, drops, xp); list.append(article);
+      }
+    }
+    async function load() {
+      const ticket = ++generation, state = recorder?.state() || {}, scope = JSON.stringify(state.owner);
+      if (scope !== ownerKey) { page = 0; ownerKey = scope; list.replaceChildren(); }
+      message.textContent = state.error || ""; retry.hidden = !state.error;
+      download.disabled = !state.owner; previous.disabled = true; next.disabled = true;
+      if (!state.owner) { status.textContent = t("等待游戏确认当前角色。若刚启用插件，请刷新游戏，再打开原生掉落与经验记录页。"); pageLabel.textContent = ""; return; }
+      status.textContent = t("正在读取本地记录…");
+      try {
+        const data = await app.lootHistory.read(state.owner, { offset: page * size, limit: size });
+        if (destroyed || ticket !== generation || JSON.stringify(recorder.state().owner) !== scope) return;
+        total = data.total;
+        const hrids = [...new Set(data.rows.flatMap(({record}) => [target(record)?.itemHrid, ...Object.keys(record.drops || {}).map(hash => app.lootHistory.itemFromHash(hash)?.itemHrid)]).filter(Boolean))];
+        const resolved = await app.marketBridge.itemNames(hrids);
+        if (destroyed || ticket !== generation || JSON.stringify(recorder.state().owner) !== scope) return;
+        names = { ...names, ...resolved };
+        draw(data.rows);
+        status.textContent = t`角色 ${state.owner.characterId} · 已保存 ${total} 条${state.pending ? t(" · 仍有数据待保存") : ""}${total ? "" : t("。请打开游戏原生掉落与经验记录页读取当前记录。")}`;
+        pageLabel.textContent = t`第 ${page + 1} / ${Math.max(1, Math.ceil(total / size))} 页`;
+        previous.disabled = page === 0; next.disabled = (page + 1) * size >= total;
+      } catch (_) { if (ticket === generation) { list.replaceChildren(); status.textContent = t("本地记录读取失败，请检查浏览器存储设置后点击读取本地记录重试。"); } }
+    }
+    const onSaved = () => { if (element.isConnected) load(); };
+    document.addEventListener(app.lootHistory.changeEvent, onSaved);
+    return Object.freeze({ element, update(context) { spriteBase = context.spriteBase; names = context.names; load(); },
+      destroy() { destroyed = true; generation++; document.removeEventListener(app.lootHistory.changeEvent, onSaved); } });
+  }
+  app.lootHistoryUI = Object.freeze({ create });
 })(globalThis);
 
 
@@ -6165,6 +7456,7 @@ function getPriceTier(price, direction) {
 (function initPriceSimulation(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const clone = value => JSON.parse(JSON.stringify(value));
   const positive = value => Number.isFinite(value) && value > 0 ? value : null;
   const fixed = hrid => ["/items/coin", "/items/coins"].includes(hrid) || /^\/items\/trainee_.*_charm$/.test(hrid);
@@ -6187,7 +7479,7 @@ function getPriceTier(price, direction) {
       }
       entries.set(hrid, { itemHrid: hrid, enhancementLevel: 0,
         name: rules.itemDetailMap?.[hrid]?.name || hrid.slice(7), roles: [role] });
-      for (const input of catalog.recipe(hrid)?.inputs || []) if (input.count > 0) add(input.itemHrid, "制造原料");
+      for (const input of catalog.recipe(hrid)?.inputs || []) if (input.count > 0) add(input.itemHrid, t("制造原料"));
     }
     const equipment = new Set([item.itemHrid]);
     // Refinement inheritance can use the unrefined equipment's enhancement inputs.
@@ -6196,11 +7488,11 @@ function getPriceTier(price, direction) {
       if (hrid.endsWith("_refined") && upgrade) equipment.add(upgrade);
     }
     for (const hrid of equipment) {
-      add(hrid, "底子");
-      for (const input of catalog.enhancementCosts(hrid) || []) if (input.count > 0) add(input.itemHrid, "强化材料");
-      for (const protect of catalog.protectionItems(hrid) || []) add(protect, "保护候选");
+      add(hrid, t("底子"));
+      for (const input of catalog.enhancementCosts(hrid) || []) if (input.count > 0) add(input.itemHrid, t("强化材料"));
+      for (const protect of catalog.protectionItems(hrid) || []) add(protect, t("保护候选"));
     }
-    add("/items/philosophers_mirror", "镜子路线候选");
+    add("/items/philosophers_mirror", t("镜子路线候选"));
     return [...entries.values()];
   }
   function create({ item, quote, settings, rules, character, market, quoteFor, acquisitionSource = "auto", capturedAt = Date.now() }) {
@@ -6213,10 +7505,10 @@ function getPriceTier(price, direction) {
         const route = calculator.minimumCostRoute(target.itemHrid, target.enhancementLevel);
         return route && Number.isFinite(route.totalCost) && route.totalCost > 0
           ? { metrics: route, preparationBasis: "minCostWithoutSale" }
-          : { reason: "缺少可用的材料、底子或保护物价格，请先读取对应行情后刷新页面。" };
+          : { reason: t("缺少可用的材料、底子或保护物价格，请先读取对应行情后刷新页面。") };
       }
       const result = calculator.calculate(target.itemHrid, target.enhancementLevel, atPrice);
-      return result && Number.isFinite(result.hourlyWage) ? result : { reason: "缺少可用的材料、底子或保护物价格，请先读取对应行情后刷新页面。" };
+      return result && Number.isFinite(result.hourlyWage) ? result : { reason: t("缺少可用的材料、底子或保护物价格，请先读取对应行情后刷新页面。") };
     }
     const baseline = calculate(baselineEngine);
     const inputs = references(target, baselineEngine, ruleData).map(entry => {
@@ -6224,19 +7516,19 @@ function getPriceTier(price, direction) {
       const observed = quoteFor?.(entry);
       return { ...entry, ask: positive(Number(row?.a)), bid: positive(Number(row?.b)),
         vendorPrice: positive(Number(ruleData.itemDetailMap?.[entry.itemHrid]?.sellPrice)) || 0,
-        source: observed?.source || "已有行情", at: observed?.at ?? null,
+        source: observed?.source || t("已有行情"), at: observed?.at ?? null,
         stale: Boolean(observed?.stale), cached: Boolean(observed?.cached) };
     });
     const allowed = new Set(inputs.map(entry => entry.itemHrid));
     function evaluate(overrides = {}) {
-      if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) throw new TypeError("模拟报价格式无效");
+      if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) throw new TypeError(t("模拟报价格式无效"));
       const data = clone(baselineMarket);
       data.marketData = data.marketData || {};
       let changed = 0;
       for (const [hrid, sides] of Object.entries(overrides)) {
-        if (!allowed.has(hrid) || !sides || typeof sides !== "object" || Array.isArray(sides)) throw new RangeError("模拟物品不在当前成本候选中");
+        if (!allowed.has(hrid) || !sides || typeof sides !== "object" || Array.isArray(sides)) throw new RangeError(t("模拟物品不在当前成本候选中"));
         for (const [side, price] of Object.entries(sides)) {
-          if (!["a", "b"].includes(side) || !positive(price) || price > 1e12) throw new RangeError("模拟报价须大于 0 且不超过 1,000,000,000,000");
+          if (!["a", "b"].includes(side) || !positive(price) || price > 1e12) throw new RangeError(t("模拟报价须大于 0 且不超过 1,000,000,000,000"));
           data.marketData[hrid] = data.marketData[hrid] || {};
           data.marketData[hrid]["0"] = { ...data.marketData[hrid]["0"], [side]: price };
           if (price !== baselineMarket.marketData?.[hrid]?.["0"]?.[side]) changed += 1;
@@ -6265,7 +7557,7 @@ function getPriceTier(price, direction) {
       }
       return { baseline: clone(baseline), simulated, changed, materialPrices,
         baseComparison,
-        calculateAt: atPrice => positive(atPrice) ? calculate(calculator, atPrice) : { reason: "暂无有效售价" },
+        calculateAt: atPrice => positive(atPrice) ? calculate(calculator, atPrice) : { reason: t("暂无有效售价") },
         routeChanged: baseline.metrics && simulated.metrics ? routeKey(baseline.metrics) !== routeKey(simulated.metrics) : null, delta: {
         totalCost: diff(baseline.metrics?.totalCost, simulated.metrics?.totalCost),
         profit: diff(baseline.evaluation?.profit, simulated.evaluation?.profit),
@@ -6285,8 +7577,9 @@ function getPriceTier(price, direction) {
 (function initExperiencePlan(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const valid = value => typeof value === "number" && Number.isFinite(value) && value >= 0;
-  const skills = { enhancing: "强化经验", cheesesmithing: "制造经验 · 锻造", crafting: "制造经验 · 制作", tailoring: "制造经验 · 缝纫", cooking: "制造经验 · 烹饪", brewing: "制造经验 · 冲泡" };
+  const skills = { get enhancing() { return t("强化经验"); }, get cheesesmithing() { return t("制造经验 · 锻造"); }, get crafting() { return t("制造经验 · 制作"); }, get tailoring() { return t("制造经验 · 缝纫"); }, get cooking() { return t("制造经验 · 烹饪"); }, get brewing() { return t("制造经验 · 冲泡"); } };
   const cache = new Map();
   function progress(skill, gain, table) {
     const result = { level: Number.isInteger(skill?.level) ? skill.level : null, gain: valid(gain) ? gain : null,
@@ -6385,10 +7678,10 @@ function getPriceTier(price, direction) {
     return xp * quantity * multiplier;
   }
   function estimate({ item, route, quantity, rules, character, params, materials, recipe, inventoryCount, showManufacturing, virtual }) {
-    const pack = (skillHrid, gain, reason = "") => ({ skillHrid, label:skills[skillHrid.split("/").pop()] || "制造经验",
+    const pack = (skillHrid, gain, reason = "") => ({ skillHrid, label:skills[skillHrid.split("/").pop()] || t("制造经验"),
       ...progress(virtual ? null : character?.characterSkills?.find(s => s.skillHrid === skillHrid), gain, rules?.levelExperienceTable), reason });
     const gain = virtual ? null : enhancingGain({item, route, quantity, rules:rules || {}, params, character, recipe});
-    const enhancement = pack("/skills/enhancing", gain, virtual ? "虚拟角色没有可对应的实际经验进度" : gain == null ? "经验所需的角色增益、游戏规则或路线数据未就绪" : "按当前角色增益及路线估算，不预测途中升级或增益到期引起的变化");
+    const enhancement = pack("/skills/enhancing", gain, virtual ? t("虚拟角色没有可对应的实际经验进度") : gain == null ? t("经验所需的角色增益、游戏规则或路线数据未就绪") : t("按当前角色增益及路线估算，不预测途中升级或增益到期引起的变化"));
     const manufacturing = [];
     if (showManufacturing) {
       const gains = new Map();
@@ -6411,7 +7704,7 @@ function getPriceTier(price, direction) {
       if (!gains.size) gains.set(`/skills/${recipe(item.itemHrid)?.actionHrid.split("/")[2] || "manufacturing"}`, null);
       for (const [skill, gain] of gains) {
         const value = materials?.enhancementReady === false || virtual ? null : gain;
-        manufacturing.push(pack(skill, value, value == null ? "制造配方、库存或经验增益未知" : "按当前计划需实际制作的批次估算，扣除同名 +0 库存；含备料倍率对应的保护装备，不含另行加工原材料"));
+        manufacturing.push(pack(skill, value, value == null ? t("制造配方、库存或经验增益未知") : t("按当前计划需实际制作的批次估算，扣除同名 +0 库存；含备料倍率对应的保护装备，不含另行加工原材料")));
       }
     }
     return { enhancement, manufacturing };
@@ -6424,6 +7717,7 @@ function getPriceTier(price, direction) {
 (function initV3MarketWages(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:market-wages:v1";
   const quantityStorageKey = "mwi-layu:material-quantities:v1";
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -6486,17 +7780,17 @@ function getPriceTier(price, direction) {
     const equipment = new Set([item.itemHrid, ...(metrics?.componentDetails || []).map((part) => part.itemHrid)]);
     if (metrics?.routeType === "refinementCarryover") equipment.add(item.itemHrid.replace(/_refined$/, ""));
     for (const hrid of equipment) {
-      add(hrid, "装备底子");
-      for (const input of catalog.enhancementCosts(hrid) || []) if (input.count > 0) add(input.itemHrid, "强化材料");
+      add(hrid, t("装备底子"));
+      for (const input of catalog.enhancementCosts(hrid) || []) if (input.count > 0) add(input.itemHrid, t("强化材料"));
       if (item.enhancementLevel > 0) {
-        for (const protect of catalog.protectionItems(hrid) || []) add(protect, protect === metrics?.protectionItemHrid ? "当前保护物" : "保护候选");
+        for (const protect of catalog.protectionItems(hrid) || []) add(protect, protect === metrics?.protectionItemHrid ? t("当前保护物") : t("保护候选"));
       }
     }
-    if (metrics?.mirrorCount > 0) add("/items/philosophers_mirror", "贤者之镜");
+    if (metrics?.mirrorCount > 0) add("/items/philosophers_mirror", t("贤者之镜"));
     // Only equipment recipes belong here; do not expand materials or protection items.
     for (const hrid of equipment) {
       for (const input of catalog.recipe(hrid)?.inputs || []) {
-        if (input.count > 0) add(input.itemHrid, "制作原料");
+        if (input.count > 0) add(input.itemHrid, t("制作原料"));
       }
     }
     return [...entries.values()];
@@ -6517,7 +7811,7 @@ function getPriceTier(price, direction) {
       return Number.isSafeInteger(value) && value >= 1 && value <= 1000000 ? value : 1;
     }
     function setTargetQuantity(item, value) {
-      if (!Number.isSafeInteger(value) || value < 1 || value > 1000000) throw new RangeError("目标数量须为 1 至 1,000,000 的整数");
+      if (!Number.isSafeInteger(value) || value < 1 || value > 1000000) throw new RangeError(t("目标数量须为 1 至 1,000,000 的整数"));
       const next = { ...targetQuantities, [quantityKey(item)]: value };
       storage.setItem(quantityStorageKey, JSON.stringify(next));
       targetQuantities = next;
@@ -6596,25 +7890,25 @@ function getPriceTier(price, direction) {
     function missingCharacterFields() {
       const skill = character?.characterSkills?.find(skill => skill.skillHrid === "/skills/enhancing");
       return [
-        ["强化等级", skill && Number.isFinite(skill.level) && skill.level >= 0],
-        ["装备", Array.isArray(character?.characterItems)],
-        ["房屋", character?.characterHouseRoomMap],
-        ["饮品槽", character?.actionTypeDrinkSlotsMap],
-        ["成就增益", character?.achievementActionTypeBuffsMap],
-        ["社区增益", character?.communityActionTypeBuffsMap]
+        [t("强化等级"), skill && Number.isFinite(skill.level) && skill.level >= 0],
+        [t("装备"), Array.isArray(character?.characterItems)],
+        [t("房屋"), character?.characterHouseRoomMap],
+        [t("饮品槽"), character?.actionTypeDrinkSlotsMap],
+        [t("成就增益"), character?.achievementActionTypeBuffsMap],
+        [t("社区增益"), character?.communityActionTypeBuffsMap]
       ].filter(([, present]) => !present).map(([label]) => label);
     }
     function ready() { return Boolean(character && !missingCharacterFields().length); }
     function status() {
-      if (!settings.features.marketHourlyWage) return "工时费已关闭";
-      if (!rules?.itemDetailMap) return "等待游戏物品数据，请刷新游戏后重试";
+      if (!settings.features.marketHourlyWage) return t("工时费已关闭");
+      if (!rules?.itemDetailMap) return t("等待游戏物品数据，请刷新游戏后重试");
       if (!settings.virtual.enabled && !ready()) {
-        const errors = { bridge_timeout:"角色读取超时，请更新 V3 脚本并刷新游戏后重试", character_state_missing:"未找到当前角色状态，请等待角色加载后重试读取",
-          bridge_unavailable:"角色读取桥接不可用，请刷新游戏后重试" };
-        return characterReadError ? errors[characterReadError] || "角色读取失败，请刷新游戏后重试"
-          : `角色参数缺失：${missingCharacterFields().join("、")}，请重试读取`;
+        const errors = { bridge_timeout:t("角色读取超时，请更新 V3 脚本并刷新游戏后重试"), character_state_missing:t("未找到当前角色状态，请等待角色加载后重试读取"),
+          bridge_unavailable:t("角色读取桥接不可用，请刷新游戏后重试") };
+        return characterReadError ? errors[characterReadError] || t("角色读取失败，请刷新游戏后重试")
+          : t`角色参数缺失：${missingCharacterFields().join("、")}，请重试读取`;
       }
-      return settings.virtual.enabled ? "虚拟角色" : "当前角色";
+      return settings.virtual.enabled ? t("虚拟角色") : t("当前角色");
     }
     const sourceScope = () => Number.isSafeInteger(character?.characterId) && character.characterId > 0
       ? String(character.characterId) : settings.virtual.enabled ? "virtual" : null;
@@ -6622,24 +7916,24 @@ function getPriceTier(price, direction) {
       return settings.preferences.baseItemSources[sourceScope()]?.[item.itemHrid] || "market";
     }
     function setBaseItemSource(item, source) {
-      if (!["market", "craft"].includes(source) || !/^\/items\/[a-z0-9_]+$/.test(item.itemHrid)) throw new RangeError("无效的底子取得方式");
+      if (!["market", "craft"].includes(source) || !/^\/items\/[a-z0-9_]+$/.test(item.itemHrid)) throw new RangeError(t("无效的底子取得方式"));
       const scope = sourceScope();
-      if (!scope) throw new Error("角色尚未就绪，请重新读取角色后选择底子来源。");
+      if (!scope) throw new Error(t("角色尚未就绪，请重新读取角色后选择底子来源。"));
       const next = clone(settings);
       next.preferences.baseItemSources[scope] = { ...next.preferences.baseItemSources[scope], [item.itemHrid]: source };
       save(next);
     }
     function calculate(item, quote) {
-      if (!settings.features.marketHourlyWage) return { reason: "已关闭" };
-      if (!rules?.itemDetailMap) return { reason: "等待物品数据" };
-      if (!settings.virtual.enabled && !ready()) return { reason: "等待角色参数" };
-      if (!item.enhancementLevel) return { reason: "未强化" };
-      if (!(Number.isFinite(quote?.price) && quote.price > 0)) return preparationResult(item, { reason: "暂无售价" });
+      if (!settings.features.marketHourlyWage) return { reason: t("已关闭") };
+      if (!rules?.itemDetailMap) return { reason: t("等待物品数据") };
+      if (!settings.virtual.enabled && !ready()) return { reason: t("等待角色参数") };
+      if (!item.enhancementLevel) return { reason: t("未强化") };
+      if (!(Number.isFinite(quote?.price) && quote.price > 0)) return preparationResult(item, { reason: t("暂无售价") });
       ensureEngine(item);
       const resultKey = `${baseItemSource(item)}:${item.itemHrid}:${item.enhancementLevel}:${quote.price}`;
       if (!results.has(resultKey)) {
         const result = engine.calculate(item.itemHrid, item.enhancementLevel, quote.price);
-        results.set(resultKey, result && Number.isFinite(result.hourlyWage) ? result : { reason: "缺少材料、底子或保护物价格" });
+        results.set(resultKey, result && Number.isFinite(result.hourlyWage) ? result : { reason: t("缺少材料、底子或保护物价格") });
       }
       return results.get(resultKey);
     }
@@ -6657,7 +7951,7 @@ function getPriceTier(price, direction) {
       engine = engines.get(acquisitionSource);
     }
     function preparationResult(item, result) {
-      if (result?.reason !== "暂无售价" || result.metrics || !(item.enhancementLevel > 0)) return result;
+      if (result?.reason !== t("暂无售价") || result.metrics || !(item.enhancementLevel > 0)) return result;
       if (!settings.features.marketHourlyWage || !rules?.itemDetailMap || (!settings.virtual.enabled && !ready())) return result;
       ensureEngine(item);
       const key = `preparation:minCost:${baseItemSource(item)}:${item.itemHrid}:${item.enhancementLevel}`;
@@ -6665,15 +7959,15 @@ function getPriceTier(price, direction) {
         const route = engine.minimumCostRoute(item.itemHrid, item.enhancementLevel);
         results.set(key, route && Number.isFinite(route.totalCost) && route.totalCost > 0
           ? { metrics: route, preparationBasis: "minCostWithoutSale" }
-          : { reason: "缺少材料、底子或保护物价格" });
+          : { reason: t("缺少材料、底子或保护物价格") });
       }
       return results.get(key);
     }
     function createSimulation(item, quote) {
-      if (!settings.features.marketHourlyWage) throw new Error("请先开启工时费计算。");
-      if (!rules?.itemDetailMap) throw new Error("等待游戏物品数据，请刷新游戏后重试。");
-      if (!settings.virtual.enabled && !ready()) throw new Error("角色参数尚未就绪，请重新读取角色。");
-      if (!(item.enhancementLevel > 0)) throw new Error("请选择已强化的收藏项目。");
+      if (!settings.features.marketHourlyWage) throw new Error(t("请先开启工时费计算。"));
+      if (!rules?.itemDetailMap) throw new Error(t("等待游戏物品数据，请刷新游戏后重试。"));
+      if (!settings.virtual.enabled && !ready()) throw new Error(t("角色参数尚未就绪，请重新读取角色。"));
+      if (!(item.enhancementLevel > 0)) throw new Error(t("请选择已强化的收藏项目。"));
       return app.priceSimulation.create({ item, quote, settings, rules, character, acquisitionSource: baseItemSource(item) || "auto", market: prices.calculationData(), quoteFor: entry => prices.quote(entry) });
     }
     function craftingRecipe(itemHrid) {
@@ -6688,8 +7982,8 @@ function getPriceTier(price, direction) {
       ] } : null;
     }
     function preparation(item, { route: selection = "selected", quantity = 1 } = {}) {
-      if (!["selected", "minCost"].includes(selection)) throw new RangeError("无效的准备路线");
-      if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000) throw new RangeError("无效的计划数量");
+      if (!["selected", "minCost"].includes(selection)) throw new RangeError(t("无效的准备路线"));
+      if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000) throw new RangeError(t("无效的计划数量"));
       const result = preparationResult(item, calculate(item, prices.quote(item)));
       const route = result?.preparationBasis === "minCostWithoutSale" ? result.metrics
         : selection === "minCost" ? result?.routePair?.highestProfit : result?.metrics;
@@ -6701,8 +7995,8 @@ function getPriceTier(price, direction) {
       })) };
       const unsupported = Boolean(item.enhancementLevel > 0 && route && route.routeType !== "traditional");
       let productionQuantity = null;
-      let productionNotice = "生产需求或成品库存未知，请待数据就绪后重试。";
-      if (unsupported) productionNotice = "所选路线包含镜子或精炼步骤，请按路线明细手动设置各步骤的生产数量。";
+      let productionNotice = t("生产需求或成品库存未知，请待数据就绪后重试。");
+      if (unsupported) productionNotice = t("所选路线包含镜子或精炼步骤，请按路线明细手动设置各步骤的生产数量。");
       else if (recipe?.outputCount > 0 && Number.isFinite(recipe.outputCount) && (item.enhancementLevel === 0 || route)) {
         // Clicking manufacture explicitly requests this product, even when its
         // acquisition source is market. Reuse the selected route's batch rounding.
@@ -6714,7 +8008,7 @@ function getPriceTier(price, direction) {
           const count = Math.ceil(Math.max(0, required - Math.floor(stock)) / recipe.outputCount);
           if (Number.isSafeInteger(count) && count >= 0 && count <= 1e10) {
             productionQuantity = count;
-            productionNotice = count === 0 ? "同名 +0 成品库存已满足当前计划，无需继续生产。" : "";
+            productionNotice = count === 0 ? t("同名 +0 成品库存已满足当前计划，无需继续生产。") : "";
           }
         }
       }
@@ -6722,7 +8016,7 @@ function getPriceTier(price, direction) {
         routeType: route?.routeType || null, protectAt: Number.isInteger(route?.protectAt) ? route.protectAt : null,
         protectionItemHrid: route?.protectionItemHrid || null, artisan };
       return { recipe, info, unsupported, productionQuantity, productionNotice,
-        notice: unsupported ? "所选路线包含镜子或精炼步骤，无法预填为一次普通强化。请按路线明细手动准备各步骤。" : "",
+        notice: unsupported ? t("所选路线包含镜子或精炼步骤，无法预填为一次普通强化。请按路线明细手动准备各步骤。") : "",
         protection: !unsupported && route && Number.isInteger(route.protectAt) ? {
           level: route.protectAt, itemHrid: route.protectionItemHrid, needed: route.expectedProtects > 0
         } : null };
@@ -6783,7 +8077,7 @@ function getPriceTier(price, direction) {
       const addRecipe = (hrid, units, refinementOnly = false) => {
         const recipe = craftingRecipe(hrid);
         if (!recipe || !(Number.isFinite(recipe.outputCount) && recipe.outputCount > 0)) {
-          enhancementReady = false; reason = "制造配方或产出数量未知，无法计算完整备料。"; return;
+          enhancementReady = false; reason = t("制造配方或产出数量未知，无法计算完整备料。"); return;
         }
         const count = Math.ceil(units / recipe.outputCount);
         batches += count;
@@ -6842,9 +8136,9 @@ function getPriceTier(price, direction) {
       }
       return { inputs: [...inputs.values()], directInputs, craftingDemands, outputCount: recipe?.outputCount, targetQuantity: quantity, batches: reason ? null : batches, multiplier, artisan,
         enhancementReady, preparationBasis: result?.preparationBasis || null,
-        enhancementReason: !enhancementReady ? result?.reason || reason || "强化方案未就绪" : "",
+        enhancementReason: !enhancementReady ? result?.reason || reason || t("强化方案未就绪") : "",
         mirrorRoute: route?.routeType === "philosophersMirror",
-        reason: !rules?.itemDetailMap ? "材料数据尚未就绪，请重新读取角色或刷新游戏。" : reason };
+        reason: !rules?.itemDetailMap ? t("材料数据尚未就绪，请重新读取角色或刷新游戏。") : reason };
     }
     function materialInfo(item) {
       const detail = rules?.itemDetailMap?.[item.itemHrid];
@@ -6876,21 +8170,23 @@ function getPriceTier(price, direction) {
 (function initLocalBackup(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const prefix = "mwi-layu:";
   const cartPrefix = `${prefix}material-cart:v1:`;
   const labels = Object.freeze({
-    [`${prefix}market-favorites:v1`]: "收藏与参考售价",
-    [`${prefix}partitions:v1`]: "分区与旧计划",
-    [`${prefix}market-wages:v1`]: "工时费与虚拟角色设置",
-    [`${prefix}material-quantities:v1`]: "旧版目标数量",
-    [`${prefix}favorite-view:v1`]: "旧版收藏视图",
-    [`${prefix}view-preferences:v1`]: "界面排序、筛选与展开状态",
-    [`${prefix}workspace:v1`]: "工作台页面与备料抽屉"
+    get [`${prefix}language:v1`]() { return t("界面语言"); },
+    get [`${prefix}market-favorites:v1`]() { return t("收藏与参考售价"); },
+    get [`${prefix}partitions:v1`]() { return t("分区与旧计划"); },
+    get [`${prefix}market-wages:v1`]() { return t("工时费与虚拟角色设置"); },
+    get [`${prefix}material-quantities:v1`]() { return t("旧版目标数量"); },
+    get [`${prefix}favorite-view:v1`]() { return t("旧版收藏视图"); },
+    get [`${prefix}view-preferences:v1`]() { return t("界面排序、筛选与展开状态"); },
+    get [`${prefix}workspace:v1`]() { return t("工作台页面与备料抽屉"); }
   });
   const limits = Object.freeze({ bytes: 2 * 1024 * 1024, entries: 128, items: 10000, groups: 200 });
   const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
   const fail = (message) => { throw new Error(message); };
-  const check = (condition, message = "备份数据格式无效，未修改本地数据。") => { if (!condition) fail(message); };
+  const check = (condition, message = t("备份数据格式无效，未修改本地数据。")) => { if (!condition) fail(message); };
   const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
   const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
   const numeric = (value, min, max) => typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
@@ -7016,6 +8312,7 @@ function getPriceTier(price, direction) {
     return /^[1-9][0-9]{0,15}$/.test(id) && integer(Number(id), 1, Number.MAX_SAFE_INTEGER) ? id : null;
   }
   function validateEntry(key, value, host) {
+    if (key === `${prefix}language:v1`) { check(["auto", "zh", "en"].includes(value)); return 1; }
     if (key === `${prefix}market-favorites:v1`) return rows(value, false);
     if (key === `${prefix}partitions:v1`) return partitions(value);
     if (key === `${prefix}market-wages:v1`) return wages(value);
@@ -7032,25 +8329,25 @@ function getPriceTier(price, direction) {
       return 1;
     }
     if (cartOwner(key, host)) return rows(value, true);
-    fail("备份包含不支持的存储键或其他站点的备料车，未修改本地数据。");
+    fail(t("备份包含不支持的存储键或其他站点的备料车，未修改本地数据。"));
   }
   function create({ storage = root.localStorage, hostname = root.location.hostname, now = () => new Date() } = {}) {
-    check(hostnameValid(hostname), "当前站点无效。");
+    check(hostnameValid(hostname), t("当前站点无效。"));
     const previews = new WeakMap();
     function describe(key, value) {
       const count = validateEntry(key, value, hostname);
       const owner = cartOwner(key, hostname);
-      return { key, label: owner ? `备料车 · 角色 ${owner}` : labels[key], count,
+      return { key, label: owner ? t`备料车 · 角色 ${owner}` : labels[key], count,
         empty: Array.isArray(value) ? value.length === 0 : Object.keys(value).length === 0,
         willOverwrite: storage.getItem(key) !== null, ...(owner ? { characterId: Number(owner) } : {}) };
     }
     function parse(source) {
-      check(typeof source === "string" && new TextEncoder().encode(source).byteLength <= limits.bytes, "备份文件为空、格式不正确或超过 2 MiB。");
+      check(typeof source === "string" && new TextEncoder().encode(source).byteLength <= limits.bytes, t("备份文件为空、格式不正确或超过 2 MiB。"));
       let value;
-      try { value = JSON.parse(source); } catch (_) { fail("备份不是有效 JSON，未修改本地数据。"); }
+      try { value = JSON.parse(source); } catch (_) { fail(t("备份不是有效 JSON，未修改本地数据。")); }
       shape(value, ["version", "host", "exportedAt", "data"], ["version", "host", "exportedAt", "data"]);
-      check(value.version === 1, "不支持该备份版本。");
-      check(hostnameValid(value.host) && value.host === hostname, "备份站点与当前站点不同，请到原游戏站点恢复。");
+      check(value.version === 1, t("不支持该备份版本。"));
+      check(hostnameValid(value.host) && value.host === hostname, t("备份站点与当前站点不同，请到原游戏站点恢复。"));
       check(typeof value.exportedAt === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value.exportedAt) && Number.isFinite(Date.parse(value.exportedAt)) && new Date(value.exportedAt).toISOString() === value.exportedAt);
       check(object(value.data) && Object.keys(value.data).length <= limits.entries);
       for (const [key, entry] of Object.entries(value.data)) validateEntry(key, entry, value.host);
@@ -7065,7 +8362,7 @@ function getPriceTier(price, direction) {
         const raw = storage.getItem(key);
         if (raw === null) continue;
         let value;
-        try { value = JSON.parse(raw); } catch (_) { fail("部分本地设置无法读取，请修复后再备份。"); }
+        try { value = JSON.parse(raw); } catch (_) { fail(t("部分本地设置无法读取，请修复后再备份。")); }
         validateEntry(key, value, hostname); data[key] = value;
       }
       const value = { version: 1, host: hostname, exportedAt: new Date(now()).toISOString(), data };
@@ -7077,15 +8374,15 @@ function getPriceTier(price, direction) {
       const result = Object.freeze({ version: 1, host: value.host, exportedAt: value.exportedAt, entries: Object.freeze(entries),
         totalKeys: entries.length, favoritesCount: value.data[`${prefix}market-favorites:v1`]?.length ?? null,
         cartScopes: Object.freeze(entries.filter(entry => entry.characterId != null).map(entry => entry.characterId)),
-        mode: "覆盖文件内同名设置；未包含的设置保持不变。空数组或空对象也会覆盖对应设置。成交历史不在备份范围内。" });
+        mode: t("覆盖文件内同名设置；未包含的设置保持不变。空数组或空对象也会覆盖对应设置。成交历史不在备份范围内。") });
       previews.set(result, { value, before: new Map(entries.map(entry => [entry.key, storage.getItem(entry.key)])) });
       return result;
     }
     function restore(previewResult) {
       const plan = previews.get(previewResult);
-      check(plan, "请先选择备份并查看预览。");
+      check(plan, t("请先选择备份并查看预览。"));
       const entries = Object.entries(plan.value.data);
-      for (const [key] of entries) check(storage.getItem(key) === plan.before.get(key), "预览后本地设置已变化，请重新预览后恢复。");
+      for (const [key] of entries) check(storage.getItem(key) === plan.before.get(key), t("预览后本地设置已变化，请重新预览后恢复。"));
       const written = [];
       try {
         for (const [key, value] of entries) { storage.setItem(key, JSON.stringify(value)); written.push(key); }
@@ -7098,7 +8395,7 @@ function getPriceTier(price, direction) {
           } catch (_) { failures.push(key); }
         }
         previews.delete(previewResult);
-        fail(failures.length ? "恢复失败，部分设置未能回滚。请保留备份文件并检查浏览器存储权限。" : "恢复失败，已回滚本次写入；原有设置保留。");
+        fail(failures.length ? t("恢复失败，部分设置未能回滚。请保留备份文件并检查浏览器存储权限。") : t("恢复失败，已回滚本次写入；原有设置保留。"));
       }
       previews.delete(previewResult);
       return { restoredKeys: entries.length, reloadRequired: entries.length > 0 };
@@ -7114,11 +8411,12 @@ function getPriceTier(price, direction) {
 (function initV3Notifications(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   function create({ onEmptyFocus }) {
     const document = root.document;
     const element = document.createElement("section");
     element.className = "v3-notifications";
-    element.setAttribute("aria-label", "操作提示");
+    element.setAttribute("aria-label", t("操作提示"));
     element.hidden = true;
     const observers = [];
     function createStatus({ onDismiss } = {}) {
@@ -7126,7 +8424,7 @@ function getPriceTier(price, direction) {
       const content = document.createElement("div");
       content.setAttribute("role", "status"); content.setAttribute("aria-atomic", "true");
       const close = document.createElement("button"); close.type = "button";
-      close.className = "v3-notification-dismiss"; close.textContent = "删除提示";
+      close.className = "v3-notification-dismiss"; close.textContent = t("删除提示");
       function sync() {
         row.hidden = content.hidden || !content.textContent.trim();
         row.classList.toggle("v3-notification-error", content.getAttribute("role") === "alert");
@@ -7158,54 +8456,55 @@ function getPriceTier(price, direction) {
 (function initBackupUI(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   function create(createStatus) {
     const document = root.document;
     const backup = app.localBackup.create();
     const section = document.createElement("details"); section.className = "mwi-layu-backup";
     app.viewPreferences.bindDetails(section, "backup");
-    const title = document.createElement("summary"); title.textContent = "本地备份与恢复";
+    const title = document.createElement("summary"); title.textContent = t("本地备份与恢复");
     const status = createStatus ? createStatus() : document.createElement("p"); status.setAttribute("role", "status");
     const preview = document.createElement("div");
     function button(text, action) {
       const el = document.createElement("button"); el.type = "button"; el.textContent = text; el.onclick = action; return el;
     }
-    const exportButton = button("导出本地备份", () => {
+    const exportButton = button(t("导出本地备份"), () => {
       try {
         const blob = new root.Blob([backup.serialize()], { type: "application/json" });
         const url = root.URL.createObjectURL(blob);
         const link = document.createElement("a"); link.href = url;
         link.download = `layu-backup-${new Date().toISOString().slice(0, 10)}.json`;
         link.click(); root.setTimeout(() => root.URL.revokeObjectURL(url), 1000);
-        status.textContent = "已生成本地备份文件。";
-      } catch (error) { status.textContent = `导出失败：${error.message}`; }
+        status.textContent = t("已生成本地备份文件。");
+      } catch (error) { status.textContent = t`导出失败：${error.message}`; }
     });
-    const label = document.createElement("label"); label.textContent = "选择备份文件 ";
+    const label = document.createElement("label"); label.textContent = t("选择备份文件 ");
     const input = document.createElement("input"); input.type = "file"; input.accept = ".json,application/json";
-    input.setAttribute("aria-label", "选择本地备份文件"); label.append(input);
+    input.setAttribute("aria-label", t("选择本地备份文件")); label.append(input);
     let generation = 0;
     input.onchange = async () => {
       const current = ++generation; preview.replaceChildren(); status.textContent = "";
       const file = input.files?.[0]; if (!file) return;
       try {
-        if (file.size > app.localBackup.limits.bytes) throw new Error("文件超过 2 MiB，请选择插件导出的备份");
+        if (file.size > app.localBackup.limits.bytes) throw new Error(t("文件超过 2 MiB，请选择插件导出的备份"));
         const plan = backup.preview(await file.text());
         if (current !== generation) return;
-        const summary = document.createElement("p"); summary.textContent = `将恢复 ${plan.totalKeys} 项本地数据。仅覆盖文件内同名数据；未包含的数据保留。备料车按文件中的角色 ID 恢复。`;
+        const summary = document.createElement("p"); summary.textContent = t`将恢复 ${plan.totalKeys} 项本地数据。仅覆盖文件内同名数据；未包含的数据保留。备料车按文件中的角色 ID 恢复。`;
         const list = document.createElement("ul");
         for (const entry of plan.entries) {
-          const row = document.createElement("li"); row.textContent = `${entry.label}：${entry.willOverwrite ? "覆盖现有" : "新增"}${entry.empty ? " · 空数据将清空该项" : ""}`; list.append(row);
+          const row = document.createElement("li"); row.textContent = `${entry.label}：${entry.willOverwrite ? t("覆盖现有") : t("新增")}${entry.empty ? t(" · 空数据将清空该项") : ""}`; list.append(row);
         }
-        const apply = button("确认覆盖并刷新游戏", () => {
+        const apply = button(t("确认覆盖并刷新游戏"), () => {
           try {
             apply.disabled = true; backup.restore(plan);
-            status.textContent = "恢复成功，正在刷新游戏以载入设置。";
+            status.textContent = t("恢复成功，正在刷新游戏以载入设置。");
             root.location.reload();
-          } catch (error) { status.textContent = `恢复失败：${error.message}`; apply.disabled = false; }
+          } catch (error) { status.textContent = t`恢复失败：${error.message}`; apply.disabled = false; }
         });
-        const cancel = button("取消恢复", () => { ++generation; preview.replaceChildren(); input.value = ""; status.textContent = "已取消，数据未改动。"; input.focus(); });
+        const cancel = button(t("取消恢复"), () => { ++generation; preview.replaceChildren(); input.value = ""; status.textContent = t("已取消，数据未改动。"); input.focus(); });
         preview.append(summary, list, apply, cancel);
-        status.textContent = "校验通过，请检查覆盖范围后再恢复。";
-      } catch (error) { if (current === generation) status.textContent = `无法读取备份：${error.message}`; }
+        status.textContent = t("校验通过，请检查覆盖范围后再恢复。");
+      } catch (error) { if (current === generation) status.textContent = t`无法读取备份：${error.message}`; }
     };
     section.append(title, exportButton, label, preview);
     if (!createStatus) section.prepend(status);
@@ -7219,6 +8518,7 @@ function getPriceTier(price, direction) {
 (function initSettingsHelp(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = text => app.i18n?.t(text) ?? text;
   const sections = [
   {
     "title": "收藏与分区",
@@ -7286,7 +8586,7 @@ function getPriceTier(price, direction) {
   {
     "title": "成交历史",
     "paragraphs": [
-      "每行对应一个已有成交的本人订单，包含部分成交，记录原挂单价与累计成交量。挂单时间取自订单创建时间；成交耗时上限为挂单至记录时间的间隔，用 ≤ 表示，仅针对已成交部分，不代表整单售罄耗时。缺少挂单时间或时间异常时显示未知。数据源未提供实际成交价和成交时间；原挂单价仅供对照，记录时间不是成交时间，离线或后续订单更新可能使耗时上限偏大。"
+      "每行对应一个已有成交的本人订单，包含部分成交，记录原挂单价与累计成交量。挂单时间取自订单创建时间；成交耗时上限为挂单至记录时间的间隔，用 ≤ 表示，仅针对已成交部分，不代表整单售罄耗时。缺少挂单时间或时间异常时显示未知；旧记录再次读取到同一订单的创建时间后可补齐，已从游戏移除且未保存创建时间的订单无法恢复。数据源未提供实际成交价和成交时间；原挂单价仅供对照，记录时间不是成交时间，离线或后续订单更新可能使耗时上限偏大。"
     ]
   },
   {
@@ -7310,15 +8610,15 @@ function getPriceTier(price, direction) {
     const help = document.createElement("details");
     help.className = "mwi-layu-settings-help";
     app.viewPreferences.bindDetails(help, "help");
-    const heading = document.createElement("summary"); heading.textContent = "帮助";
+    const heading = document.createElement("summary"); heading.textContent = t("帮助");
     help.append(heading);
     for (const { title, paragraphs } of sections) {
       const section = document.createElement("details");
       app.viewPreferences.bindDetails(section, `help-topic:${title}`);
-      const summary = document.createElement("summary"); summary.textContent = title;
+      const summary = document.createElement("summary"); summary.textContent = t(title);
       section.append(summary);
       for (const text of paragraphs) {
-        const p = document.createElement("p"); p.textContent = text; section.append(p);
+        const p = document.createElement("p"); p.textContent = t(text); section.append(p);
       }
       help.append(section);
     }
@@ -7332,13 +8632,14 @@ function getPriceTier(price, direction) {
 (function initV3Settings(root) {
   "use strict";
   const app = root.MWILayuEnhancement;
-  const tiers = { loss: "亏损／持平", red: "低工时", orange: "一般工时", gold: "中等工时", lightGreen: "较高工时", brightGreen: "高工时" };
-  const sourceLabels = { "": "不使用", ask: "左一", askMinusOne: "左一退一档", bidPlusOne: "右一进一档", bid: "右一" };
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
+  const tiers = { get loss() { return t("亏损／持平"); }, get red() { return t("低工时"); }, get orange() { return t("一般工时"); }, get gold() { return t("中等工时"); }, get lightGreen() { return t("较高工时"); }, get brightGreen() { return t("高工时"); } };
+  const sourceLabels = { get ""() { return t("不使用"); }, get ask() { return t("左一"); }, get askMinusOne() { return t("左一退一档"); }, get bidPlusOne() { return t("右一进一档"); }, get bid() { return t("右一"); } };
   function createSettings(wages, createStatus) {
     const document = root.document;
     const container = document.createElement("section");
     container.className = "mwi-layu-wage-settings";
-    container.setAttribute("aria-label", "强化计算设置");
+    container.setAttribute("aria-label", t("强化计算设置"));
     const form = document.createElement("form");
     const controls = new Map();
     function group(title) {
@@ -7380,43 +8681,86 @@ function getPriceTier(price, direction) {
       label.append(text, input); parent.append(label); controls.set(path, input);
       return input;
     }
-    const basic = group("计算与显示");
-    field(basic, "features.autoFavoriteListings", "自动收藏挂单", { type: "checkbox" });
+    const languageGroup = group("Language / 语言");
+    languageGroup.parentElement.classList.add("v3-language-settings");
+    const languageLabel = document.createElement("label");
+    languageLabel.className = "mwi-layu-settings-field";
+    const languageTitle = document.createElement("span"); languageTitle.textContent = "Language / 语言";
+    const language = document.createElement("select"); language.setAttribute("aria-label", "Language / 语言");
+    for (const [value, title] of [["auto", "跟随游戏 / Follow game"], ["zh", "中文"], ["en", "English"]]) {
+      const option = document.createElement("option"); option.value = value; option.textContent = title; language.append(option);
+    }
+    language.value = app.i18n?.preference || "auto";
+    languageLabel.append(languageTitle, language); languageGroup.append(languageLabel);
+    const applyLanguage = document.createElement("button"); applyLanguage.type = "button";
+    applyLanguage.textContent = t("应用语言");
+    const languageHint = document.createElement("p"); languageHint.textContent = t("切换语言会重建插件界面，请先保存其他设置和未提交的输入。");
+    const languageStatus = document.createElement("p"); languageStatus.setAttribute("role", "status");
+    applyLanguage.onclick = () => {
+      try { app.i18n.setPreference(language.value); languageStatus.textContent = t("语言设置已保存。"); }
+      catch (_) { languageStatus.textContent = t("保存失败，请检查浏览器存储设置后重试。"); }
+    };
+    languageGroup.append(applyLanguage, languageHint, languageStatus);
+    const basic = group(t("计算与显示"));
+    field(basic, "features.autoFavoriteListings", t("自动收藏挂单"), { type: "checkbox" });
     const autoFavoriteHint = document.createElement("p");
-    autoFavoriteHint.textContent = "自动收藏读取到的本人买卖挂单，同物品、同等级去重；手动移除后，同一挂单不会重复加入。保存后在下一次读取挂单时生效。";
+    autoFavoriteHint.textContent = t("自动收藏读取到的本人买卖挂单，同物品、同等级去重；手动移除后，同一挂单不会重复加入。保存后在下一次读取挂单时生效。");
     basic.append(autoFavoriteHint);
-    field(basic, "features.marketHourlyWage", "显示工时费", { type: "checkbox" });
-    field(basic, "features.enhancingCommunityBuff", "计入当前社区强化增益", { type: "checkbox" });
-    field(basic, "features.manufacturingArtisanTea", "制造时使用工匠茶", { type: "checkbox" });
-    field(basic, "preferences.enhancementRouteObjective", "强化路线选择", { choices: { hourly: "最高工时费", profit: "最低成本", standard: "标准时薪" } });
-    field(basic, "preferences.enhancementStandardHourlyM", "标准时薪（M／小时）", { max: 1e6, step: 0.001 });
-    field(basic, "preferences.enhancementMaterialMultiplier", "强化备料倍率", { min: 0, max: 100, step: 0.01 });
-    const pricing = group("底子取得成本");
-    for (let index = 0; index < 4; index += 1) field(pricing, `material.${index}`, `材料第 ${index + 1} 顺位`, { choices: sourceLabels });
-    field(pricing, "preferences.baseItemCostPricePolicy.product", "成品 +0 报价", { choices: Object.fromEntries(Object.entries(sourceLabels).filter(([key]) => key)) });
-    const colors = group("工时费颜色");
-    section(colors, "分档阈值");
-    for (let index = 0; index < 4; index += 1) field(colors, `threshold.${index}`, `第 ${index + 1} 档阈值（M／小时）`, { max: 1e6, step: 0.001 });
-    section(colors, "显示颜色");
+    field(basic, "features.marketHourlyWage", t("显示工时费"), { type: "checkbox" });
+    field(basic, "features.enhancingCommunityBuff", t("计入当前社区强化增益"), { type: "checkbox" });
+    field(basic, "features.manufacturingArtisanTea", t("制造时使用工匠茶"), { type: "checkbox" });
+    field(basic, "preferences.enhancementRouteObjective", t("强化路线选择"), { choices: { hourly: t("最高工时费"), profit: t("最低成本"), standard: t("标准时薪") } });
+    field(basic, "preferences.enhancementStandardHourlyM", t("标准时薪（M／小时）"), { max: 1e6, step: 0.001 });
+    const preparation = document.createElement("div");
+    preparation.className = "mwi-layu-preparation-inputs";
+    basic.append(preparation);
+    const multiplier = field(preparation, "preferences.enhancementMaterialMultiplier", t("强化备料倍率"), { min: 0, max: 100, step: 0.01 });
+    const probability = field(preparation, "preparationSuccessPercent", t("期望成功率（%）"), { min: 0, max: 99.99, step: "any" });
+    // Derived UI only: keep the existing multiplier as the sole persisted value.
+    controls.delete("preparationSuccessPercent");
+    probability.title = t("按 1 − e^(−备料倍率) 估算，保留两位小数；接近 100% 时显示 99.99%。");
+    function formatPreparationInput(input) {
+      if (input.checkValidity()) input.value = Number(input.value).toFixed(2);
+    }
+    for (const input of [multiplier, probability]) input.addEventListener("blur", () => formatPreparationInput(input));
+    function syncProbability() {
+      if (!multiplier.checkValidity()) return;
+      probability.setCustomValidity("");
+      probability.value = Math.min(99.99, -Math.expm1(-Number(multiplier.value)) * 100).toFixed(2);
+    }
+    multiplier.addEventListener("input", syncProbability);
+    probability.addEventListener("input", () => {
+      probability.setCustomValidity("");
+      if (Number(probability.value) >= 100) probability.setCustomValidity(t("100% 需要无限备料倍率，请输入小于 100% 的成功率。"));
+      if (!probability.checkValidity()) return;
+      multiplier.value = (-Math.log1p(-Number(probability.value) / 100)).toFixed(2);
+    });
+    const pricing = group(t("底子取得成本"));
+    for (let index = 0; index < 4; index += 1) field(pricing, `material.${index}`, t`材料第 ${index + 1} 顺位`, { choices: sourceLabels });
+    field(pricing, "preferences.baseItemCostPricePolicy.product", t("成品 +0 报价"), { choices: Object.fromEntries(Object.entries(sourceLabels).filter(([key]) => key)) });
+    const colors = group(t("工时费颜色"));
+    section(colors, t("分档阈值"));
+    for (let index = 0; index < 4; index += 1) field(colors, `threshold.${index}`, t`第 ${index + 1} 档阈值（M／小时）`, { max: 1e6, step: 0.001 });
+    section(colors, t("显示颜色"));
     for (const [key, label] of Object.entries(tiers)) field(colors, `color.${key}`, label, { type: "color" });
-    const virtual = group("虚拟角色");
-    field(virtual, "virtual.enabled", "启用虚拟配置", { type: "checkbox" });
-    const labels = { enhancing_level: "强化技能等级", laboratory_level: "天文台等级", enhancer_level: "强化器等级", enhancers_top_level: "强化上衣等级", enhancers_bottom_level: "强化下装等级", necklace_level: "项链等级", glove_level: "附魔手套等级", chance_cape_level: "机缘披风等级", drink_pouch_level: "暴饮之囊等级" };
+    const virtual = group(t("虚拟角色"));
+    field(virtual, "virtual.enabled", t("启用虚拟配置"), { type: "checkbox" });
+    const labels = { enhancing_level: t("强化技能等级"), laboratory_level: t("天文台等级"), enhancer_level: t("强化器等级"), enhancers_top_level: t("强化上衣等级"), enhancers_bottom_level: t("强化下装等级"), necklace_level: t("项链等级"), glove_level: t("附魔手套等级"), chance_cape_level: t("机缘披风等级"), drink_pouch_level: t("暴饮之囊等级") };
     function virtualLevel(key) {
       const [min, max] = app.marketWages.numericVirtual[key];
       field(virtual, `virtual.${key}`, labels[key], { min, max });
     }
-    section(virtual, "技能与建筑");
+    section(virtual, t("技能与建筑"));
     for (const key of ["enhancing_level", "laboratory_level"]) virtualLevel(key);
-    section(virtual, "装备");
-    field(virtual, "virtual.enhancer_type", "强化器类型", { choices: { starry: "星空强化器", divine: "神圣强化器" } });
+    section(virtual, t("装备"));
+    field(virtual, "virtual.enhancer_type", t("强化器类型"), { choices: { starry: t("星空强化器"), divine: t("神圣强化器") } });
     for (const key of ["enhancer_level", "enhancers_top_level", "enhancers_bottom_level", "necklace_level", "glove_level"]) virtualLevel(key);
-    field(virtual, "virtual.chance_cape_type", "机缘披风类型", { choices: { none: "不装备", normal: "普通", refined: "精炼" } });
+    field(virtual, "virtual.chance_cape_type", t("机缘披风类型"), { choices: { none: t("不装备"), normal: t("普通"), refined: t("精炼") } });
     for (const key of ["chance_cape_level", "drink_pouch_level"]) virtualLevel(key);
-    section(virtual, "茶与增益");
-    field(virtual, "virtual.tea_type", "强化茶", { choices: { none: "不使用", basic: "普通强化茶", super: "超级强化茶", ultra: "究极强化茶" } });
-    field(virtual, "virtual.champion_achievement", "冠军成就", { type: "checkbox" });
-    field(virtual, "virtual.community_enhancing_speed_level", "虚拟社区增益等级", { choices: Object.fromEntries([["system", "跟随当前社区增益开关"], ...Array.from({ length: 21 }, (_, level) => [String(level), String(level)])]) });
+    section(virtual, t("茶与增益"));
+    field(virtual, "virtual.tea_type", t("强化茶"), { choices: { none: t("不使用"), basic: t("普通强化茶"), super: t("超级强化茶"), ultra: t("究极强化茶") } });
+    field(virtual, "virtual.champion_achievement", t("冠军成就"), { type: "checkbox" });
+    field(virtual, "virtual.community_enhancing_speed_level", t("虚拟社区增益等级"), { choices: Object.fromEntries([["system", t("跟随当前社区增益开关")], ...Array.from({ length: 21 }, (_, level) => [String(level), String(level)])]) });
     const virtualStatus = createStatus ? createStatus() : document.createElement("p"); virtualStatus.setAttribute("role", "status");
     if (!createStatus) container.prepend(virtualStatus);
     for (const [path, input] of controls) {
@@ -7430,7 +8774,7 @@ function getPriceTier(price, direction) {
           for (const [key, field] of controls) {
             if (!key.startsWith("virtual.")) continue;
             if (!field.checkValidity()) {
-              virtualStatus.textContent = "虚拟参数无效，尚未应用。请修正标记的输入。";
+              virtualStatus.textContent = t("虚拟参数无效，尚未应用。请修正标记的输入。");
               enabled.checked = wages.settings().virtual.enabled;
               field.reportValidity(); return;
             }
@@ -7439,18 +8783,18 @@ function getPriceTier(price, direction) {
         }
         try {
           wages.save(value);
-          virtualStatus.textContent = enabled.checked ? "虚拟配置已生效，计算已更新。" : "已切回当前角色，计算已更新。";
+          virtualStatus.textContent = enabled.checked ? t("虚拟配置已生效，计算已更新。") : t("已切回当前角色，计算已更新。");
         } catch (_error) {
           enabled.checked = wages.settings().virtual.enabled;
-          virtualStatus.textContent = "虚拟配置保存失败，仍使用原设置，请重试。";
+          virtualStatus.textContent = t("虚拟配置保存失败，仍使用原设置，请重试。");
         }
       });
     }
     const status = createStatus ? createStatus() : document.createElement("p"); status.setAttribute("role", "status");
     const actions = document.createElement("div"); actions.className = "mwi-layu-wage-actions";
-    const save = document.createElement("button"); save.type = "submit"; save.className = "mwi-layu-settings-save"; save.textContent = "保存并应用";
-    const reset = document.createElement("button"); reset.type = "button"; reset.textContent = "恢复默认值";
-    const retry = document.createElement("button"); retry.type = "button"; retry.textContent = "重新读取角色";
+    const save = document.createElement("button"); save.type = "submit"; save.className = "mwi-layu-settings-save"; save.textContent = t("保存并应用");
+    const reset = document.createElement("button"); reset.type = "button"; reset.textContent = t("恢复默认值");
+    const retry = document.createElement("button"); retry.type = "button"; retry.textContent = t("重新读取角色");
     actions.append(save, reset, retry); form.append(actions); if (!createStatus) container.prepend(status); container.append(form, app.helpUI.create());
     function populate(value) {
       for (const [path, input] of controls) {
@@ -7461,12 +8805,15 @@ function getPriceTier(price, direction) {
         else stored = path.split(".").reduce((object, key) => object?.[key], value);
         if (input.type === "checkbox") input.checked = Boolean(stored); else input.value = String(stored ?? "");
       }
+      formatPreparationInput(multiplier);
+      syncProbability();
       app.itemUI?.refreshChoices(container);
     }
     populate(wages.settings());
-    if (wages.state().storageError) status.textContent = "无法读取已保存设置，暂用默认值。请检查浏览器存储后重新保存。";
+    if (wages.state().storageError) status.textContent = t("无法读取已保存设置，暂用默认值。请检查浏览器存储后重新保存。");
     form.addEventListener("submit", (event) => {
       event.preventDefault();
+      if (!form.reportValidity()) return;
       const value = wages.settings();
       const material = [];
       for (const [path, input] of controls) {
@@ -7482,13 +8829,13 @@ function getPriceTier(price, direction) {
       value.preferences.baseItemCostPricePolicy.material = material;
       const thresholds = value.preferences.hourlyWageColorProfile.thresholdsM;
       if (thresholds.some((value, index) => index > 0 && value <= thresholds[index - 1])) {
-        status.textContent = "颜色阈值必须依次递增，设置尚未保存。";
+        status.textContent = t("颜色阈值必须依次递增，设置尚未保存。");
         controls.get("threshold.0").focus(); return;
       }
-      try { populate(wages.save(value)); status.textContent = "已保存，工时费已更新。"; }
-      catch (_error) { status.textContent = "保存失败，请检查浏览器存储设置后重试。"; }
+      try { populate(wages.save(value)); status.textContent = t("已保存，工时费已更新。"); }
+      catch (_error) { status.textContent = t("保存失败，请检查浏览器存储设置后重试。"); }
     });
-    reset.addEventListener("click", () => { populate(app.marketWages.defaults()); status.textContent = "已填入默认值，点击保存并应用后生效。"; });
+    reset.addEventListener("click", () => { populate(app.marketWages.defaults()); status.textContent = t("已填入默认值，点击保存并应用后生效。"); });
     retry.addEventListener("click", async () => {
       retry.disabled = true;
       try { await wages.refreshCharacter(); status.textContent = wages.status(); } finally { retry.disabled = false; }
@@ -7503,7 +8850,8 @@ function getPriceTier(price, direction) {
 (function initV3PriceSimulationUI(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
-  const number = value => Number.isFinite(value) ? value.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) : "—";
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
+  const number = value => Number.isFinite(value) ? value.toLocaleString(app.i18n?.locale || "zh-CN", { maximumFractionDigits: 2 }) : "—";
   function formatPrice(value) {
     if (!Number.isFinite(value)) return "";
     const units = [[1, ""], [1e3, "k"], [1e6, "m"], [1e9, "b"]];
@@ -7557,14 +8905,14 @@ function getPriceTier(price, direction) {
     }
     function createMaterialControl(material, mode, equivalentControl = null) {
       const hrid = material.itemHrid;
-      const modeLabel = mode === "purchase" ? "采购" : mode === "manufacturing" ? "制造" : "强化";
+      const modeLabel = mode === "purchase" ? t("采购") : mode === "manufacturing" ? t("制造") : t("强化");
       const label = names[hrid] || material.name || hrid.slice(7);
       const control = node("div", null, "mwi-layu-material-price-control");
       control.dataset.costHrid = hrid; control.dataset.costMode = mode;
       const line = node("div", null, "mwi-layu-material-price-stepper");
       const value = node("span"); const amount = node("input"); value.append(amount);
       amount.type = "text"; amount.inputMode = "decimal";
-      amount.setAttribute("aria-label", `${modeLabel}材料模拟单价：${label}`);
+      amount.setAttribute("aria-label", t`${modeLabel}材料模拟单价：${label}`);
       amount.dataset.focusKey = `simulation-input:${key}:${mode}:${hrid}`;
       const note = node("small");
       let side = "a", previous = null, next = null, dirty = false;
@@ -7577,38 +8925,38 @@ function getPriceTier(price, direction) {
         if (price != null) setPrice(hrid, side, price);
       };
       const lower = button("", () => move(-1)); const higher = button("", () => move(1));
-      for (const [el, direction, text] of [[lower, -1, "降低一档"], [higher, 1, "提高一档"]]) {
-        el.setAttribute("aria-label", `${modeLabel}材料${text}：${label}`);
+      for (const [el, direction, text] of [[lower, -1, t("降低一档")], [higher, 1, t("提高一档")]]) {
+        el.setAttribute("aria-label", t`${modeLabel}材料${text}：${label}`);
         el.dataset.focusKey = `simulation-step:${key}:${mode}:${hrid}:${direction}`;
         el.textContent = direction < 0 ? "−" : "+";
       }
       const currentQuote = () => {
         try { return readQuote?.({ itemHrid: hrid, enhancementLevel: 0 }); } catch (_error) { return null; }
       };
-      const restore = button("左一", () => {
+      const restore = button(t("左一"), () => {
         const quote = currentQuote();
         if (!(quote?.price > 0) || !Number.isFinite(quote.price) || quote.price > 1e12) {
-          (onStatus || (text => { note.textContent = text; }))("暂无有效左一价格，请先读取该材料行情"); return;
+          (onStatus || (text => { note.textContent = text; }))(t("暂无有效左一价格，请先读取该材料行情")); return;
         }
         if (!snapshot) initialize();
         // Restore the input used by this cost control, including bid-priced recipes.
         setPrice(hrid, side, quote.price);
       });
-      restore.setAttribute("aria-label", `${modeLabel}材料恢复当前左一价格：${label}`);
+      restore.setAttribute("aria-label", t`${modeLabel}材料恢复当前左一价格：${label}`);
       restore.dataset.focusKey = `simulation-restore:${key}:${mode}:${hrid}`;
       restore.className = "mwi-layu-material-price-restore";
-      const bid = button("右一", () => {
+      const bid = button(t("右一"), () => {
         const price = currentQuote()?.bid;
         if (Number.isFinite(price) && price > 0 && price <= 1e12) setPrice(hrid, side, price);
       });
-      bid.setAttribute("aria-label", `${modeLabel}材料使用当前右一价格：${label}`);
+      bid.setAttribute("aria-label", t`${modeLabel}材料使用当前右一价格：${label}`);
       bid.dataset.focusKey = `simulation-bid:${key}:${mode}:${hrid}`;
       function commit() {
         // A rounded display is never a new quote until the user edits it.
         if (!dirty) { displayPrice(); return; }
         const price = parsePrice(amount.value);
         if (!Number.isFinite(price) || price <= 0 || price > 1e12) {
-          amount.setAttribute("aria-invalid", "true"); (onStatus || (text => { note.textContent = text; }))("请输入大于 0 且不超过 1,000,000,000,000 的单价"); return;
+          amount.setAttribute("aria-invalid", "true"); (onStatus || (text => { note.textContent = text; }))(t("请输入大于 0 且不超过 1,000,000,000,000 的单价")); return;
         }
         dirty = false; amount.removeAttribute("aria-invalid"); setPrice(hrid, side, price);
       }
@@ -7628,33 +8976,33 @@ function getPriceTier(price, direction) {
         side = mode === "manufacturing" && info?.manufacturingSource ? (info.manufacturingSource.startsWith("bid") ? "b" : "a") : info?.ask != null ? "a" : "b";
         if (mode === "purchase" && info?.basePurchaseSource) side = info.basePurchaseSource.startsWith("bid") ? "b" : "a";
         const quote = side === "a" ? info?.ask : info?.bid;
-        let unit = info?.enhancement, kind = "强化计价";
-        if (mode === "purchase") { unit = info?.basePurchase; kind = "底子采购计价"; }
-        else if (mode === "manufacturing") { unit = info?.manufacturing; kind = "自制材料计价"; }
-        else if (hrid === "/items/philosophers_mirror") { unit = info?.mirror; kind = "镜子计价"; }
-        else if (!entry?.roles.includes("强化材料")) { unit = info?.protection; kind = "保护计价"; }
-        amount.placeholder = "未知";
+        let unit = info?.enhancement, kind = t("强化计价");
+        if (mode === "purchase") { unit = info?.basePurchase; kind = t("底子采购计价"); }
+        else if (mode === "manufacturing") { unit = info?.manufacturing; kind = t("自制材料计价"); }
+        else if (hrid === "/items/philosophers_mirror") { unit = info?.mirror; kind = t("镜子计价"); }
+        else if (!entry?.roles.includes(t("强化材料"))) { unit = info?.protection; kind = t("保护计价"); }
+        amount.placeholder = t("未知");
         amount.disabled = !snapshot; control.dataset.unitPrice = unit ?? "";
         control.dataset.quotePrice = quote ?? ""; control.dataset.quoteSide = side;
         if (!dirty) displayPrice();
-        amount.title = `模拟报价：${number(quote)} · ${kind}：${number(unit)}`;
+        amount.title = t`模拟报价：${number(quote)} · ${kind}：${number(unit)}`;
         amount.setAttribute("aria-description", amount.title);
         previous = app.marketPrices.previousPrice(quote, 0, entry?.vendorPrice || 0);
         next = app.marketPrices.nextPrice(quote, 0, entry?.vendorPrice || 0);
         lower.disabled = previous == null; higher.disabled = next == null;
         const observed = currentQuote();
         restore.disabled = !snapshot || !(observed?.price > 0) || !Number.isFinite(observed.price) || observed.price > 1e12;
-        restore.title = restore.disabled ? "暂无有效左一价格，请先读取该材料行情"
-          : `${observed.cached ? "缓存 · " : ""}${observed.stale ? "旧报价 · " : ""}${observed.source || "已有行情"}左一：${number(observed.price)}`;
+        restore.title = restore.disabled ? t("暂无有效左一价格，请先读取该材料行情")
+          : t`${observed.cached ? t("缓存 · ") : ""}${observed.stale ? t("旧报价 · ") : ""}${observed.source || t("已有行情")}左一：${number(observed.price)}`;
         bid.disabled = !snapshot || !(observed?.bid > 0) || !Number.isFinite(observed.bid) || observed.bid > 1e12;
-        bid.title = bid.disabled ? "暂无有效右一价格" : `用当前右一 ${number(observed.bid)} 模拟本项成本`;
+        bid.title = bid.disabled ? t("暂无有效右一价格") : t`用当前右一 ${number(observed.bid)} 模拟本项成本`;
         restore.setAttribute("aria-pressed", String(!restore.disabled && quote === observed.price));
         bid.setAttribute("aria-pressed", String(!bid.disabled && quote === observed.bid && quote !== observed.price));
-        lower.title = previous == null ? "无可用更低档位" : `模拟${side === "a" ? "左一" : "右一"}：${number(previous)}`;
-        higher.title = next == null ? "无可用更高档位" : `模拟${side === "a" ? "左一" : "右一"}：${number(next)}`;
-        note.textContent = !latest ? "计算未就绪，请重新展开项目重试" : quote == null ? "无市场报价，请先读取该材料行情" : "";
+        lower.title = previous == null ? t("无可用更低档位") : t`模拟${side === "a" ? t("左一") : t("右一")}：${number(previous)}`;
+        higher.title = next == null ? t("无可用更高档位") : t`模拟${side === "a" ? t("左一") : t("右一")}：${number(next)}`;
+        note.textContent = !latest ? t("计算未就绪，请重新展开项目重试") : quote == null ? t("无市场报价，请先读取该材料行情") : "";
         if (latest && unit != null && quote != null && number(unit) !== number(quote)) note.textContent = `${kind}：${number(unit)}`;
-        if (latest && mode === "manufacturing" && unit == null) note.textContent += " · 自制未启用、缺价或组合分摊未知";
+        if (latest && mode === "manufacturing" && unit == null) note.textContent += t(" · 自制未启用、缺价或组合分摊未知");
         // Controls edit a market quote, not the derived cost. Manufacturing
         // allocation can differ (including floating-point rounding) while both
         // uses still edit exactly the same HRID/side. Never duplicate that input.
@@ -7663,7 +9011,7 @@ function getPriceTier(price, direction) {
           equivalentControl.dataset.quoteSide === side);
         if (control.hidden) {
           const shared = equivalentControl.querySelector("input");
-          shared.title = `模拟报价：${number(quote)} · 制造计价：${number(unit)} · 强化计价：${number(Number(equivalentControl.dataset.unitPrice) || null)}`;
+          shared.title = t`模拟报价：${number(quote)} · 制造计价：${number(unit)} · 强化计价：${number(Number(equivalentControl.dataset.unitPrice) || null)}`;
           shared.setAttribute("aria-description", shared.title);
           // If a source fallback merges the controls during editing, keep
           // keyboard focus on the corresponding action in the surviving row.
@@ -7679,7 +9027,7 @@ function getPriceTier(price, direction) {
       materialControls.add(update); update(); return control;
     }
     return Object.freeze({ reset() { drafts.clear(); snapshot = null; initialize(); }, refreshSource() { initialize(); }, current: () => latest, active: () => drafts.size > 0,
-      sellPrice: () => snapshot?.sellPrice, calculateAt: price => latest?.calculateAt(price) || { reason: "模拟报价无效，请修正" }, createMaterialControl, clearMaterialControls: () => materialControls.clear(), bind(listener) {
+      sellPrice: () => snapshot?.sellPrice, calculateAt: price => latest?.calculateAt(price) || { reason: t("模拟报价无效，请修正") }, createMaterialControl, clearMaterialControls: () => materialControls.clear(), bind(listener) {
       onResult = listener; materialControls.clear();
       if (!snapshot) initialize(); else onResult(latest);
     }, updateAppearance(value) {
@@ -7694,6 +9042,7 @@ function getPriceTier(price, direction) {
 (function initV3PresetUI(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   let nextId = 0;
   function clothingPart(item) {
     return /_(top|bottoms)(?:_refined)?$/.exec(item.itemHrid)?.[1] || "";
@@ -7717,7 +9066,7 @@ function getPriceTier(price, direction) {
       if (className) el.className = className;
       return el;
     };
-    const element = node("section", null, "mwi-layu-presets"); element.setAttribute("aria-label", "从预设添加");
+    const element = node("section", null, "mwi-layu-presets"); element.setAttribute("aria-label", t("从预设添加"));
     // Equipment choices belong to this open manager; enhancement levels and the display filter persist.
     const selected = new Map(), levels = new Set(preferences.read().presetLevels || []), expanded = new Set(["clothes"]);
     let resultText = "", failure = false, snapshot, deleting = false, removed = [], searchText = "", targetGroup = "";
@@ -7734,27 +9083,27 @@ function getPriceTier(price, direction) {
     }
     function render(value) {
       snapshot = value;
-      element.setAttribute("aria-label", deleting ? "按预设批量删除" : "从预设添加");
+      element.setAttribute("aria-label", deleting ? t("按预设批量删除") : t("从预设添加"));
       const { names, spriteBase } = value, hideOrdinary = preferences.read().presetHideOrdinary === true;
       const catalog = app.partitionPresets.filterCatalog(value.catalog, hideOrdinary);
       element.replaceChildren();
       const modes = node("div", null, "mwi-layu-group-toolbar mwi-layu-preset-modes");
-      for (const [label, mode] of [["批量添加", false], ["批量删除", true]]) {
+      for (const [label, mode] of [[t("批量添加"), false], [t("批量删除"), true]]) {
         const toggle = button(label, `preset-mode:${mode}`, () => {
           deleting = mode; resultText = ""; failure = false; render(snapshot);
           element.querySelector(`[data-focus-key="preset-mode:${mode}"]`).focus({ preventScroll: true });
         }); toggle.setAttribute("aria-pressed", String(deleting === mode)); modes.append(toggle);
       }
-      const search = node("input"); search.type = "search"; search.placeholder = "搜索预设物品";
-      search.setAttribute("aria-label", "搜索预设物品"); search.value = searchText; search.dataset.focusKey = "preset-search";
+      const search = node("input"); search.type = "search"; search.placeholder = t("搜索预设物品");
+      search.setAttribute("aria-label", t("搜索预设物品")); search.value = searchText; search.dataset.focusKey = "preset-search";
       search.oninput = () => {
         searchText = search.value;
         for (const toggle of element.querySelectorAll('.mwi-layu-preset-expand[aria-expanded="false"]')) toggle.click();
         filterTree();
       }; modes.append(search);
       element.append(modes);
-      if (!catalog.ready) { message.hidden = false; message.textContent = "等待游戏物品数据，请刷新游戏后重试。"; if (!createStatus) element.prepend(message); return; }
-      const filter = button("隐藏普通装备", "preset-hide-ordinary", () => {
+      if (!catalog.ready) { message.hidden = false; message.textContent = t("等待游戏物品数据，请刷新游戏后重试。"); if (!createStatus) element.prepend(message); return; }
+      const filter = button(t("隐藏普通装备"), "preset-hide-ordinary", () => {
         const parents = [];
         for (let parent = element.parentElement; parent; parent = parent.parentElement) parents.push([parent, parent.scrollTop]);
         preferences.update({ presetHideOrdinary: !hideOrdinary }); resultText = ""; failure = false;
@@ -7764,10 +9113,10 @@ function getPriceTier(price, direction) {
       });
       filter.setAttribute("aria-pressed", String(hideOrdinary));
       const count = value.catalog.groups.reduce((n, group) => n + group.items.length, 0) - catalog.groups.reduce((n, group) => n + group.items.length, 0);
-      const filterStatus = node("span", hideOrdinary ? `已开启 · 隐藏 ${count} 件普通装备` : "未开启 · 显示全部装备", "mwi-layu-group-note");
+      const filterStatus = node("span", hideOrdinary ? t`已开启 · 隐藏 ${count} 件普通装备` : t("未开启 · 显示全部装备"), "mwi-layu-group-note");
       filterStatus.setAttribute("aria-live", "polite");
       const help = node("details", null, "mwi-layu-preset-filter-help");
-      help.append(node("summary", "隐藏范围"), node("p", "隐藏 1–65 级生活工具、基础奶酪与木材系列装备，以及粗糙、爬行动物、哥布林、野兽、暗影皮革系列装备；另隐藏 40 级哥布林装备及棉、亚麻、竹、丝绸、光辉基础布料装备，以及指定的 12 件低中阶装备及小、中、大、巨大四种袋子。保留高阶皮革装备、80/90 级工具及所有精制版。开启时取消被隐藏物品的本次勾选，关闭后不恢复勾选；已有收藏不变。", "mwi-layu-group-note"));
+      help.append(node("summary", t("隐藏范围")), node("p", t("隐藏 1–65 级生活工具、基础奶酪与木材系列装备，以及粗糙、爬行动物、哥布林、野兽、暗影皮革系列装备；另隐藏 40 级哥布林装备及棉、亚麻、竹、丝绸、光辉基础布料装备，以及指定的 12 件低中阶装备及小、中、大、巨大四种袋子。保留高阶皮革装备、80/90 级工具及所有精制版。开启时取消被隐藏物品的本次勾选，关闭后不恢复勾选；已有收藏不变。"), "mwi-layu-group-note"));
       modes.append(filter); filter.append(node("span", " · "), filterStatus); element.append(help);
       // A refreshed catalog may remove/reclassify items. Never silently select replacement items.
       for (const [id, hrids] of selected) {
@@ -7780,8 +9129,8 @@ function getPriceTier(price, direction) {
       const identity = item => app.itemUI.identity(item, spriteBase, names[item.itemHrid] || item.name);
       function withShop(content, item, key) {
         const row = node("div", null, "mwi-layu-preset-item-row");
-        const shop = button("商店", `preset-shop:${key}:${item.itemHrid}`, () => onOpen(item, shop, null, true), "mwi-layu-preset-shop");
-        shop.setAttribute("aria-label", `打开商店：${names[item.itemHrid] || item.name}`);
+        const shop = button(t("商店"), `preset-shop:${key}:${item.itemHrid}`, () => onOpen(item, shop, null, true), "mwi-layu-preset-shop");
+        shop.setAttribute("aria-label", t`打开商店：${names[item.itemHrid] || item.name}`);
         shop.disabled = typeof onOpen !== "function";
         row.append(content, shop); return row;
       }
@@ -7804,7 +9153,7 @@ function getPriceTier(price, direction) {
       for (const group of catalog.groups) {
         const cell = node("section", null, "mwi-layu-preset-option"), heading = node("div", null, "mwi-layu-preset-category-head");
         const body = node("div", null, "mwi-layu-preset-tiers"); body.id = `${prefix}-${group.id}`; body.hidden = !expanded.has(group.id);
-        body.setAttribute("role", "group"); body.setAttribute("aria-label", `${group.name}装备等级`);
+        body.setAttribute("role", "group"); body.setAttribute("aria-label", t`${group.name}装备等级`);
         const toggle = button(null, `preset-expand:${group.id}`, () => {
           body.hidden = !body.hidden;
           body.hidden ? expanded.delete(group.id) : expanded.add(group.id);
@@ -7812,33 +9161,33 @@ function getPriceTier(price, direction) {
           if (!body.hidden) { populate(); filterTree(); }
           update();
         }, "mwi-layu-preset-expand");
-        toggle.setAttribute("aria-label", `展开分类：${group.name}`); toggle.setAttribute("aria-controls", body.id); toggle.setAttribute("aria-expanded", String(!body.hidden));
+        toggle.setAttribute("aria-label", t`展开分类：${group.name}`); toggle.setAttribute("aria-controls", body.id); toggle.setAttribute("aria-expanded", String(!body.hidden));
         const title = node("strong", group.name), meta = node("span", null, "mwi-layu-group-note"); toggle.append(title, meta);
-        const all = node("label", null, "mwi-layu-preset-choice"); all.append(selectionControl(`预设：${group.name}`, `category:${group.id}`, group.tiers), node("span", "全选"));
+        const all = node("label", null, "mwi-layu-preset-choice"); all.append(selectionControl(t`预设：${group.name}`, `category:${group.id}`, group.tiers), node("span", t("全选")));
         controls.push(() => {
           const n = group.tiers.reduce((sum, tier) => sum + choices(tier).size, 0);
-          meta.textContent = ` · ${group.tiers.length} 个分区 · ${group.items.length} 件 · 已选 ${n} 件`;
+          meta.textContent = t` · ${group.tiers.length} 个分区 · ${group.items.length} 件 · 已选 ${n} 件`;
         });
         heading.append(toggle, all); cell.append(heading, body); grid.append(cell);
         function populate() {
           if (body.childElementCount) return;
-          if (!group.items.length) { body.append(node("p", hideOrdinary ? "筛选后暂无可添加物品，可关闭隐藏查看。" : "当前物品表中无可添加物品", "mwi-layu-group-note")); return; }
+          if (!group.items.length) { body.append(node("p", hideOrdinary ? t("筛选后暂无可添加物品，可关闭隐藏查看。") : t("当前物品表中无可添加物品"), "mwi-layu-group-note")); return; }
           for (const tier of group.tiers) {
             const block = node("section", null, "mwi-layu-preset-tier"); block.dataset.preset = tier.id;
             const tierHead = node("div", null, "mwi-layu-preset-tier-head"), label = node("label", null, "mwi-layu-preset-choice");
-            const tierName = group.id === "materials" ? "强化材料" : tier.itemLevel == null ? "等级未知" : `${tier.itemLevel}级`;
-            label.append(selectionControl(`预设分区：${tier.name}`, `tier:${tier.id}`, [tier]), node("strong", tierName));
+            const tierName = group.id === "materials" ? t("强化材料") : tier.itemLevel == null ? t("等级未知") : t`${tier.itemLevel}级`;
+            label.append(selectionControl(t`预设分区：${tier.name}`, `tier:${tier.id}`, [tier]), node("strong", tierName));
             const status = node("span", null, "mwi-layu-group-note"); tierHead.append(label, status);
             controls.push(() => {
               const n = choices(tier).size;
-              status.textContent = `${n === tier.items.length ? "全部选中" : n ? "部分选中" : "未选择"} · ${n}/${tier.items.length} 件`;
+              status.textContent = t`${n === tier.items.length ? t("全部选中") : n ? t("部分选中") : t("未选择")} · ${n}/${tier.items.length} 件`;
               block.classList.toggle("is-selected", n > 0);
             });
-            const list = node("div", null, "mwi-layu-preset-items"); list.setAttribute("aria-label", `${tier.name}预设物品`);
+            const list = node("div", null, "mwi-layu-preset-items"); list.setAttribute("aria-label", t`${tier.name}预设物品`);
             if (group.id === "clothes") list.classList.add("v3-preset-clothes");
             for (const item of group.id === "clothes" ? pairClothing(tier.items) : tier.items) {
               const row = node("label", null, "mwi-layu-preset-item-choice");
-              const input = checkbox(`预设物品：${tier.name}：${names[item.itemHrid] || item.name}`, `${tier.id}:${item.itemHrid}`, choices(tier).has(item.itemHrid), checked => {
+              const input = checkbox(t`预设物品：${tier.name}：${names[item.itemHrid] || item.name}`, `${tier.id}:${item.itemHrid}`, choices(tier).has(item.itemHrid), checked => {
                 const set = choices(tier); checked ? set.add(item.itemHrid) : set.delete(item.itemHrid); selected.set(tier.id, set); changed();
               });
               controls.push(() => { input.checked = choices(tier).has(item.itemHrid); row.classList.toggle("is-selected", input.checked); });
@@ -7852,117 +9201,117 @@ function getPriceTier(price, direction) {
         if (!body.hidden) { populate(); filterTree(); }
       }
       const catalogHead = node("div", null, "v3-section-heading");
-      const catalogTitle = node("div"); catalogTitle.append(node("strong", "官方预设目录分类树"), node("p", `全 ${catalog.groups.length} 大主分类 · 逐件或按品阶勾选`, "mwi-layu-group-note"));
+      const catalogTitle = node("div"); catalogTitle.append(node("strong", t("官方预设目录分类树")), node("p", t`全 ${catalog.groups.length} 大主分类 · 逐件或按品阶勾选`, "mwi-layu-group-note"));
       catalogHead.append(catalogTitle, search); grid.prepend(catalogHead);
-      modes.append(button("全选所有分类", "preset-select-all", () => { for (const tier of catalog.presets) chooseTier(tier, true); changed(); }));
+      modes.append(button(t("全选所有分类"), "preset-select-all", () => { for (const tier of catalog.presets) chooseTier(tier, true); changed(); }));
       element.append(grid);
       if (catalog.unknown.length) {
-        const details = node("details", null, "mwi-layu-preset-unknown"); details.append(node("summary", `${catalog.unknown.length} 种装备类型尚未识别（不自动添加）`));
+        const details = node("details", null, "mwi-layu-preset-unknown"); details.append(node("summary", t`${catalog.unknown.length} 种装备类型尚未识别（不自动添加）`));
         const list = node("div", null, "mwi-layu-preset-items");
         for (const item of catalog.unknown) list.append(withShop(identity(item), item, "unknown"));
         details.append(list); element.append(details);
       }
       const selection = node("section", null, "mwi-layu-preset-selection"), selectionHead = node("div", null, "mwi-layu-preset-tier-head");
       const total = node("h4"); total.setAttribute("aria-live", "polite");
-      const clear = button("清空选择", "preset-clear", () => { selected.clear(); changed(); });
+      const clear = button(t("清空选择"), "preset-clear", () => { selected.clear(); changed(); });
       selectionHead.append(total, clear);
-      const targets = node("div", null, "mwi-layu-preset-targets"); targets.setAttribute("aria-label", "已选分区与物品");
+      const targets = node("div", null, "mwi-layu-preset-targets"); targets.setAttribute("aria-label", t("已选分区与物品"));
       selection.append(selectionHead, targets); element.append(selection);
       const aside = node("div", null, "mwi-layu-preset-aside");
       if (!deleting) {
-        const label = node("label", "目标归属分区 "), target = node("select"); target.setAttribute("aria-label", "目标归属分区");
-        for (const group of [{id:"", name:"按预设自动分区"}, ...app.marketPartitions.create().groups().filter(group => group.id !== "unassigned")]) {
+        const label = node("label", t("目标归属分区 ")), target = node("select"); target.setAttribute("aria-label", t("目标归属分区"));
+        for (const group of [{id:"", name:t("按预设自动分区")}, ...app.marketPartitions.create().groups().filter(group => group.id !== "unassigned")]) {
           const option = node("option", group.name); option.value = group.id; target.append(option);
         }
         if (![...target.options].some(option => option.value === targetGroup)) targetGroup = "";
         target.value = targetGroup; target.onchange = () => { targetGroup = target.value; changed(); };
         label.append(target); aside.append(label);
       }
-      aside.append(node("h4", deleting ? "删除哪些强化等级" : "加入哪些强化等级"));
+      aside.append(node("h4", deleting ? t("删除哪些强化等级") : t("加入哪些强化等级")));
       const levelRow = node("div", null, "mwi-layu-preset-levels");
       const addLevel = level => {
         const label = node("label", null, "mwi-layu-partition-choice");
-        label.append(checkbox(`预设强化等级 +${level}`, `enhancement:${level}`, levels.has(level), checked => {
+        label.append(checkbox(t`预设强化等级 +${level}`, `enhancement:${level}`, levels.has(level), checked => {
           checked ? levels.add(level) : levels.delete(level);
           preferences.update({ presetLevels: [...levels].sort((a, b) => a - b) }); changed();
         }), node("span", `+${level}`)); return label;
       };
-      const shortcuts = node("div", null, "v3-level-shortcuts"); shortcuts.append(node("span", "快捷：", "mwi-layu-group-note"));
+      const shortcuts = node("div", null, "v3-level-shortcuts"); shortcuts.append(node("span", t("快捷："), "mwi-layu-group-note"));
       for (const level of [5,7,8,10,12]) shortcuts.append(button(`+${level}`, `level-shortcut:${level}`, () => {
         levels.has(level) ? levels.delete(level) : levels.add(level); preferences.update({presetLevels:[...levels]}); render(snapshot);
       }));
-      for (const [text, enabled] of [["全选 0–20", true], ["清空等级", false]]) shortcuts.append(button(text, `preset-level-all:${enabled}`, () => {
+      for (const [text, enabled] of [[t("全选 0–20"), true], [t("清空等级"), false]]) shortcuts.append(button(text, `preset-level-all:${enabled}`, () => {
         levels.clear(); if (enabled) for (let n = 0; n <= 20; n++) levels.add(n);
         preferences.update({presetLevels:[...levels]}); render(snapshot);
       }));
       for (let level = 0; level <= 20; level++) levelRow.append(addLevel(level));
-      aside.append(shortcuts, levelRow, node("p", "等级可多选；不可强化物品仅加入 +0。", "mwi-layu-group-note")); element.append(aside);
+      aside.append(shortcuts, levelRow, node("p", t("等级可多选；不可强化物品仅加入 +0。"), "mwi-layu-group-note")); element.append(aside);
       const footer = node("div", null, "mwi-layu-preset-footer"), preview = node("div", null, "mwi-layu-preset-preview"); preview.setAttribute("aria-live", "polite");
-      const apply = button(deleting ? "删除所有匹配收藏" : "添加所选分区与物品", "preset-apply", () => {
+      const apply = button(deleting ? t("删除所有匹配收藏") : t("添加所选分区与物品"), "preset-apply", () => {
         apply.disabled = true;
         try {
           const items = activeItems();
           if (deleting) {
             const deleted = presets.remove(Object.keys(items), [...levels], names, items);
             if (deleted.length) removed = deleted;
-            resultText = `已删除 ${deleted.length} 条收藏。`;
+            resultText = t`已删除 ${deleted.length} 条收藏。`;
           } else {
             const result = presets.apply(Object.keys(items), [...levels], names, items, targetGroup);
-            resultText = `已创建 ${result.newGroups} 个分区，新增 ${result.added} 条收藏，复用 ${result.reused} 条收藏。`;
+            resultText = t`已创建 ${result.newGroups} 个分区，新增 ${result.added} 条收藏，复用 ${result.reused} 条收藏。`;
           }
           failure = false;
           update(); onChange();
         } catch (error) { failure = true; resultText = error.message; update(); }
       }, "mwi-layu-preset-apply");
-      const undo = button("撤销预设批量删除", "preset-undo", () => {
+      const undo = button(t("撤销预设批量删除"), "preset-undo", () => {
         try {
           const result = presets.restoreRemoved(removed); removed = []; failure = false;
-          resultText = `已恢复 ${result.restored} 条收藏，保留 ${result.conflicts} 条后续新增或修改的记录。`;
+          resultText = t`已恢复 ${result.restored} 条收藏，保留 ${result.conflicts} 条后续新增或修改的记录。`;
           update(); onChange();
-        } catch (error) { failure = true; resultText = `撤销失败：${error.message}`; update(); }
+        } catch (error) { failure = true; resultText = t`撤销失败：${error.message}`; update(); }
       });
-      const onlyPreset = button("仅删除预设新增收藏", "preset-delete-new", () => {
+      const onlyPreset = button(t("仅删除预设新增收藏"), "preset-delete-new", () => {
         try {
           const items = activeItems(), deleted = presets.remove(Object.keys(items), [...levels], names, items, true);
           if (deleted.length) removed = deleted;
-          failure = false; resultText = `已删除 ${deleted.length} 条预设新增收藏，手动及来源未记录的收藏保留。`;
+          failure = false; resultText = t`已删除 ${deleted.length} 条预设新增收藏，手动及来源未记录的收藏保留。`;
           update(); onChange();
         } catch (error) { failure = true; resultText = error.message; update(); }
       });
       onlyPreset.hidden = !deleting;
       const execution = node("div", null, "v3-preset-execution"); execution.append(onlyPreset, apply, undo);
-      footer.append(node("strong", "预计执行结果", "v3-section-title"), preview, execution);
+      footer.append(node("strong", t("预计执行结果"), "v3-section-title"), preview, execution);
       const matches = node("details", null, "mwi-layu-preset-matches"); matches.hidden = !deleting;
       const matchSummary = node("summary"), matchList = node("div", null, "mwi-layu-delete-preview");
       matches.append(matchSummary, matchList);
-      element.append(node("p", deleting ? "两个按钮使用相同物品与强化等级条件：仅删预设新增，或删除全部匹配。删除同时移除参考价，可撤销；分区、备料车及游戏挂单保持原状。" : "仅添加所选物品；保留已有分区归属、收藏与参考价。", "mwi-layu-preset-preserve mwi-layu-group-note"), matches, footer);
+      element.append(node("p", deleting ? t("两个按钮使用相同物品与强化等级条件：仅删预设新增，或删除全部匹配。删除同时移除参考价，可撤销；分区、备料车及游戏挂单保持原状。") : t("仅添加所选物品；保留已有分区归属、收藏与参考价。"), "mwi-layu-preset-preserve mwi-layu-group-note"), matches, footer);
       function activeItems() {
         return Object.fromEntries(catalog.presets.filter(tier => choices(tier).size).map(tier => [tier.id, [...choices(tier)]]));
       }
       function update() {
         for (const sync of controls) sync();
         const items = activeItems(), ids = Object.keys(items), count = Object.values(items).reduce((n, hrids) => n + hrids.length, 0);
-        total.textContent = `已选 ${ids.length} 个分区 · ${count} 件物品`;
+        total.textContent = t`已选 ${ids.length} 个分区 · ${count} 件物品`;
         clear.disabled = !count;
         let plan;
-        preview.replaceChildren(); matchList.replaceChildren(); matchSummary.textContent = "尚无匹配收藏";
+        preview.replaceChildren(); matchList.replaceChildren(); matchSummary.textContent = t("尚无匹配收藏");
         try {
           plan = deleting ? presets.removalPlan(ids, [...levels], names, items) : presets.plan(ids, [...levels], names, items, targetGroup);
           if (deleting) {
             const presetCount = plan.rows.filter(row => row.presetAdded === true).length;
-            preview.append(node("span", `全部匹配 ${plan.rows.length} 条收藏 · 其中预设新增 ${presetCount} 条`));
-            onlyPreset.textContent = `仅删除预设新增收藏 (${presetCount})`;
+            preview.append(node("span", t`全部匹配 ${plan.rows.length} 条收藏 · 其中预设新增 ${presetCount} 条`));
+            onlyPreset.textContent = t`仅删除预设新增收藏 (${presetCount})`;
             onlyPreset.disabled = !presetCount;
-            apply.textContent = `删除所有匹配收藏 (${plan.rows.length})`;
-            matchSummary.textContent = `查看匹配收藏：${plan.rows.length} 条 · 其中预设新增 ${presetCount} 条`;
+            apply.textContent = t`删除所有匹配收藏 (${plan.rows.length})`;
+            matchSummary.textContent = t`查看匹配收藏：${plan.rows.length} 条 · 其中预设新增 ${presetCount} 条`;
             for (const row of plan.rows) {
               const line = node("div", null, "mwi-layu-favorite-delete-row");
               line.append(app.itemUI.identity(row, spriteBase, `${names[row.itemHrid] || row.name} +${row.enhancementLevel}`),
-                node("span", row.presetAdded ? "预设新增" : "来源未记录", "mwi-layu-group-note")); matchList.append(line);
+                node("span", row.presetAdded ? t("预设新增") : t("来源未记录"), "mwi-layu-group-note")); matchList.append(line);
             }
             apply.disabled = !plan.rows.length;
-          } else { preview.append(node("span", `${plan.newGroups} 个新分区`), node("span", `${plan.added} 条新收藏`), node("span", `复用已有 ${plan.reused} 条收藏`, "mwi-layu-group-note")); apply.disabled = false; }
-        } catch (error) { preview.append(node("span", ids.length ? error.message : "请展开分类，选择需要的物品。", "mwi-layu-group-note")); apply.disabled = true; onlyPreset.disabled = true; }
+          } else { preview.append(node("span", t`${plan.newGroups} 个新分区`), node("span", t`${plan.added} 条新收藏`), node("span", t`复用已有 ${plan.reused} 条收藏`, "mwi-layu-group-note")); apply.disabled = false; }
+        } catch (error) { preview.append(node("span", ids.length ? error.message : t("请展开分类，选择需要的物品。"), "mwi-layu-group-note")); apply.disabled = true; onlyPreset.disabled = true; }
         // Avoid rebuilding the item summary on enhancement-only changes; removal restores keyboard focus.
         const signature = JSON.stringify(items);
         if (targets.dataset.selection !== signature) {
@@ -7971,7 +9320,7 @@ function getPriceTier(price, direction) {
             const group = node("div", null, "mwi-layu-preset-selected-group");
             group.dataset.presetId = tier.id;
             const name = plan?.targets.find(target => target.presetId === tier.id)?.name || tier.name;
-            group.append(node("h4", `${deleting ? "匹配" : "加入"}「${name}」`));
+            group.append(node("h4", `${deleting ? t("匹配") : t("加入")}「${name}」`));
             const list = node("div", null, "mwi-layu-preset-items");
             for (const item of tier.items.filter(item => choices(tier).has(item.itemHrid))) {
               const remove = button(null, `preset-remove:${tier.id}:${item.itemHrid}`, () => {
@@ -7982,18 +9331,18 @@ function getPriceTier(price, direction) {
                   (next[Math.min(index, next.length - 1)] || grid.querySelector("button")).focus({ preventScroll: true });
                 }
               }, "mwi-layu-preset-remove");
-              remove.setAttribute("aria-label", `取消选择：${tier.name}：${names[item.itemHrid] || item.name}`);
-              remove.append(identity(item), node("span", "移除", "mwi-layu-group-note")); list.append(withShop(remove, item, `selected:${tier.id}`));
+              remove.setAttribute("aria-label", t`取消选择：${tier.name}：${names[item.itemHrid] || item.name}`);
+              remove.append(identity(item), node("span", t("移除"), "mwi-layu-group-note")); list.append(withShop(remove, item, `selected:${tier.id}`));
             }
             group.append(list); targets.append(group);
           }
-          if (!count) targets.append(node("p", "尚未选择物品。", "mwi-layu-group-note"));
+          if (!count) targets.append(node("p", t("尚未选择物品。"), "mwi-layu-group-note"));
         }
         // Changing the destination only changes captions; keep mounted item SVGs and keyboard focus.
         for (const group of targets.querySelectorAll("[data-preset-id]")) {
           const tier = catalog.presets.find(value => value.id === group.dataset.presetId);
           const name = plan?.targets.find(value => value.presetId === tier.id)?.name || tier.name;
-          group.querySelector("h4").textContent = `${deleting ? "匹配" : "加入"}「${name}」`;
+          group.querySelector("h4").textContent = `${deleting ? t("匹配") : t("加入")}「${name}」`;
         }
         undo.hidden = !removed.length;
         message.hidden = !resultText; message.textContent = resultText; message.setAttribute("role", failure ? "alert" : "status"); message.classList.toggle("mwi-layu-preset-error", failure);
@@ -8013,6 +9362,7 @@ function getPriceTier(price, direction) {
 (function initV3FavoriteManagement(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   function create({ store, partitions, onChange, createStatus }) {
     const document = root.document, key = app.marketFavoritesStore.key;
     const node = (tag, text, className) => {
@@ -8021,7 +9371,7 @@ function getPriceTier(price, direction) {
       if (className) el.className = className;
       return el;
     };
-    const element = node("section", null, "mwi-layu-favorite-manager"); element.setAttribute("aria-label", "管理收藏");
+    const element = node("section", null, "mwi-layu-favorite-manager"); element.setAttribute("aria-label", t("管理收藏"));
     const selected = new Set(), filters = {}, controls = {};
     let snapshot, removed = [];
     const button = (label, action) => {
@@ -8032,21 +9382,21 @@ function getPriceTier(price, direction) {
     function field(label, name, options) {
       const wrap = node("label"), input = node(options ? "select" : "input");
       if (options) for (const [value, text] of options) { const option = node("option", text); option.value = value; input.append(option); }
-      else { input.type = "search"; input.placeholder = "名称或 HRID"; }
+      else { input.type = "search"; input.placeholder = t("名称或 HRID"); }
       input.setAttribute("aria-label", label); input.dataset.focusKey = `favorite-filter:${name}`;
       filters[name] = ""; controls[name] = input;
       input.onchange = () => { filters[name] = input.value; selected.clear(); draw(); };
       if (!options) input.oninput = input.onchange;
       wrap.append(node("span", label), input); bar.append(wrap);
     }
-    field("搜索收藏", "search");
-    field("收藏类别", "category", [["", "全部类别"], ["equipment", "装备"], ["materials", "材料"], ["other", "其他"], ["unknown", "类别未知"]]);
-    field("收藏分区", "group", [["", "全部分区"]]);
-    field("最低强化等级", "min", [["", "不限"], ...Array.from({ length: 21 }, (_, n) => [String(n), `+${n}`])]);
-    field("最高强化等级", "max", [["", "不限"], ...Array.from({ length: 21 }, (_, n) => [String(n), `+${n}`])]);
-    field("收藏来源", "source", [["", "全部来源"], ["preset", "明确由预设新增"], ["other", "手动或来源未记录"]]);
+    field(t("搜索收藏"), "search");
+    field(t("收藏类别"), "category", [["", t("全部类别")], ["equipment", t("装备")], ["materials", t("材料")], ["other", t("其他")], ["unknown", t("类别未知")]]);
+    field(t("收藏分区"), "group", [["", t("全部分区")]]);
+    field(t("最低强化等级"), "min", [["", t("不限")], ...Array.from({ length: 21 }, (_, n) => [String(n), `+${n}`])]);
+    field(t("最高强化等级"), "max", [["", t("不限")], ...Array.from({ length: 21 }, (_, n) => [String(n), `+${n}`])]);
+    field(t("收藏来源"), "source", [["", t("全部来源")], ["preset", t("明确由预设新增")], ["other", t("手动或来源未记录")]]);
     const actions = node("div", null, "v3-favorite-actions"), summary = node("p"), list = node("div", null, "mwi-layu-favorite-delete-list mwi-layu-group-scroll");
-    list.tabIndex = 0; list.setAttribute("role", "region"); list.setAttribute("aria-label", "收藏管理表格");
+    list.tabIndex = 0; list.setAttribute("role", "region"); list.setAttribute("aria-label", t("收藏管理表格"));
     const status = createStatus ? createStatus() : node("p"); status.setAttribute("role", "status");
     function matching() {
       const query = filters.search.trim().toLocaleLowerCase();
@@ -8059,78 +9409,78 @@ function getPriceTier(price, direction) {
     }
     function mutate(action) {
       try { action(); status.setAttribute("role", "status"); draw(); onChange(); }
-      catch (error) { status.setAttribute("role", "alert"); status.textContent = `保存失败，原数据保留，可重试：${error.message}`; }
+      catch (error) { status.setAttribute("role", "alert"); status.textContent = t`保存失败，原数据保留，可重试：${error.message}`; }
     }
     function removeRows(rows) {
       const deleted = store.removeMany(rows);
       if (deleted.length) removed = deleted;
-      selected.clear(); status.textContent = `已删除 ${deleted.length} 条收藏及其参考价；可撤销最近一次批量删除。`;
+      selected.clear(); status.textContent = t`已删除 ${deleted.length} 条收藏及其参考价；可撤销最近一次批量删除。`;
     }
-    const selectAll = button("全选筛选结果", () => { matching().forEach(item => selected.add(key(item))); draw(); });
-    const clear = button("清空勾选", () => { selected.clear(); draw(); });
-    const deleteSelected = button("删除勾选收藏", () => mutate(() => removeRows(matching().filter(item => selected.has(key(item))))));
-    const deleteFiltered = button("删除筛选结果", () => mutate(() => removeRows(matching())));
-    const deleteFilteredPresets = button("仅删除筛选结果中的预设新增收藏", () => mutate(() => removeRows(matching().filter(item => item.presetAdded === true))));
-    const deletePresets = button("一键删除所有预设新增收藏", () => mutate(() => removeRows(store.list().filter(item => item.presetAdded === true))));
-    const undo = button("撤销最近一次批量删除", () => mutate(() => {
+    const selectAll = button(t("全选筛选结果"), () => { matching().forEach(item => selected.add(key(item))); draw(); });
+    const clear = button(t("清空勾选"), () => { selected.clear(); draw(); });
+    const deleteSelected = button(t("删除勾选收藏"), () => mutate(() => removeRows(matching().filter(item => selected.has(key(item))))));
+    const deleteFiltered = button(t("删除筛选结果"), () => mutate(() => removeRows(matching())));
+    const deleteFilteredPresets = button(t("仅删除筛选结果中的预设新增收藏"), () => mutate(() => removeRows(matching().filter(item => item.presetAdded === true))));
+    const deletePresets = button(t("一键删除所有预设新增收藏"), () => mutate(() => removeRows(store.list().filter(item => item.presetAdded === true))));
+    const undo = button(t("撤销最近一次批量删除"), () => mutate(() => {
       const result = store.restoreMany(removed); removed = [];
-      status.textContent = `已恢复 ${result.restored} 条收藏及原参考价，保留 ${result.conflicts} 条后续新增或修改的记录。`;
+      status.textContent = t`已恢复 ${result.restored} 条收藏及原参考价，保留 ${result.conflicts} 条后续新增或修改的记录。`;
     }));
     const presetPreview = node("details"), presetSummary = node("summary"), presetList = node("div", null, "mwi-layu-delete-preview");
     presetPreview.append(presetSummary, presetList);
     actions.append(selectAll, clear, deleteSelected, deleteFilteredPresets, deleteFiltered, deletePresets, undo);
     const heading = node("header", null, "v3-section-heading");
-    const headingText = node("div"); headingText.append(node("h2", "管理现有收藏与批量清理"), node("p", "组合筛选物品、等级与来源，支持撤销最近一次删除。"));
+    const headingText = node("div"); headingText.append(node("h2", t("管理现有收藏与批量清理")), node("p", t("组合筛选物品、等级与来源，支持撤销最近一次删除。")));
     heading.append(headingText, undo);
     const operations = node("div", null, "v3-favorite-operation-bar"); operations.append(summary, actions);
-    const help = node("details", null, "v3-favorite-help"); help.append(node("summary", "删除范围与撤销说明"),
-      node("p", "筛选条件同时生效；改变条件会清空勾选。删除同时移除参考价，可撤销最近一次删除。分区、备料车及游戏挂单保持原状。"),
-      node("p", "一键清理覆盖全部分区与强化等级，仅删除明确由预设新增的收藏；旧收藏及预设复用的已有收藏保留。"), presetPreview);
+    const help = node("details", null, "v3-favorite-help"); help.append(node("summary", t("删除范围与撤销说明")),
+      node("p", t("筛选条件同时生效；改变条件会清空勾选。删除同时移除参考价，可撤销最近一次删除。分区、备料车及游戏挂单保持原状。")),
+      node("p", t("一键清理覆盖全部分区与强化等级，仅删除明确由预设新增的收藏；旧收藏及预设复用的已有收藏保留。")), presetPreview);
     element.append(heading, bar, operations, help, list);
     if (!createStatus) element.prepend(status);
     function identity(item) { return app.itemUI.identity(item, snapshot.spriteBase, `${snapshot.names[item.itemHrid] || item.name} +${item.enhancementLevel}`); }
     function draw() {
       const rows = matching(), valid = new Set(rows.map(key));
       for (const id of selected) if (!valid.has(id)) selected.delete(id);
-      summary.textContent = `共 ${store.list().length} 条收藏 · 筛选命中 ${rows.length} 条 · 已勾选 ${selected.size} 条`;
-      if (filters.min !== "" && filters.max !== "" && Number(filters.min) > Number(filters.max)) summary.textContent += " · 最低等级高于最高等级，请调整条件";
+      summary.textContent = t`共 ${store.list().length} 条收藏 · 筛选命中 ${rows.length} 条 · 已勾选 ${selected.size} 条`;
+      if (filters.min !== "" && filters.max !== "" && Number(filters.min) > Number(filters.max)) summary.textContent += t(" · 最低等级高于最高等级，请调整条件");
       list.replaceChildren();
       const grid = node("table", null, "mwi-layu-group-table v3-favorite-table"), head = node("thead"), header = node("tr"), body = node("tbody");
-      for (const title of ["选择", "物品 / 强化等级", "所属分区", "收藏来源", "参考售价", "操作"]) { const cell = node("th", title); cell.scope = "col"; header.append(cell); }
+      for (const title of [t("选择"), t("物品 / 强化等级"), t("所属分区"), t("收藏来源"), t("参考售价"), t("操作")]) { const cell = node("th", title); cell.scope = "col"; header.append(cell); }
       head.append(header); grid.append(head, body); list.append(grid);
       for (const item of rows) {
         const label = node("tr", null, "mwi-layu-favorite-delete-row"), input = node("input"); input.type = "checkbox"; input.checked = selected.has(key(item));
-        input.setAttribute("aria-label", `勾选收藏：${snapshot.names[item.itemHrid] || item.name} +${item.enhancementLevel}`);
+        input.setAttribute("aria-label", t`勾选收藏：${snapshot.names[item.itemHrid] || item.name} +${item.enhancementLevel}`);
         input.dataset.focusKey = `favorite-select:${key(item)}`;
         input.onchange = () => {
           input.checked ? selected.add(key(item)) : selected.delete(key(item));
-          summary.textContent = `共 ${store.list().length} 条收藏 · 筛选命中 ${rows.length} 条 · 已勾选 ${selected.size} 条`;
+          summary.textContent = t`共 ${store.list().length} 条收藏 · 筛选命中 ${rows.length} 条 · 已勾选 ${selected.size} 条`;
           deleteSelected.disabled = !selected.size; clear.disabled = !selected.size;
         };
         const groups = partitions.groups().filter(group => partitions.groupsOf(item.itemHrid).includes(group.id));
         const badges = node("div", null, "v3-tags"); for (const group of groups) badges.append(node("span", group.name, "v3-tag"));
-        const remove = button("删除", () => mutate(() => removeRows([item]))); remove.setAttribute("aria-label", `删除收藏：${snapshot.names[item.itemHrid] || item.name} +${item.enhancementLevel}`); remove.className = "v3-danger";
-        for (const value of [input, identity(item), badges, item.presetAdded ? "预设新增" : "手动 / 未记录", item.customPrice == null ? "未设置" : String(item.customPrice), remove]) { const cell = node("td"); if (value?.nodeType) cell.append(value); else cell.textContent = value; label.append(cell); }
+        const remove = button(t("删除"), () => mutate(() => removeRows([item]))); remove.setAttribute("aria-label", t`删除收藏：${snapshot.names[item.itemHrid] || item.name} +${item.enhancementLevel}`); remove.className = "v3-danger";
+        for (const value of [input, identity(item), badges, item.presetAdded ? t("预设新增") : t("手动 / 未记录"), item.customPrice == null ? t("未设置") : String(item.customPrice), remove]) { const cell = node("td"); if (value?.nodeType) cell.append(value); else cell.textContent = value; label.append(cell); }
         body.append(label);
       }
-      if (!rows.length) list.append(node("p", "没有匹配收藏，请调整条件或从预设添加。", "mwi-layu-group-note"));
+      if (!rows.length) list.append(node("p", t("没有匹配收藏，请调整条件或从预设添加。"), "mwi-layu-group-note"));
       const presets = store.list().filter(item => item.presetAdded === true);
-      presetSummary.textContent = `查看一键清理范围：${presets.length} 条预设新增收藏`;
+      presetSummary.textContent = t`查看一键清理范围：${presets.length} 条预设新增收藏`;
       presetList.replaceChildren(...presets.map(identity));
       selectAll.disabled = deleteFiltered.disabled = !rows.length;
       deleteSelected.disabled = clear.disabled = !selected.size;
       const filteredPresetCount = rows.filter(item => item.presetAdded === true).length;
       deleteFilteredPresets.disabled = !filteredPresetCount;
-      deleteFilteredPresets.textContent = `仅删除筛选结果中的预设新增收藏 (${filteredPresetCount})`;
+      deleteFilteredPresets.textContent = t`仅删除筛选结果中的预设新增收藏 (${filteredPresetCount})`;
       deletePresets.disabled = !presets.length; undo.hidden = !removed.length;
-      deleteSelected.textContent = `删除勾选收藏 (${selected.size})`; deleteFiltered.textContent = `删除筛选结果 (${rows.length})`;
-      deletePresets.textContent = `一键删除所有预设新增收藏 (${presets.length})`;
+      deleteSelected.textContent = t`删除勾选收藏 (${selected.size})`; deleteFiltered.textContent = t`删除筛选结果 (${rows.length})`;
+      deletePresets.textContent = t`一键删除所有预设新增收藏 (${presets.length})`;
     }
     function render(value) {
       snapshot = value;
       const groups = partitions.groups();
       controls.group.replaceChildren();
-      for (const group of [{ id: "", name: "全部分区" }, ...groups]) {
+      for (const group of [{ id: "", name: t("全部分区") }, ...groups]) {
         const option = node("option", group.name); option.value = group.id; controls.group.append(option);
       }
       if (filters.group && !groups.some(group => group.id === filters.group)) { filters.group = ""; selected.clear(); }
@@ -8146,11 +9496,12 @@ function getPriceTier(price, direction) {
 (function initV3ViewState(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:workspace:v1";
   const drawerHeight = Object.freeze({ min:180, max:10000, initial:380 });
   const defaults = Object.freeze({ workspaceTab:"projects", managementTab:"presets", drawerOpen:false, drawerHeight:drawerHeight.initial });
   function normalize(value) {
-    return { partitionOrder:Array.isArray(value?.partitionOrder) ? [...new Set(value.partitionOrder.filter(id => typeof id === "string" && id !== "all"))] : [], workspaceTab:["projects", "materials", "manage", "settings"].includes(value?.workspaceTab) ? value.workspaceTab : defaults.workspaceTab,
+    return { partitionOrder:Array.isArray(value?.partitionOrder) ? [...new Set(value.partitionOrder.filter(id => typeof id === "string" && id !== "all"))] : [], workspaceTab:["projects", "materials", "manage", "settings", "loot"].includes(value?.workspaceTab) ? value.workspaceTab : defaults.workspaceTab,
       managementTab:["presets", "partitions", "favorites"].includes(value?.managementTab) ? value.managementTab : defaults.managementTab,
       drawerOpen:value?.drawerOpen === true,
       drawerHeight:Number.isFinite(value?.drawerHeight) ? Math.max(drawerHeight.min, Math.min(drawerHeight.max, Math.round(value.drawerHeight))) : defaults.drawerHeight };
@@ -8158,11 +9509,11 @@ function getPriceTier(price, direction) {
   function create(storage = root.localStorage, onError = () => {}) {
     let state = { ...defaults };
     try { state = normalize(JSON.parse(storage.getItem(storageKey) || "null")); }
-    catch (_) { onError("页面状态读取失败，已使用默认视图，原记录保留。"); }
+    catch (_) { onError(t("页面状态读取失败，已使用默认视图，原记录保留。")); }
     return Object.freeze({ read:() => ({ ...state, partitionOrder:[...(state.partitionOrder || [])] }), save(value) {
       const next = normalize(value);
       try { storage.setItem(storageKey, JSON.stringify(next)); state = next; }
-      catch (_) { onError("页面状态保存失败，当前操作仍可继续，刷新后可能无法恢复。"); }
+      catch (_) { onError(t("页面状态保存失败，当前操作仍可继续，刷新后可能无法恢复。")); }
     } });
   }
   app.v3ViewState = Object.freeze({ storageKey, drawerHeight, normalize, create });
@@ -8175,6 +9526,20 @@ function getPriceTier(price, direction) {
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   // The approved V3 sketch is the visual authority. Adapt to the game panel, independently of browser viewport width.
   const css = `
+.mwi-layu-panel .v3-language-settings {grid-column:1/-1;}
+.mwi-layu-panel .v3-language-settings p {grid-column:1/-1;}
+.mwi-layu-panel[lang=en-US] .v3-strategy {height:auto;min-height:60px;grid-template-rows:auto auto;}
+.mwi-layu-panel[lang=en-US] .v3-source-bottom {flex-wrap:wrap;white-space:normal;}
+.mwi-layu-panel[lang=en-US] .v3-source-top {flex-wrap:wrap;}
+.mwi-layu-panel[lang=en-US] .mwi-layu-group-table th {white-space:normal;overflow-wrap:anywhere;}
+
+.mwi-layu-panel .v3-loot-history {padding:14px;overflow:auto;min-height:0;flex:1;overflow-wrap:anywhere;}
+.mwi-layu-panel .v3-loot-history > p {max-width:75ch;}
+.mwi-layu-panel .v3-loot-record {padding:12px 0;border-bottom:1px solid var(--v3-line);font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-loot-record h3 {display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 6px;color:var(--v3-text);}
+.mwi-layu-panel .v3-loot-drops {display:flex;flex-wrap:wrap;gap:8px 16px;}
+.mwi-layu-panel .v3-loot-drops > span {display:inline-flex;align-items:center;gap:5px;}
+
 .mwi-layu-panel {
  --v3-bg:#24253C; --v3-header:#141a24; --v3-surface:#182130; --v3-line:#263348;
  --v3-text:#f1f5f9; --v3-muted:#a0aec2; --v3-accent:#38bdf8;
@@ -8342,6 +9707,7 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-wage-group > summary {color:#7dd3fc;font-weight:650;}
 .mwi-layu-panel .mwi-layu-wage-settings fieldset {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;border:0;padding:12px 0;min-width:0;}
 .mwi-layu-panel .mwi-layu-settings-field {display:flex;flex-direction:column;gap:4px;min-width:0;}
+.mwi-layu-panel .mwi-layu-preparation-inputs {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;grid-column:1/-1;min-width:0;}
 .mwi-layu-panel .mwi-layu-settings-toggle,.mwi-layu-panel .mwi-layu-settings-color {flex-direction:row-reverse;align-items:center;justify-content:flex-end;gap:10px;}
 .mwi-layu-panel .mwi-layu-settings-subheading,.mwi-layu-panel fieldset > p {grid-column:1/-1;}
 .mwi-layu-panel .mwi-layu-wage-actions {display:flex;gap:8px;padding:12px 0;}
@@ -8444,6 +9810,8 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-material-counts {display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:1px 6px;color:#a0aec2;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;}
 .mwi-layu-panel .v3-material-counts > * {white-space:nowrap;}
 .mwi-layu-panel .v3-enhancement-plan {margin-top:8px;padding:12px 12px 7px;background:#1b2638;border:1px solid #30415b;border-radius:5px;white-space:normal;}
+.mwi-layu-panel .v3-workbench-materials > .v3-enhancement-plan:first-child {margin-top:0;margin-bottom:0;}
+.mwi-layu-panel .v3-enhancement-plan + .mwi-layu-level-actions {margin-bottom:12px;}
 .mwi-layu-panel .v3-enhancement-plan h4 {margin:0;font-size:12px;line-height:18px;font-weight:600;}
 .mwi-layu-panel .v3-plan-summary {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,max-content) minmax(0,max-content);align-items:center;gap:8px 16px;}
 .mwi-layu-panel .v3-plan-header {grid-column:1;grid-row:1;min-width:0;}
@@ -8579,29 +9947,30 @@ function getPriceTier(price, direction) {
 (function initV3Workspace(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const number = (value) => {
-    if (typeof value !== "number" || !Number.isFinite(value)) return "未知";
+    if (typeof value !== "number" || !Number.isFinite(value)) return t("未知");
     const abs = Math.abs(value);
     const unit = abs >= 1e9 ? [1e9, "b"] : abs >= 1e6 ? [1e6, "m"] : abs >= 1e3 ? [1e3, "k"] : [1, ""];
     return (value / unit[0]).toFixed(2).replace(/\.?0+$/, "") + unit[1];
   };
-  const time = (value) => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString() : "未知";
+  const time = (value) => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(app.i18n?.locale) : t("未知");
   function enhancementPlanMetrics(route) {
     const valid = value => Number.isFinite(value) && value >= 0 ? value : null;
     const hours = valid(route?.totalTimeHours), actions = valid(route?.expectedActions);
-    let duration = "未知";
-    if (hours === 0) duration = "0秒";
-    else if (hours > 0 && hours < 1 / 60) duration = hours < 1 / 3600 ? "不足1秒" : `${Math.round(hours * 3600)}秒`;
+    let duration = t("未知");
+    if (hours === 0) duration = t("0秒");
+    else if (hours > 0 && hours < 1 / 60) duration = hours < 1 / 3600 ? t("不足1秒") : t`${Math.round(hours * 3600)}秒`;
     else if (hours > 0) {
       const minutes = Math.round(hours * 60);
       const days = Math.floor(minutes / 1440), rest = minutes % 1440;
-      duration = [days && `${days}天`, Math.floor(rest / 60) && `${Math.floor(rest / 60)}小时`,
-        rest % 60 && `${rest % 60}分`].filter(Boolean).join("");
+      duration = [days && t`${days}天`, Math.floor(rest / 60) && t`${Math.floor(rest / 60)}小时`,
+        rest % 60 && t`${rest % 60}分`].filter(Boolean).join("");
     }
-    return { hours, actions, duration, count: actions == null ? "未知" : `${actions.toLocaleString("en-US", {maximumFractionDigits:2})} 次` };
+    return { hours, actions, duration, count: actions == null ? t("未知") : t`${actions.toLocaleString("en-US", {maximumFractionDigits:2})} 次` };
   }
   const partialNumber = (value, known) => Number.isFinite(value) ? number(value)
-    : Number.isFinite(known) && known > 0 ? `${number(known)} + 未知` : "未知";
+    : Number.isFinite(known) && known > 0 ? t`${number(known)} + 未知` : t("未知");
   function preparationAction(item, materials, inventoryAt) {
     // Finished/higher-level items cannot be enhanced to this target again.
     for (let level = 0; level < item.enhancementLevel; level += 1) {
@@ -8616,13 +9985,13 @@ function getPriceTier(price, direction) {
     return null; // Unknown inventory/requirements must not be presented as ready.
   }
   const waitUpperBound = (value) => {
-    if (!Number.isFinite(value) || value < 0) return "未知";
+    if (!Number.isFinite(value) || value < 0) return t("未知");
     // Round upward so the displayed upper bound never understates elapsed time.
     const seconds = Math.ceil(value / 1000);
     const days = Math.floor(seconds / 86400), hours = Math.floor(seconds % 86400 / 3600);
     const minutes = Math.floor(seconds % 3600 / 60), rest = seconds % 60;
-    return "≤ " + [days && `${days}天`, hours && `${hours}小时`, minutes && `${minutes}分`,
-      (rest || seconds === 0) && `${rest}秒`].filter(Boolean).join(" ");
+    return "≤ " + [days && t`${days}天`, hours && t`${hours}小时`, minutes && t`${minutes}分`,
+      (rest || seconds === 0) && t`${rest}秒`].filter(Boolean).join(" ");
   };
   function create({ partitions, cart, presets, onChange, onOpen, onCraft, onEnhance, onPrice, onStatus, createStatus }) {
     const document = root.document;
@@ -8636,7 +10005,7 @@ function getPriceTier(price, direction) {
       el.dataset.focusKey = label || text || "";
       el.addEventListener("click", () => action(el)); return el;
     }
-    function attempt(action) { try { action(); onStatus(""); onChange(); } catch (error) { onStatus(error.message || "保存失败，请重试"); } }
+    function attempt(action) { try { action(); onStatus(""); onChange(); } catch (error) { onStatus(error.message || t("保存失败，请重试")); } }
     function table(headers, label) {
       const region = node("div", null, "mwi-layu-group-scroll"); region.tabIndex = 0;
       region.setAttribute("role", "region"); region.setAttribute("aria-label", label);
@@ -8665,6 +10034,7 @@ function getPriceTier(price, direction) {
     const element = node("div", null, "mwi-layu-partitions");
     const pageState = app.v3ViewState.create(root.localStorage, onStatus);
     let { workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder } = pageState.read();
+    let lootPage = null;
     let settingsPage = null, matrixQuery = "";
     const savePage = () => pageState.save({ workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder });
     const favoriteManager = app.v3FavoriteManagement.create({ store: app.marketFavoritesStore.createStore(root.localStorage), partitions, onChange, createStatus });
@@ -8679,7 +10049,7 @@ function getPriceTier(price, direction) {
         if (suppressClick) { event.preventDefault(); event.stopImmediatePropagation(); }
       }, true);
       for (const label of choices()) {
-        label.title = "拖动改变分区顺序（触屏长按）；Alt + 左右方向键排序";
+        label.title = t("拖动改变分区顺序（触屏长按）；Alt + 左右方向键排序");
         label.addEventListener("keydown", event => {
           if (!event.altKey || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
           event.preventDefault();
@@ -8763,11 +10133,13 @@ function getPriceTier(price, direction) {
       for (const button of element.querySelectorAll(".mwi-layu-quantity-remove-pending")) {
         button.classList.remove("mwi-layu-quantity-remove-pending");
         button.setAttribute("aria-pressed", "false");
-        button.title = "数量为 1，点击后再次点击可移除规划";
+        button.title = t("数量为 1，点击后再次点击可移除规划");
         button.setAttribute("aria-description", button.title);
       }
     }
     const expanded = new Set(savedPreferences.expanded);
+    let projectOrderScope = null;
+    let projectOrder = [];
     // These regions are rebuilt on market/character refresh. Keep offsets in memory
     // for the current render only; do not persist them into another page/session.
     const scrollRegionSelector = [
@@ -8787,8 +10159,13 @@ function getPriceTier(price, direction) {
         .map(el => [scrollKey(el), el.scrollTop, el.scrollLeft]);
       const viewportTop = element.parentElement?.getBoundingClientRect().top || 0;
       const anchor = [...element.querySelectorAll('.mwi-layu-project-row')].find(el => el.getBoundingClientRect().top >= viewportTop);
+      const shell = focus ? active.closest('.mwi-layu-group-level')?.closest('.mwi-layu-shopping-layout') : null;
+      const controlRect = shell && active.getBoundingClientRect();
+      const shellRect = shell?.getBoundingClientRect();
+      const controlAnchor = shell && controlRect.bottom > shellRect.top && controlRect.top < shellRect.bottom
+        ? [scrollKey(shell), controlRect.top - shellRect.top] : null;
       return { focus, selection: active?.type === "search" ? [active.selectionStart, active.selectionEnd] : null,
-        parents, scrolls, anchor: anchor ? [anchor.dataset.favoriteKey, anchor.getBoundingClientRect().top] : null };
+        parents, scrolls, controlAnchor, anchor: anchor ? [anchor.dataset.favoriteKey, anchor.getBoundingClientRect().top] : null };
     }
     function restoreView(saved) {
       const regions = new Map(scrollRegions().map(el => [scrollKey(el), el]));
@@ -8802,6 +10179,12 @@ function getPriceTier(price, direction) {
           || (saved.focus === "cart-drawer-height" && !drawerOpen ? element.querySelector('[aria-controls="mwi-layu-cart-drawer"][aria-expanded="false"]') : null);
         target?.focus({ preventScroll: true });
         if (saved.selection && target?.type === "search") target.setSelectionRange(...saved.selection);
+        const shell = saved.controlAnchor && regions.get(saved.controlAnchor[0]);
+        if (target && shell?.contains(target)) {
+          const rect = shell.getBoundingClientRect();
+          const scale = shell.offsetHeight ? rect.height / shell.offsetHeight : 1;
+          if (scale > 0) shell.scrollTop += (target.getBoundingClientRect().top - rect.top - saved.controlAnchor[1]) / scale;
+        }
       }
       for (const [el, top, left] of saved.parents) { el.scrollTop = top; el.scrollLeft = left; }
       if (saved.anchor && !saved.focus) {
@@ -8818,11 +10201,11 @@ function getPriceTier(price, direction) {
       const limits = app.v3ViewState.drawerHeight;
       const collapsePull = 48;
       const grip = node("div", null, "v3-cart-resizer"); grip.tabIndex = 0;
-      const hint = node("span", "继续下拉收起", "v3-cart-resizer-hint"); hint.hidden = true; grip.append(hint);
+      const hint = node("span", t("继续下拉收起"), "v3-cart-resizer-hint"); hint.hidden = true; grip.append(hint);
       grip.setAttribute("role", "separator"); grip.setAttribute("aria-orientation", "horizontal");
-      grip.setAttribute("aria-label", "调整备料抽屉高度"); grip.setAttribute("aria-controls", drawer.id);
+      grip.setAttribute("aria-label", t("调整备料抽屉高度")); grip.setAttribute("aria-controls", drawer.id);
       grip.dataset.focusKey = "cart-drawer-height";
-      grip.title = "上下拖动调整高度，最低处继续下拉可收起；方向键微调，双击或 Enter 恢复默认";
+      grip.title = t("上下拖动调整高度，最低处继续下拉可收起；方向键微调，双击或 Enter 恢复默认");
       const bounds = () => {
         const max = Math.max(1, Math.min(limits.max, element.clientHeight - 90));
         return { min:Math.min(limits.min, max), max };
@@ -8832,7 +10215,7 @@ function getPriceTier(price, direction) {
         const height = Math.max(min, Math.min(max, Math.round(value)));
         drawer.style.height = `${height}px`;
         grip.setAttribute("aria-valuemin", min); grip.setAttribute("aria-valuemax", max);
-        grip.setAttribute("aria-valuenow", height); grip.setAttribute("aria-valuetext", `${height} 像素`);
+        grip.setAttribute("aria-valuenow", height); grip.setAttribute("aria-valuetext", t`${height} 像素`);
         return height;
       }
       syncDrawerHeight = () => { if (drawer.isConnected && !drawer.hidden) apply(drawerHeight); };
@@ -8862,7 +10245,7 @@ function getPriceTier(price, direction) {
         drawerHeight = apply(requested);
         hint.hidden = !atMinimum;
         if (!atMinimum) { session.detentY = null; return; }
-        grip.setAttribute("aria-valuetext", `${drawerHeight} 像素，继续下拉收起`);
+        grip.setAttribute("aria-valuetext", t`${drawerHeight} 像素，继续下拉收起`);
         // Start the detent at the first boundary event, so a fast initial pull
         // still stops once before a further deliberate movement can close it.
         if (session.detentY == null) session.detentY = event.clientY;
@@ -8902,19 +10285,19 @@ function getPriceTier(price, direction) {
         const column = columns[index], key = column.key, label = th.textContent;
         const grip = node("span", null, "mwi-layu-column-resizer"); grip.tabIndex = 0;
         grip.setAttribute("role", "separator"); grip.setAttribute("aria-orientation", "vertical");
-        grip.setAttribute("aria-label", `调整列宽：${label}`);
+        grip.setAttribute("aria-label", t`调整列宽：${label}`);
         grip.setAttribute("aria-valuemin", column.min); grip.setAttribute("aria-valuemax", column.max);
         grip.dataset.focusKey = `column-width:${key}`;
-        grip.title = `调整列宽：${label}`;
+        grip.title = t`调整列宽：${label}`;
         function apply(value) {
           const width = Math.max(column.min, Math.min(column.max, Math.round(value)));
           widths[key] = width; cols[index].style.width = `${width}px`; updateTableWidth();
-          grip.setAttribute("aria-valuenow", width); grip.setAttribute("aria-valuetext", `${width} 像素`);
+          grip.setAttribute("aria-valuenow", width); grip.setAttribute("aria-valuetext", t`${width} 像素`);
         }
         function save(previous) {
           if (widths[key] === previous) return;
           try { partitions.setColumnWidth(key, widths[key]); onStatus(""); }
-          catch (_error) { apply(previous); onStatus("列宽保存失败，已恢复原宽度，请重试。"); }
+          catch (_error) { apply(previous); onStatus(t("列宽保存失败，已恢复原宽度，请重试。")); }
         }
         function finish(cancel) {
           if (resizeSession?.grip !== grip) return;
@@ -9007,7 +10390,7 @@ function getPriceTier(price, direction) {
         !(showMaterials && materialRows.has(app.materialCart.key(item)))).map(item => {
         const quote = prices.quote(item);
         const simulation = simulationPanels.get(app.materialCart.key(item));
-        const result = simulation?.active() ? simulation.current()?.simulated || { reason: "模拟报价无效，请修正" } : wages.calculate(item, quote);
+        const result = simulation?.active() ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, quote);
         const quantity = cartItems.find(row => app.materialCart.key(row) === app.materialCart.key(item))?.quantity || 1;
         const orders = app.marketPartitions.compareListings(own?.listings || [], item, quote);
         const ownPrices = orders.map(row => row.price).filter(Number.isFinite);
@@ -9021,6 +10404,17 @@ function getPriceTier(price, direction) {
         (sort === "name" ? compare(a.item.enhancementLevel, b.item.enhancementLevel, direction) : 0));
       const active = document.activeElement;
       if (element.contains(active) && active.tagName === "INPUT" && !["checkbox", "search", "radio"].includes(active.type)) return;
+      // Keep open comparisons in place while their live/simulated profits change.
+      // Explicit navigation/sorting and closing the last visible detail apply the
+      // current ranking again. This order belongs only to this mounted workspace.
+      const nextOrderScope = JSON.stringify([cartScope, owner, workspaceTab, selected, search, listingFilter, sort, direction]);
+      if (nextOrderScope === projectOrderScope && chosen.some(plan => expanded.has(app.materialCart.key(plan.item)))) {
+        const ranks = new Map(projectOrder.map((key, index) => [key, index]));
+        chosen.sort((a, b) => (ranks.get(app.materialCart.key(a.item)) ?? ranks.size) -
+          (ranks.get(app.materialCart.key(b.item)) ?? ranks.size));
+      }
+      projectOrderScope = nextOrderScope;
+      projectOrder = chosen.map(plan => app.materialCart.key(plan.item));
       const nextStructure = JSON.stringify([items, cartItems, cartScope, cartError, partitions.read(), names, spriteBase, skillSpriteBase,
         workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, search, listingFilter, sort, direction,
         materialSort, materialDirection, shortagesOnly, [...expanded], [...historyExpanded], [...simulationEnabled],
@@ -9038,17 +10432,22 @@ function getPriceTier(price, direction) {
       syncDrawerHeight = () => {};
       element.replaceChildren();
       if (!["projects", "manage"].includes(workspaceTab)) {
-        const back = button("返回强化项目", () => { workspaceTab = "projects"; drawerOpen = false; savePage(); onChange(); });
+        const back = button(t("返回强化项目"), () => { workspaceTab = "projects"; drawerOpen = false; savePage(); onChange(); });
         back.dataset.view = "projects"; back.className = "v3-back"; element.append(back);
+      }
+      if (workspaceTab === "loot") {
+        if (!lootPage) lootPage = app.lootHistoryUI.create({ onError: onStatus });
+        element.append(lootPage.element); lootPage.update({ spriteBase, names });
+        restoreView(savedView); refreshLive = () => {}; return;
       }
       if (workspaceTab === "settings") {
         if (!settingsPage) {
           settingsPage = node("section", null, "v3-settings-page");
-          settingsPage.setAttribute("aria-label", "设置与备份");
+          settingsPage.setAttribute("aria-label", t("设置与备份"));
           const content = node("div", null, "v3-settings-body");
           const settings = app.v3Settings.createSettings(wages, createStatus); settings.open = true;
           content.append(settings, app.backupUI.create(createStatus));
-          settingsPage.append(node("h2", "设置与备份"), content);
+          settingsPage.append(node("h2", t("设置与备份")), content);
         }
         element.append(settingsPage);
         app.itemUI.decorate(element, spriteBase, names);
@@ -9058,12 +10457,12 @@ function getPriceTier(price, direction) {
       }
       const controlsRow = node("div", null, "v3-controls");
       const toolbar = node("div", null, "mwi-layu-group-toolbar");
-      const nav = node("div", null, "mwi-layu-group-nav mwi-layu-partition-checkboxes"); nav.setAttribute("role", "group"); nav.setAttribute("aria-label", "分区筛选");
+      const nav = node("div", null, "mwi-layu-group-nav mwi-layu-partition-checkboxes"); nav.setAttribute("role", "group"); nav.setAttribute("aria-label", t("分区筛选"));
       const orderedGroups = [...groups].sort((a, b) => {
         const rank = id => partitionOrder.includes(id) ? partitionOrder.indexOf(id) : partitionOrder.length + groups.findIndex(group => group.id === id);
         return rank(a.id) - rank(b.id);
       });
-      for (const group of [{ id: "all", name: "全部" }, ...orderedGroups]) {
+      for (const group of [{ id: "all", name: t("全部") }, ...orderedGroups]) {
         const count = group.id === "all" ? new Set([...items, ...catalog.rows].map(app.materialCart.key)).size : group.id === "materials" ? catalog.rows.length : items.filter(item => partitions.groupsOf(item.itemHrid).includes(group.id)).length;
         const label = node("label", null, "mwi-layu-partition-choice");
         const input = node("input"); input.type = "checkbox"; input.setAttribute("aria-label", `${group.name} (${count})`);
@@ -9080,26 +10479,26 @@ function getPriceTier(price, direction) {
         label.append(input, node("span", `${group.name} (${count})`)); nav.append(label);
       }
       bindPartitionSorting(nav);
-      const sortSelect = node("select"); sortSelect.setAttribute("aria-label", "分区内物品排序");
-      for (const [key, label] of [["wage", "工时费"], ["profit", "利润"], ["margin", "利润率"], ["name", "物品名称 / 等级"], ["market", "市场左一"], ["own", "我的挂单价格"], ["reference", "参考售价"]]) {
-        for (const [value, suffix] of [[-1, "降序"], [1, "升序"]]) {
+      const sortSelect = node("select"); sortSelect.setAttribute("aria-label", t("分区内物品排序"));
+      for (const [key, label] of [["wage", t("工时费")], ["profit", t("利润")], ["margin", t("利润率")], ["name", t("物品名称 / 等级")], ["market", t("市场左一")], ["own", t("我的挂单价格")], ["reference", t("参考售价")]]) {
+        for (const [value, suffix] of [[-1, t("降序")], [1, t("升序")]]) {
           const opt = node("option", `${label} · ${suffix}`); opt.value = `${key}:${value}`; sortSelect.append(opt);
         }
       }
-      const savedOption = node("option", "收藏顺序"); savedOption.value = "saved:1"; sortSelect.append(savedOption);
+      const savedOption = node("option", t("收藏顺序")); savedOption.value = "saved:1"; sortSelect.append(savedOption);
       sortSelect.value = `${sort}:${direction}`;
       sortSelect.onchange = () => { const value = sortSelect.value.split(":"); sort = value[0]; direction = Number(value[1]); saveView(); onChange(); };
       if (showProjects) controlsRow.append(nav);
-      const searchInput = node("input"); searchInput.type = "search"; searchInput.placeholder = "搜索物品或等级";
-      searchInput.maxLength = 200; searchInput.setAttribute("aria-label", "搜索收藏与原材料"); searchInput.value = search;
+      const searchInput = node("input"); searchInput.type = "search"; searchInput.placeholder = t("搜索物品或等级");
+      searchInput.maxLength = 200; searchInput.setAttribute("aria-label", t("搜索收藏与原材料")); searchInput.value = search;
       searchInput.addEventListener("compositionstart", () => { composingSearch = true; });
       searchInput.addEventListener("compositionend", () => { composingSearch = false; search = searchInput.value; saveView(); onChange(); });
       searchInput.oninput = () => { search = searchInput.value; if (!composingSearch) { saveView(); onChange(); } };
       toolbar.append(searchInput);
-      if (search) toolbar.append(button("清除搜索", () => { search = ""; saveView(); onChange(); }));
+      if (search) toolbar.append(button(t("清除搜索"), () => { search = ""; saveView(); onChange(); }));
       if (showProjects) {
-        const filters = node("div", null, "mwi-layu-listing-filters"); filters.setAttribute("aria-label", "挂单快速筛选");
-        for (const [value, label] of [["all", "全部项目"], ["mine", "我的挂单"], ["behind", "被压价"], ["unknown", "需要更新"]]) {
+        const filters = node("div", null, "mwi-layu-listing-filters"); filters.setAttribute("aria-label", t("挂单快速筛选"));
+        for (const [value, label] of [["all", t("全部项目")], ["mine", t("我的挂单")], ["behind", t("被压价")], ["unknown", t("需要更新")]]) {
           const b = button(label, () => { listingFilter = value; saveView(); onChange(); });
           b.setAttribute("aria-pressed", String(listingFilter === value)); filters.append(b);
         }
@@ -9110,13 +10509,13 @@ function getPriceTier(price, direction) {
       if (workspaceTab === "manage") {
         drawerOpen = false;
         const suite = node("section", null, "v3-management");
-        const subnav = node("nav", null, "v3-management-tabs"); subnav.setAttribute("aria-label", "管理功能");
-        for (const [id, label] of [["presets", "预设批量添加 / 删除"], ["partitions", "自定义分区与归属"], ["favorites", "收藏批量管理"]]) {
+        const subnav = node("nav", null, "v3-management-tabs"); subnav.setAttribute("aria-label", t("管理功能"));
+        for (const [id, label] of [["presets", t("预设批量添加 / 删除")], ["partitions", t("自定义分区与归属")], ["favorites", t("收藏批量管理")]]) {
           const tab = button(label, () => { managementTab = id; savePage(); onChange(); });
           tab.setAttribute("aria-pressed", String(managementTab === id)); subnav.append(tab);
         }
         const suiteHead = node("div", null, "v3-suite-heading");
-        const back = button("返回选品主表", () => { workspaceTab = "projects"; savePage(); onChange(); }); back.dataset.view = "projects";
+        const back = button(t("返回选品主表"), () => { workspaceTab = "projects"; savePage(); onChange(); }); back.dataset.view = "projects";
         suiteHead.append(subnav, back); suite.append(suiteHead);
         if (managementTab === "presets" && presetView) {
           presetView.render({ catalog: wages.presetCatalog(), names, spriteBase });
@@ -9144,10 +10543,10 @@ function getPriceTier(price, direction) {
       if (showProjects) {
         const title = node("div", null, "mwi-layu-project-heading");
         title.append(node("h2", groups.filter(group => selected.includes(group.id) && group.id !== "materials").map(group => group.name).join(" / ")),
-          node("span", `${chosen.length} 个项目`, "mwi-layu-group-note")); main.append(title);
-        if (!chosen.length) main.append(node("p", search || listingFilter !== "all" ? "没有符合搜索或挂单筛选的项目。" : "所选分区暂无项目。", "mwi-layu-group-empty"));
+          node("span", t`${chosen.length} 个项目`, "mwi-layu-group-note")); main.append(title);
+        if (!chosen.length) main.append(node("p", search || listingFilter !== "all" ? t("没有符合搜索或挂单筛选的项目。") : t("所选分区暂无项目。"), "mwi-layu-group-empty"));
         else {
-          const listing = table(["物品 / 等级", "市场左一", "利润", "工时费 / h", "利润率", "我的挂单", "参考售价", "备料"], "收藏项目列表");
+          const listing = table([t("物品 / 等级"), t("市场左一"), t("利润"), t("工时费 / h"), t("利润率"), t("我的挂单"), t("参考售价"), t("备料")], t("收藏项目列表"));
           listing.region.classList.add("mwi-layu-project-scroll"); listing.body.parentElement.classList.add("mwi-layu-project-table");
           sortableHeaders(listing, ["name", "market", "profit", "wage", "margin", "own", "reference", null], false);
           resizableColumns(listing);
@@ -9161,26 +10560,26 @@ function getPriceTier(price, direction) {
       }
       if (showMaterials) {
         const title = node("div", null, "mwi-layu-project-heading");
-        title.append(node("h2", "原材料"), node("span", `${catalog.rows.length} 种材料`, "mwi-layu-group-note"));
+        title.append(node("h2", t("原材料")), node("span", t`${catalog.rows.length} 种材料`, "mwi-layu-group-note"));
         main.append(title, materialCatalog());
       }
-      if (!selected.length) main.append(node("p", "请勾选上方分区，可同时选择多个。", "mwi-layu-group-empty"));
+      if (!selected.length) main.append(node("p", t("请勾选上方分区，可同时选择多个。"), "mwi-layu-group-empty"));
       shell.append(main); if (workspaceTab !== "manage") element.append(shell);
       const drawer = node("section", null, "v3-cart-drawer"); drawer.id = "mwi-layu-cart-drawer";
-      drawer.hidden = !drawerOpen; drawer.setAttribute("aria-label", "备料抽屉");
+      drawer.hidden = !drawerOpen; drawer.setAttribute("aria-label", t("备料抽屉"));
       if (drawerOpen) { resizableDrawer(drawer); drawer.append(cartPanel()); }
       const dock = node("footer", null, "v3-cart-dock");
       let totals = app.materialCart.summarize(cartItems, wages, prices);
       let budget = app.materialCart.budget(totals, prices);
-      dock.append(node("span", `备料车 · ${cartItems.length} 项 / ${cartItems.reduce((n, item) => n + item.quantity, 0)} 件`),
-        node("span", `采购预算 ${cartError || !cartScope ? "未知" : number(budget.amount)}${budget.complete ? "" : " · 数据待完整"}`));
-      const toggle = button(drawerOpen ? "收起备料清单" : "展开备料清单", () => { drawerOpen = !drawerOpen; savePage(); onChange(); });
+      dock.append(node("span", t`备料车 · ${cartItems.length} 项 / ${cartItems.reduce((n, item) => n + item.quantity, 0)} 件`),
+        node("span", t`采购预算 ${cartError || !cartScope ? t("未知") : number(budget.amount)}${budget.complete ? "" : t(" · 数据待完整")}`));
+      const toggle = button(drawerOpen ? t("收起备料清单") : t("展开备料清单"), () => { drawerOpen = !drawerOpen; savePage(); onChange(); });
       toggle.setAttribute("aria-expanded", String(drawerOpen)); toggle.setAttribute("aria-controls", drawer.id);
       const dockActions = node("div", null, "v3-dock-actions"); dockActions.append(toggle);
       const planNames = node("div", null, "v3-dock-plan");
       for (const item of cartItems.slice(0,2)) planNames.append(app.itemUI.identity(item, spriteBase, `${names[item.itemHrid] || item.name} +${item.enhancementLevel} ×${item.quantity}`));
-      if (cartItems.length > 2) planNames.append(node("span", `等 ${cartItems.length} 项`));
-      dock.insertBefore(planNames, dock.children[1]); dock.append(node("span", `缺料 ${budget.total - budget.ready} 种`, "v3-dock-shortage"), dockActions); element.append(drawer, dock);
+      if (cartItems.length > 2) planNames.append(node("span", t`等 ${cartItems.length} 项`));
+      dock.insertBefore(planNames, dock.children[1]); dock.append(node("span", t`缺料 ${budget.total - budget.ready} 种`, "v3-dock-shortage"), dockActions); element.append(drawer, dock);
       // Item labels can change wrapping and scroll limits. Restore only after final layout content exists.
       app.itemUI.decorate(element, spriteBase, names);
       syncDrawerHeight();
@@ -9230,8 +10629,8 @@ function getPriceTier(price, direction) {
         totals = app.materialCart.summarize(cartItems, wages, prices); budget = app.materialCart.budget(totals, prices);
         const nextCartSignature = JSON.stringify([totals, budget, wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 })]);
         if (nextCartSignature !== cartSignature) {
-          dock.children[2].textContent = `采购预算 ${cartError || !cartScope ? "未知" : number(budget.amount)}${budget.complete ? "" : " · 数据待完整"}`;
-          dock.querySelector(".v3-dock-shortage").textContent = `缺料 ${budget.total - budget.ready} 种`;
+          dock.children[2].textContent = t`采购预算 ${cartError || !cartScope ? t("未知") : number(budget.amount)}${budget.complete ? "" : t(" · 数据待完整")}`;
+          dock.querySelector(".v3-dock-shortage").textContent = t`缺料 ${budget.total - budget.ready} 种`;
           if (drawerOpen) {
             const nextPanel = cartPanel(); app.itemUI.decorate(nextPanel, spriteBase, names);
             replaceRegion(drawer.querySelector(".mwi-layu-cart"), nextPanel);
@@ -9251,7 +10650,7 @@ function getPriceTier(price, direction) {
             if (isMaterial) { materialSort = key; materialDirection = next; }
             else { sort = key; direction = next; }
             saveView(); onChange();
-          }, `${label}：点击${next === 1 ? "升序" : "降序"}排列`);
+          }, t`${label}：点击${next === 1 ? t("升序") : t("降序")}排列`);
           b.className = "mwi-layu-column-sort";
           b.dataset.focusKey = `sort:${isMaterial ? "materials" : "projects"}:${key}`;
           const status = current === key ? order === 1 ? "ascending" : "descending" : "none";
@@ -9262,36 +10661,36 @@ function getPriceTier(price, direction) {
       function materialCatalog() {
         const section = node("section", null, "mwi-layu-material-catalog");
         const header = node("header", null, "v3-section-heading"), copy = node("div");
-        copy.append(node("h2", "原材料统一核算看板"), node("p", "需求仅按备料车累计，制造与强化共用材料统一扣减库存。", "mwi-layu-group-note"));
-        header.append(copy, button("查看采购清单", () => {drawerOpen = true; savePage(); onChange();})); section.append(header);
-        if (cartError || !cartScope) section.append(node("p", cartError || "角色尚未就绪，备料需求未知。", "mwi-layu-cart-warning"));
-        if (!catalog.rows.length) { section.append(node("p", "暂无可显示的材料，请添加收藏并读取角色与配方。", "mwi-layu-group-empty")); return section; }
+        copy.append(node("h2", t("原材料统一核算看板")), node("p", t("需求仅按备料车累计，制造与强化共用材料统一扣减库存。"), "mwi-layu-group-note"));
+        header.append(copy, button(t("查看采购清单"), () => {drawerOpen = true; savePage(); onChange();})); section.append(header);
+        if (cartError || !cartScope) section.append(node("p", cartError || t("角色尚未就绪，备料需求未知。"), "mwi-layu-cart-warning"));
+        if (!catalog.rows.length) { section.append(node("p", t("暂无可显示的材料，请添加收藏并读取角色与配方。"), "mwi-layu-group-empty")); return section; }
         const entries = catalog.rows.filter(matchesSearch).map(material => ({ ...material, name: names[material.itemHrid] || material.name,
           market: material.itemHrid === "/items/coin" ? 1 : prices.quote(material)?.price,
           ...(cartError || !cartScope ? { manufacturing: null, enhancement: null, required: null, shortage: null } : {}) }));
         entries.sort((a, b) => compare(a[materialSort], b[materialSort], materialDirection) ||
           compare(a.name, b.name, materialSort === "name" ? materialDirection : 1) || compare(a.enhancementLevel, b.enhancementLevel, materialSort === "name" ? materialDirection : 1));
-        const listing = table(["原材料 / 等级", "库存", "制造", "强化", "需备合计", "还缺", "市场左一", "采购预算", "快捷采购"], "原材料分区列表");
+        const listing = table([t("原材料 / 等级"), t("库存"), t("制造"), t("强化"), t("需备合计"), t("还缺"), t("市场左一"), t("采购预算"), t("快捷采购")], t("原材料分区列表"));
         listing.body.parentElement.classList.add("mwi-layu-material-table");
         sortableHeaders(listing, ["name", "inventoryCount", "manufacturing", "enhancement", "required", "shortage", "market", null, null], true);
         for (const material of entries) {
-          const sources = disclosure(`${material.sources.length} 项`, `sources:${app.materialCart.key(material)}`);
+          const sources = disclosure(t`${material.sources.length} 项`, `sources:${app.materialCart.key(material)}`);
           for (const source of material.sources) sources.append(app.itemUI.identity(source, spriteBase, `${names[source.itemHrid] || source.name} +${source.enhancementLevel}`));
           const cost = material.shortage === 0 ? 0 : Number.isFinite(material.shortage) && Number.isFinite(material.market) ? Math.ceil(material.shortage) * material.market : null;
-          const purchase = button("预填采购", b => onOpen(material, b, "shortage"), `预填采购：${material.name}`); purchase.className = "v3-primary"; purchase.disabled = material.itemHrid === "/items/coin" || !(material.shortage > 0);
+          const purchase = button(t("预填采购"), b => onOpen(material, b, "shortage"), t`预填采购：${material.name}`); purchase.className = "v3-primary"; purchase.disabled = material.itemHrid === "/items/coin" || !(material.shortage > 0);
           const identity = node("div"); identity.append(materialLink(material), sources);
           const tr = row(listing.body, [identity, number(material.inventoryCount), number(material.manufacturing), number(material.enhancement), number(material.required), number(material.shortage), material.itemHrid === "/items/coin" ? "—" : number(material.market), number(cost), purchase]);
           tr.dataset.materialKey = app.materialCart.key(material);
           if (material.shortage > 0) tr.cells[5].className = "mwi-layu-shortage";
         }
         section.append(listing.region);
-        if (catalog.warningItems.length) section.append(warningPanel("材料范围可能不完整：", catalog.warningItems));
+        if (catalog.warningItems.length) section.append(warningPanel(t("材料范围可能不完整："), catalog.warningItems));
         return section;
       }
       function wage(result) {
         const el = node("span", Number.isFinite(result?.hourlyWage) ? number(result.hourlyWage) : "—");
         el.style.color = result?.evaluation?.hourlyColor || "inherit";
-        el.title = Number.isFinite(result?.hourlyWage) ? "" : result?.reason || "等待计算";
+        el.title = Number.isFinite(result?.hourlyWage) ? "" : result?.reason || t("等待计算");
         return el;
       }
       function profit(result) {
@@ -9299,7 +10698,7 @@ function getPriceTier(price, direction) {
         const known = Number.isFinite(value);
         const el = node("span", known ? number(value) : "—");
         el.style.color = result?.evaluation?.marginColor || "inherit";
-        el.title = known ? "" : result?.reason || "暂无利润";
+        el.title = known ? "" : result?.reason || t("暂无利润");
         return el;
       }
       function profitMargin(result) {
@@ -9307,17 +10706,17 @@ function getPriceTier(price, direction) {
         const known = Number.isFinite(value);
         const el = node("span", known ? `${(value * 100).toFixed(2)}%` : "—");
         el.style.color = result?.evaluation?.marginColor || "inherit";
-        el.title = known ? "" : result?.reason || "暂无利润率";
+        el.title = known ? "" : result?.reason || t("暂无利润率");
         return el;
       }
       function priceInput(item) {
         const key = app.marketFavoritesStore.key(item); const label = `${item.name} +${item.enhancementLevel}`;
-        const input = node("input"); input.className = "mwi-layu-compact-price"; input.type = "text"; input.inputMode = "numeric"; input.placeholder = "未设置";
-        input.setAttribute("aria-label", `自定义价格：${label}`); input.value = priceDrafts.get(key) ?? (item.customPrice == null ? "" : String(item.customPrice));
+        const input = node("input"); input.className = "mwi-layu-compact-price"; input.type = "text"; input.inputMode = "numeric"; input.placeholder = t("未设置");
+        input.setAttribute("aria-label", t`自定义价格：${label}`); input.value = priceDrafts.get(key) ?? (item.customPrice == null ? "" : String(item.customPrice));
         input.oninput = () => priceDrafts.set(key, input.value);
         input.onchange = () => {
           const value = input.value.trim();
-          if (value && (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))) { input.setAttribute("aria-invalid", "true"); onStatus("参考售价请输入非负整数金币，清空表示未设置。"); return; }
+          if (value && (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))) { input.setAttribute("aria-invalid", "true"); onStatus(t("参考售价请输入非负整数金币，清空表示未设置。")); return; }
           attempt(() => { onPrice(item, value ? Number(value) : null); priceDrafts.delete(key); });
         };
         input.onblur = onChange; input.onkeydown = event => { if (event.key === "Enter") { input.onchange(); input.blur(); } };
@@ -9331,21 +10730,21 @@ function getPriceTier(price, direction) {
         const disabled = !cartScope || Boolean(cartError);
         const stepper = node("div", null, "v3-project-quantity");
         const input = node("input"); input.type = "text"; input.inputMode = "numeric";
-        input.setAttribute("aria-label", `计划备料数量：${label}`);
+        input.setAttribute("aria-label", t`计划备料数量：${label}`);
         input.value = quantityDrafts.get(draftKey) ?? String(count(cartItems)); input.disabled = disabled;
-        input.title = disabled ? cartError || "角色尚未就绪" : "输入整数数量，0 表示移出备料计划";
+        input.title = disabled ? cartError || t("角色尚未就绪") : t("输入整数数量，0 表示移出备料计划");
         function readDraft(rows) {
           const text = quantityDrafts.get(draftKey);
           if (text == null) return count(rows);
           const value = Number(text.trim());
           if (!/^\d+$/.test(text.trim()) || !Number.isSafeInteger(value) || value > maximum(rows)) {
             input.setAttribute("aria-invalid", "true");
-            throw new Error(`备料数量须为 0 至 ${maximum(rows).toLocaleString()} 的整数；同物品各等级合计最多 1,000,000 件`);
+            throw new Error(t`备料数量须为 0 至 ${maximum(rows).toLocaleString(app.i18n?.locale)} 的整数；同物品各等级合计最多 1,000,000 件`);
           }
           return value;
         }
         function save(value, rows) {
-          if (!Number.isSafeInteger(value) || value < 0 || value > maximum(rows)) throw new Error("同物品各等级合计最多 1,000,000 件");
+          if (!Number.isSafeInteger(value) || value < 0 || value > maximum(rows)) throw new Error(t("同物品各等级合计最多 1,000,000 件"));
           const previous = count(rows);
           if (previous !== value) {
             if (value === 0) cart.remove(cartScope, item);
@@ -9370,9 +10769,9 @@ function getPriceTier(price, direction) {
           const rows = cart.read(cartScope);
           save(Math.max(0, readDraft(rows) + delta), rows);
         });
-        const lower = button("−", () => step(-1), `减少计划备料数量：${label}`);
-        const higher = button("+", () => step(1), `增加计划备料数量：${label}`);
-        lower.title = "减少 1 件，减到 0 移出计划"; higher.title = "增加 1 件";
+        const lower = button("−", () => step(-1), t`减少计划备料数量：${label}`);
+        const higher = button("+", () => step(1), t`增加计划备料数量：${label}`);
+        lower.title = t("减少 1 件，减到 0 移出计划"); higher.title = t("增加 1 件");
         lower.disabled = disabled || count(cartItems) === 0;
         higher.disabled = disabled || count(cartItems) >= maximum(cartItems);
         if (quantityDrafts.has(draftKey)) { try { readDraft(cartItems); } catch (_) { /* Keep validation visible after a redraw. */ } }
@@ -9380,29 +10779,29 @@ function getPriceTier(price, direction) {
       }
       function projectRow(body, plan, retainedRow = null) {
         const { item, quote, result, quantity } = plan; const key = app.materialCart.key(item); const label = `${item.name} +${item.enhancementLevel}`;
-        const identity = button(null, () => { if (expanded.has(key)) expanded.delete(key); else expanded.add(key); saveView(); onChange(); }, `项目明细：${label}`);
+        const identity = button(null, () => { if (expanded.has(key)) expanded.delete(key); else expanded.add(key); saveView(); onChange(); }, t`项目明细：${label}`);
         identity.className = "mwi-layu-project-identity"; identity.setAttribute("aria-expanded", String(expanded.has(key)));
         identity.append(node("span", expanded.has(key) ? "▼" : "▶", "mwi-layu-disclosure-sign"), app.itemUI.identity(item, spriteBase), node("span", `+${item.enhancementLevel}`, "mwi-layu-project-level"));
-        const price = node("span", quote?.price == null ? "未知" : number(quote.price));
-        price.title = quote ? `${quote.cached ? "本地缓存 · " : ""}${quote.source} · ${time(new Date(quote.at).toISOString())}` : "等待行情";
+        const price = node("span", quote?.price == null ? t("未知") : number(quote.price));
+        price.title = quote ? `${quote.cached ? t("本地缓存 · ") : ""}${quote.source} · ${time(new Date(quote.at).toISOString())}` : t("等待行情");
         if (quote) {
           const stale = Date.now() - quote.at >= 5 * 60000;
-          price.append(node("small", stale ? "旧" : quote.cached ? "缓存" : quote.source === "市场快照" ? "快照" : "订单簿", "mwi-layu-quote-source"));
-          if (stale) price.title += "；报价超过 5 分钟，请打开市场复核";
+          price.append(node("small", stale ? t("旧") : quote.cached ? t("缓存") : quote.source === t("市场快照") ? t("快照") : t("订单簿"), "mwi-layu-quote-source"));
+          if (stale) price.title += t("；报价超过 5 分钟，请打开市场复核");
         }
         const { orders } = plan;
-        const mine = node("span", !own ? "未读取" : orders.length ? "" : "—");
+        const mine = node("span", !own ? t("未读取") : orders.length ? "" : "—");
         for (const isSell of [true, false]) {
           const sideOrders = orders.filter(order => order.isSell === isSell);
           if (!sideOrders.length) continue;
           const sidePrices = sideOrders.map(order => order.price).filter(value => Number.isFinite(value) && value > 0);
           const bestOwn = sidePrices.length ? (isSell ? Math.min(...sidePrices) : Math.max(...sidePrices)) : null;
           const representative = sideOrders.find(order => order.price === bestOwn) || sideOrders[0];
-          const line = node("span", `${isSell ? "卖" : "买"} ${number(bestOwn)} · ${sideOrders.length}单`, "mwi-layu-listing-comparison");
+          const line = node("span", t`${isSell ? t("卖") : t("买")} ${number(bestOwn)} · ${sideOrders.length}单`, "mwi-layu-listing-comparison");
           const behindCount = sideOrders.filter(order => order.standing === "behind").length;
-          const text = `${own.cached || representative.stale ? "旧 · " : ""}${representative.label}`;
-          line.append(node("small", `${isSell ? "左一" : "右一"} ${number(representative.best)} · ${text}${behindCount && representative.standing !== "behind" ? ` · 另${behindCount}单被压价` : ""}`, "mwi-layu-order-state"));
-          line.title = `${quote?.source || "暂无行情"}${quote?.at ? ` · ${time(new Date(quote.at).toISOString())}` : ""}`;
+          const text = `${own.cached || representative.stale ? t("旧 · ") : ""}${representative.label}`;
+          line.append(node("small", `${isSell ? t("左一") : t("右一")} ${number(representative.best)} · ${text}${behindCount && representative.standing !== "behind" ? t` · 另${behindCount}单被压价` : ""}`, "mwi-layu-order-state"));
+          line.title = `${quote?.source || t("暂无行情")}${quote?.at ? ` · ${time(new Date(quote.at).toISOString())}` : ""}`;
           line.classList.add(`mwi-layu-order-${representative.standing}`);
           mine.append(line);
         }
@@ -9413,13 +10812,13 @@ function getPriceTier(price, direction) {
         const updateMetrics = () => {
           const simulation = simulationPanels.get(key);
           const active = simulation?.active();
-          const metric = active ? simulation.current()?.simulated || { reason: "模拟报价无效，请修正" } : wages.calculate(item, prices.quote(item));
+          const metric = active ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, prices.quote(item));
           metricRow.cells[2].replaceChildren(profit(metric)); metricRow.cells[3].replaceChildren(wage(metric)); metricRow.cells[4].replaceChildren(profitMargin(metric));
           metricRow.dataset.simulated = String(Boolean(active));
-          if (active) metricRow.cells[2].append(node("small", "模拟", "mwi-layu-quote-source"));
+          if (active) metricRow.cells[2].append(node("small", t("模拟"), "mwi-layu-quote-source"));
           for (const [index, value] of [[2, metric?.evaluation?.profit], [3, metric?.hourlyWage], [4, metric?.evaluation?.profitMargin]]) {
             metricRow.cells[index].dataset.value = value ?? "";
-            metricRow.cells[index].title = active ? `材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : "按当前行情计算";
+            metricRow.cells[index].title = active ? t`材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : t("按当前行情计算");
           }
         };
         updateMetrics();
@@ -9440,10 +10839,10 @@ function getPriceTier(price, direction) {
       function cartPanel() {
         const byUnitPrice = rows => rows.map(item => ({ item, price: item.itemHrid === "/items/coin" ? 1 : prices.quote(item)?.price }))
           .sort((a, b) => compare(a.price, b.price, -1)).map(entry => entry.item);
-        const panel = node("aside", null, "mwi-layu-cart"); panel.setAttribute("aria-label", "备料车");
-        const header = node("div", null, "mwi-layu-cart-heading"); header.append(node("h2", "备料计划与采购清单核算"), node("span", `${cartItems.length} 项 · ${cartItems.reduce((n, row) => n + row.quantity, 0)} 件`)); panel.append(header);
-        if (cartError || !cartScope) { panel.append(node("p", cartError || "角色尚未就绪，读取后即可加入项目。", "mwi-layu-group-note")); return panel; }
-        if (!cartItems.length) { panel.append(node("p", "在强化项目中加入备料后，统一计算材料需求。", "mwi-layu-group-note")); return panel; }
+        const panel = node("aside", null, "mwi-layu-cart"); panel.setAttribute("aria-label", t("备料车"));
+        const header = node("div", null, "mwi-layu-cart-heading"); header.append(node("h2", t("备料计划与采购清单核算")), node("span", t`${cartItems.length} 项 · ${cartItems.reduce((n, row) => n + row.quantity, 0)} 件`)); panel.append(header);
+        if (cartError || !cartScope) { panel.append(node("p", cartError || t("角色尚未就绪，读取后即可加入项目。"), "mwi-layu-group-note")); return panel; }
+        if (!cartItems.length) { panel.append(node("p", t("在强化项目中加入备料后，统一计算材料需求。"), "mwi-layu-group-note")); return panel; }
         const list = node("div", null, "mwi-layu-cart-items");
         for (const item of byUnitPrice(cartItems)) {
           const label = `${names[item.itemHrid] || item.name} +${item.enhancementLevel}`;
@@ -9452,10 +10851,10 @@ function getPriceTier(price, direction) {
           const maximum = 1000000 - cartItems.filter(row => row.itemHrid === item.itemHrid && app.materialCart.key(row) !== app.materialCart.key(item)).reduce((sum, row) => sum + row.quantity, 0);
           const input = node("input"); input.type = "number"; input.min = "1"; input.max = String(maximum); input.step = "1"; input.required = true;
           const draftKey = `${cartScope}|${app.materialCart.key(item)}`;
-          input.value = quantityDrafts.get(draftKey) ?? String(item.quantity); input.setAttribute("aria-label", `备料数量：${label}`);
+          input.value = quantityDrafts.get(draftKey) ?? String(item.quantity); input.setAttribute("aria-label", t`备料数量：${label}`);
           input.oninput = () => { clearPendingRemoval(); quantityDrafts.set(draftKey, input.value); };
           input.onchange = () => {
-            if (!input.checkValidity()) { input.setAttribute("aria-invalid", "true"); onStatus(`备料数量须为 1 至 ${maximum.toLocaleString()} 的整数；同物品各等级合计最多 1,000,000 件`); return; }
+            if (!input.checkValidity()) { input.setAttribute("aria-invalid", "true"); onStatus(t`备料数量须为 1 至 ${maximum.toLocaleString(app.i18n?.locale)} 的整数；同物品各等级合计最多 1,000,000 件`); return; }
             attempt(() => { cart.setQuantity(cartScope, item, Number(input.value)); clearPendingRemoval(); quantityDrafts.delete(draftKey); });
           };
           input.onblur = onChange; input.onkeydown = event => { if (event.key === "Enter") { input.onchange(); input.blur(); } };
@@ -9463,9 +10862,9 @@ function getPriceTier(price, direction) {
           function stepButton(delta) {
             const b = button(null, () => attempt(() => {
               const current = cart.read(cartScope).find(row => app.materialCart.key(row) === app.materialCart.key(item));
-              if (!current) throw new Error("项目已移出备料车，请重新加入");
+              if (!current) throw new Error(t("项目已移出备料车，请重新加入"));
               const draft = quantityDrafts.get(draftKey);
-              if (draft != null && (!input.checkValidity() || !Number.isSafeInteger(Number(draft)))) throw new Error("请先输入有效的整数数量");
+              if (draft != null && (!input.checkValidity() || !Number.isSafeInteger(Number(draft)))) throw new Error(t("请先输入有效的整数数量"));
               const quantity = draft == null ? current.quantity : Number(draft);
               if (delta < 0 && quantity === 1 && current.quantity === 1) {
                 if (pendingRemoval === draftKey) {
@@ -9480,7 +10879,7 @@ function getPriceTier(price, direction) {
               cart.setQuantity(cartScope, item, Math.max(1, quantity + delta));
               clearPendingRemoval();
               quantityDrafts.delete(draftKey);
-            }), `${delta < 0 ? "减少" : "增加"}备料数量：${label}`);
+            }), t`${delta < 0 ? t("减少") : t("增加")}备料数量：${label}`);
             b.className = "mwi-layu-quantity-arrow";
             const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             svg.setAttribute("viewBox", "0 0 16 16"); svg.setAttribute("aria-hidden", "true");
@@ -9488,79 +10887,79 @@ function getPriceTier(price, direction) {
             triangle.setAttribute("d", delta < 0 ? "M11 2L3 8l8 6Z" : "M5 2l8 6-8 6Z"); svg.append(triangle); b.append(svg);
             b.disabled = delta > 0 && item.quantity >= maximum;
             function updateRemovalState() {
-              if (delta > 0) { b.title = "增加 1 件"; return; }
+              if (delta > 0) { b.title = t("增加 1 件"); return; }
               const armed = pendingRemoval === draftKey;
               b.classList.toggle("mwi-layu-quantity-remove-pending", armed);
               b.setAttribute("aria-pressed", String(armed));
-              b.title = armed ? "再次点击移除该规划" : item.quantity === 1 ? "数量为 1，点击后再次点击可移除规划" : "减少 1 件";
+              b.title = armed ? t("再次点击移除该规划") : item.quantity === 1 ? t("数量为 1，点击后再次点击可移除规划") : t("减少 1 件");
               b.setAttribute("aria-description", b.title);
             }
             updateRemovalState();
             return b;
           }
           stepper.append(stepButton(-1), input, stepButton(1));
-          line.append(stepper, button("移除", () => attempt(() => { cart.remove(cartScope, item); clearPendingRemoval(); quantityDrafts.delete(draftKey); }), `移出备料车：${label}`)); list.append(line);
+          line.append(stepper, button(t("移除"), () => attempt(() => { cart.remove(cartScope, item); clearPendingRemoval(); quantityDrafts.delete(draftKey); }), t`移出备料车：${label}`)); list.append(line);
         }
         panel.append(list);
         const totals = app.materialCart.summarize(cartItems, wages, prices);
         const budget = app.materialCart.budget(totals, prices);
-        const budgetLine = node("p", `${budget.complete ? "缺口预算" : "缺口预算未计全"} ${budget.missing.length && budget.amount === 0 ? "未知" : number(budget.amount)} 金币 · 无需再购 ${budget.ready}/${budget.total} 种`, "mwi-layu-budget");
+        const budgetLine = node("p", t`${budget.complete ? t("缺口预算") : t("缺口预算未计全")} ${budget.missing.length && budget.amount === 0 ? t("未知") : number(budget.amount)} 金币 · 无需再购 ${budget.ready}/${budget.total} 种`, "mwi-layu-budget");
         budgetLine.setAttribute("role", "status"); panel.append(budgetLine);
         const coins = wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 }).inventoryCount;
         const allocation = app.materialCart.allocate(totals, prices, coins);
         if (!allocation.available) panel.append(node("p", allocation.reason, "mwi-layu-group-note"));
         else if (allocation.insufficient) {
-          const allocateButton = button(allocationOwner === cartScope ? "收起预算采购清单" : "按当前金币分配采购", () => {
+          const allocateButton = button(allocationOwner === cartScope ? t("收起预算采购清单") : t("按当前金币分配采购"), () => {
             allocationOwner = allocationOwner === cartScope ? null : cartScope; onChange();
-          }, "按当前金币分配采购");
+          }, t("按当前金币分配采购"));
           allocateButton.setAttribute("aria-expanded", String(allocationOwner === cartScope)); panel.append(allocateButton);
           if (allocationOwner === cartScope) {
-            const status = node("p", `可用 ${number(coins)} · 采购 ${number(allocation.purchaseCost)} · 预留消耗 ${number(allocation.reservedCoins)} · 余额 ${number(allocation.remaining)}`, "mwi-layu-group-note");
+            const status = node("p", t`可用 ${number(coins)} · 采购 ${number(allocation.purchaseCost)} · 预留消耗 ${number(allocation.reservedCoins)} · 余额 ${number(allocation.remaining)}`, "mwi-layu-group-note");
             status.setAttribute("role", "status"); panel.append(status);
-            if (!allocation.manufacturingComplete) panel.append(node("p", "金币不足以备齐制造材料；本次仅分配制造材料，暂不分配强化材料。", "mwi-layu-cart-warning"));
-            const purchases = table(["材料", "建议购买", "金额"], "预算采购清单");
+            if (!allocation.manufacturingComplete) panel.append(node("p", t("金币不足以备齐制造材料；本次仅分配制造材料，暂不分配强化材料。"), "mwi-layu-cart-warning"));
+            const purchases = table([t("材料"), t("建议购买"), t("金额")], t("预算采购清单"));
             for (const material of byUnitPrice(allocation.rows.filter(material => material.purchaseQuantity > 0))) {
-              const tr = row(purchases.body, [materialLink(material, "budget"), material.purchaseQuantity.toLocaleString(), number(material.purchaseCost)]);
+              const tr = row(purchases.body, [materialLink(material, "budget"), material.purchaseQuantity.toLocaleString(app.i18n?.locale), number(material.purchaseCost)]);
               tr.dataset.purchaseQuantity = material.purchaseQuantity; tr.dataset.purchaseCost = material.purchaseCost;
               tr.dataset.materialHrid = material.itemHrid;
             }
             panel.append(purchases.region);
-            if (!allocation.purchaseCost) panel.append(node("p", "当前预算下无须或无法追加采购。", "mwi-layu-group-note"));
+            if (!allocation.purchaseCost) panel.append(node("p", t("当前预算下无须或无法追加采购。"), "mwi-layu-group-note"));
           }
         }
         if (budget.missing.length) {
-          const missing = node("p", "未计入金额：", "mwi-layu-cart-warning");
+          const missing = node("p", t("未计入金额："), "mwi-layu-cart-warning");
           for (const material of budget.missing) missing.append(materialLink(material), " ");
           panel.append(missing);
         }
         const shortageLabel = node("label", null, "mwi-layu-partition-choice"); const shortageToggle = node("input"); shortageToggle.type = "checkbox";
-        shortageToggle.checked = shortagesOnly; shortageToggle.setAttribute("aria-label", "备料车只看缺料");
+        shortageToggle.checked = shortagesOnly; shortageToggle.setAttribute("aria-label", t("备料车只看缺料"));
         shortageToggle.onchange = () => { shortagesOnly = shortageToggle.checked; saveView(); onChange(); };
-        shortageLabel.append(shortageToggle, node("span", "只看缺料（含未知）")); panel.append(shortageLabel);
+        shortageLabel.append(shortageToggle, node("span", t("只看缺料（含未知）"))); panel.append(shortageLabel);
         const sortedMaterials = byUnitPrice(budget.rows.filter(row => !shortagesOnly || row.shortage == null || row.shortage > 0));
-        const materialHeading = node("h3", "合计材料 · 单价降序");
+        const materialHeading = node("h3", t("合计材料 · 单价降序"));
         panel.append(materialHeading);
-        if (!totals.complete) panel.append(node("p", "数量中的「+ 未知」表示尚有项目未算入；已算部分保留，完整缺口和预算待方案就绪后计算。", "mwi-layu-group-note"));
-        const materials = table(["材料", "库存", "总需", "缺口", "左一单价", "预算小计"], "备料车材料合计");
+        if (!totals.complete) panel.append(node("p", t("数量中的「+ 未知」表示尚有项目未算入；已算部分保留，完整缺口和预算待方案就绪后计算。"), "mwi-layu-group-note"));
+        const materials = table([t("材料"), t("库存"), t("总需"), t("缺口"), t("左一单价"), t("预算小计")], t("备料车材料合计"));
         for (const material of sortedMaterials) {
           const cost = node("span", number(material.purchaseCost));
-          cost.title = material.quote?.at ? `${material.quote.source} · ${time(new Date(material.quote.at).toISOString())}；采购 ${material.purchaseQuantity ?? "未知"} 份` : "金币直接消耗或报价未知";
-          const stock = material.pendingPurchaseCount > 0 ? `${number(material.inventoryCount)}（待收 ${number(material.pendingPurchaseCount)}）` : number(material.inventoryCount);
+          cost.title = material.quote?.at ? t`${material.quote.source} · ${time(new Date(material.quote.at).toISOString())}；采购 ${material.purchaseQuantity ?? t("未知")} 份` : t("金币直接消耗或报价未知");
+          const stock = material.pendingPurchaseCount > 0 ? t`${number(material.inventoryCount)}（待收 ${number(material.pendingPurchaseCount)}）` : number(material.inventoryCount);
           const tr = row(materials.body, [materialLink(material, "shortage"), stock, partialNumber(material.required, material.knownRequired), partialNumber(material.shortage, material.knownShortage), number(material.quote?.price), cost]);
           tr.dataset.materialHrid = material.itemHrid; tr.dataset.materialLevel = material.enhancementLevel;
           tr.dataset.manufacturing = material.manufacturing ?? ""; tr.dataset.required = material.required ?? ""; tr.dataset.shortage = material.shortage ?? "";
-          tr.title = `制造 ${partialNumber(material.manufacturing, material.knownManufacturing)}；强化备料 ${partialNumber(material.enhancement, material.knownEnhancement)}`;
+          tr.title = t`制造 ${partialNumber(material.manufacturing, material.knownManufacturing)}；强化备料 ${partialNumber(material.enhancement, material.knownEnhancement)}`;
           if (material.shortage > 0 || material.knownShortage > 0) tr.cells[3].className = "mwi-layu-shortage";
         }
         panel.append(materials.region);
         if (totals.rows.some(material => material.manufacturing == null || material.manufacturing > 0)) {
-          const breakdown = disclosure("制造 / 强化用量拆分", "cart-breakdown");
-          const split = table(["材料", "制造", "强化"], "备料用量拆分");
+          const breakdown = disclosure(t("制造 / 强化用量拆分"), "cart-breakdown");
+          const split = table([t("材料"), t("制造"), t("强化")], t("备料用量拆分"));
           for (const material of sortedMaterials) row(split.body, [materialLink(material), partialNumber(material.manufacturing, material.knownManufacturing), partialNumber(material.enhancement, material.knownEnhancement)]);
           breakdown.append(split.region); panel.append(breakdown);
         }
-        if (totals.warningItems.length) panel.append(warningPanel("未算全：", totals.warningItems));
-        if (totals.minimumCostItems.length) panel.append(warningPanel("备料路线：", totals.minimumCostItems));
+        if (totals.warningItems.length) panel.append(warningPanel(t("未算全："), totals.warningItems));
+        if (totals.minimumCostItems.length) panel.append(warningPanel(t("备料路线："), totals.minimumCostItems));
         return panel;
       }
       function warningPanel(prefix, entries) {
@@ -9576,12 +10975,12 @@ function getPriceTier(price, direction) {
         const label = `${names[material.itemHrid] || material.name || material.itemHrid.split("/").pop()}${material.enhancementLevel ? ` +${material.enhancementLevel}` : ""}`;
         const identity = app.itemUI.identity(material, spriteBase, label);
         if (material.itemHrid === "/items/coin") return identity;
-        const b = button(null, (el) => onOpen(material, el, purchaseMode), `打开原材料市场：${label}`); b.append(identity); b.className = "mwi-layu-group-link"; b.title = label;
+        const b = button(null, (el) => onOpen(material, el, purchaseMode), t`打开原材料市场：${label}`); b.append(identity); b.className = "mwi-layu-group-link"; b.title = label;
         return b;
       }
       function materialCards(materials, simulation, enabled) {
-        if (!materials) return node("p", "等待材料参数", "mwi-layu-group-note");
-        const list = node("div", null, "v3-material-cards"); list.setAttribute("aria-label", "制造与强化备料合计");
+        if (!materials) return node("p", t("等待材料参数"), "mwi-layu-group-note");
+        const list = node("div", null, "v3-material-cards"); list.setAttribute("aria-label", t("制造与强化备料合计"));
         const inputs = materials.inputs.filter(m => m.count !== 0 || m.expectedEnhancement > 0);
         const parts = [m => m.count !== 0 && !(m.expectedEnhancement > 0), m => m.count !== 0 && m.expectedEnhancement > 0, m => m.count === 0 && m.expectedEnhancement > 0];
         const groups = parts.map(match => inputs.filter(m => m.itemHrid !== "/items/coin" && match(m)));
@@ -9608,37 +11007,37 @@ function getPriceTier(price, direction) {
               // and multiply unrounded values rather than the compact display text.
               const total = lack === 0 ? 0 : Number.isFinite(lack) && quote != null ? lack * quote : null;
               const readout = node("div", null, "v3-material-readout");
-              for (const [label, value, className] of [["单价", quote, "v3-material-quote"], ["补齐总价", total, "v3-material-total"]]) {
+              for (const [label, value, className] of [[t("单价"), quote, "v3-material-quote"], [t("补齐总价"), total, "v3-material-total"]]) {
                 const field = node("div", null, "v3-material-price-field");
-                const amount = node("span", Number.isFinite(value) ? app.priceSimulationUI.formatPrice(value) : "未知", className);
+                const amount = node("span", Number.isFinite(value) ? app.priceSimulationUI.formatPrice(value) : t("未知"), className);
                 amount.dataset.value = Number.isFinite(value) ? value : "";
                 field.append(node("span", label, "v3-material-price-label"), amount); readout.append(field);
               }
-              readout.firstElementChild.title = quote == null ? "暂无报价" : `当前单价：${number(quote)}`;
-              readout.lastElementChild.title = lack === 0 ? "无需补齐，补齐总价为 0；已扣除库存与待收货" : Number.isFinite(total) ? `补齐总价：${number(lack)} × ${number(quote)} = ${number(total)}；缺少数量已扣除库存与待收货` : "缺少数量或当前单价未知";
+              readout.firstElementChild.title = quote == null ? t("暂无报价") : t`当前单价：${number(quote)}`;
+              readout.lastElementChild.title = lack === 0 ? t("无需补齐，补齐总价为 0；已扣除库存与待收货") : Number.isFinite(total) ? t`补齐总价：${number(lack)} × ${number(quote)} = ${number(total)}；缺少数量已扣除库存与待收货` : t("缺少数量或当前单价未知");
               pricing.hidden = true; head.append(readout);
             }
             const progress = node("progress"); progress.max = 1;
             const ratio = need == null || m.inventoryCount == null ? null : need > 0 ? Math.min(1, m.inventoryCount / need) : 1;
             // Unknown inventory stays indeterminate; zero need is already fully stocked.
             if (ratio != null) progress.value = ratio;
-            progress.setAttribute("aria-label", `${names[m.itemHrid] || m.name}备料进度`);
+            progress.setAttribute("aria-label", t`${names[m.itemHrid] || m.name}备料进度`);
             const counts = node("div", null, "v3-material-counts");
-            const shortage = node("span", `缺：${number(lack)}`, lack > 0 ? "mwi-layu-shortage" : ""); shortage.dataset.value = lack ?? "";
-            if (m.pendingPurchaseCount > 0) shortage.title = `已扣除待收货数量 ${number(m.pendingPurchaseCount)}`;
-            counts.append(node("span", `需：${number(need)}`), node("span", `库存：${number(m.inventoryCount)}`), shortage);
+            const shortage = node("span", t`缺：${number(lack)}`, lack > 0 ? "mwi-layu-shortage" : ""); shortage.dataset.value = lack ?? "";
+            if (m.pendingPurchaseCount > 0) shortage.title = t`已扣除待收货数量 ${number(m.pendingPurchaseCount)}`;
+            counts.append(node("span", t`需：${number(need)}`), node("span", t`库存：${number(m.inventoryCount)}`), shortage);
             card.append(head, progress, counts); list.append(card);
           }
         }
         const container = node("div");
         if (inputs.length) container.append(list);
-        else container.append(node("p", materials.enhancementReady && !materials.reason ? "无需此类材料。" : "强化方案未就绪，合计需备未知。", "mwi-layu-group-note"));
+        else container.append(node("p", materials.enhancementReady && !materials.reason ? t("无需此类材料。") : t("强化方案未就绪，合计需备未知。"), "mwi-layu-group-note"));
         if (materials.reason) container.append(node("p", materials.reason, "mwi-layu-group-note"));
         return container;
       }
       function renderExperiencePlan(panel, forecast) {
-        const grid = node("div", null, "v3-xp-grid"); grid.setAttribute("aria-label", "计划经验预估");
-        const percent = value => Number.isFinite(value) ? `${value.toFixed(2)}%` : "未知";
+        const grid = node("div", null, "v3-xp-grid"); grid.setAttribute("aria-label", t("计划经验预估"));
+        const percent = value => Number.isFinite(value) ? `${value.toFixed(2)}%` : t("未知");
         function field(value, manufacturing = false) {
           const el = node("div", null, `v3-xp${manufacturing ? " v3-xp-manufacturing" : ""}`);
           el.dataset.skillHrid = value.skillHrid; el.dataset.gain = value.gain ?? "";
@@ -9659,15 +11058,15 @@ function getPriceTier(price, direction) {
           const track = node("div", null, "v3-xp-track"); track.setAttribute("role", "progressbar");
           track.setAttribute("aria-label", value.label); track.setAttribute("aria-valuemin", "0"); track.setAttribute("aria-valuemax", "100");
           if (value.current != null) track.setAttribute("aria-valuenow", value.current.toFixed(2));
-          track.setAttribute("aria-valuetext", `${cross ? "跨级，" : ""}${start}，预计 ${end}；预计增加 ${number(value.gain)} 经验`);
-          track.title = `实心表示已有经验，斜纹表示预计新增经验。${value.reason}`;
+          track.setAttribute("aria-valuetext", t`${cross ? t("跨级，") : ""}${start}，预计 ${end}；预计增加 ${number(value.gain)} 经验`);
+          track.title = t`实心表示已有经验，斜纹表示预计新增经验。${value.reason}`;
           const solid = node("span", null, "v3-xp-current"), projected = node("span", null, "v3-xp-projected");
           solid.style.width = `${value.current ?? 0}%`;
           projected.style.left = `${value.current ?? 0}%`; projected.style.width = `${value.added ?? 0}%`;
           track.append(solid, projected);
           const bottom = node("div", null, "v3-xp-bottom");
-          if (cross) bottom.append(node("span", "跨级", "v3-xp-level-up"));
-          bottom.append(node("span", value.gain == null ? "预计经验未知" : `预计 +${number(value.gain)} 经验`, "v3-xp-gain"));
+          if (cross) bottom.append(node("span", t("跨级"), "v3-xp-level-up"));
+          bottom.append(node("span", value.gain == null ? t("预计经验未知") : t`预计 +${number(value.gain)} 经验`, "v3-xp-gain"));
           el.title = value.reason; el.append(heading, track, bottom);
           return el;
         }
@@ -9687,30 +11086,30 @@ function getPriceTier(price, direction) {
         const routes = node("div", null, "v3-plan-routes");
         const metrics = node("div", null, "v3-plan-metrics"); metrics.setAttribute("aria-live", "polite");
         const duration = node("strong"), count = node("strong");
-        for (const [label, value, metric] of [["期望时间", duration, "time"], ["期望次数", count, "actions"]]) {
+        for (const [label, value, metric] of [[t("期望时间"), duration, "time"], [t("期望次数"), count, "actions"]]) {
           const field = node("div", null, "v3-plan-metric"); field.dataset.metric = metric;
           field.append(node("span", label), value); metrics.append(field);
         }
-        duration.title = "单件期望强化耗时，不含制造、采购或等待；期望值不保证本次完成时间";
-        count.title = "单件期望强化动作次数，不是保护材料消耗量";
+        duration.title = t("单件期望强化耗时，不含制造、采购或等待；期望值不保证本次完成时间");
+        count.title = t("单件期望强化动作次数，不是保护材料消耗量");
         const result = enhancementPlanMetrics(route);
         duration.textContent = result.duration; duration.dataset.hours = result.hours ?? "";
         count.textContent = result.count; count.dataset.actions = result.actions ?? "";
-        header.append(node("h4", "强化方案")); body.append(routes, metrics);
+        header.append(node("h4", t("强化方案"))); body.append(routes, metrics);
         summary.append(header, body); panel.replaceChildren(summary);
         const restoreFocus = () => { if (focusKey) [...panel.querySelectorAll("[data-focus-key]")]
           .find(el => el.dataset.focusKey === focusKey)?.focus({preventScroll:true}); };
         delete panel.dataset.routeType; delete panel.dataset.protectAt;
-        if (!route) { routes.append(node("p", "方案尚未就绪，请先读取所需行情。")); restoreFocus(); return; }
+        if (!route) { routes.append(node("p", t("方案尚未就绪，请先读取所需行情。"))); restoreFocus(); return; }
         panel.dataset.routeType = route.routeType;
         panel.dataset.protectAt = route.protectAt ?? "";
         const arrow = () => node("span", "→", "v3-plan-arrow");
         function stage(level, itemHrid = null, protectionText = "") {
           const step = node("span", null, "v3-plan-step");
-          step.append(node("strong", `+${level ?? "未知"}`));
+          step.append(node("strong", `+${level ?? t("未知")}`));
           if (itemHrid) {
-            const name = names[itemHrid] || ({ "/items/mirror_of_protection":"保护之镜", "/items/philosophers_mirror":"贤者之镜" })[itemHrid] || itemHrid.slice(7);
-            const icon = button(null, el => onOpen({ itemHrid, enhancementLevel:0, name }, el), `打开市场：${name}`);
+            const name = names[itemHrid] || ({ "/items/mirror_of_protection":t("保护之镜"), "/items/philosophers_mirror":t("贤者之镜") })[itemHrid] || itemHrid.slice(7);
+            const icon = button(null, el => onOpen({ itemHrid, enhancementLevel:0, name }, el), t`打开市场：${name}`);
             icon.className = "v3-plan-item-icon";
             icon.dataset.itemHrid = itemHrid; icon.title = name;
             const image = node("span"); image.setAttribute("role", "img"); image.setAttribute("aria-label", name);
@@ -9725,14 +11124,14 @@ function getPriceTier(price, direction) {
           if (count != null) line.append(app.itemUI.identity(target, spriteBase, `${names[target.itemHrid] || target.itemHrid.slice(7)} ×${number(count)}`));
           const protects = metric.expectedProtects > 0 && Number.isInteger(metric.protectAt);
           const expectedProtects = metric.expectedProtects == null ? null : metric.expectedProtects * units;
-          const protectionText = `(${Number.isFinite(expectedProtects) ? expectedProtects.toLocaleString("en-US", {useGrouping:false, maximumFractionDigits:2}) : "未知"})`;
+          const protectionText = `(${Number.isFinite(expectedProtects) ? expectedProtects.toLocaleString("en-US", {useGrouping:false, maximumFractionDigits:2}) : t("未知")})`;
           line.append(stage(0, protects && metric.protectAt === 0 ? metric.protectionItemHrid : null, protectionText));
           if (protects && metric.protectAt > 0) line.append(arrow(), stage(metric.protectAt, metric.protectionItemHrid, protectionText));
           if (level !== 0) line.append(arrow(), stage(level, mirrorTarget != null ? "/items/philosophers_mirror" : null));
-          else line.append(node("span", "无需强化"));
+          else line.append(node("span", t("无需强化")));
           if (mirrorTarget != null) line.append(arrow(), stage(mirrorTarget));
-          if (metric.expectedProtects === 0 && mirrorTarget == null) line.append(node("span", "无需保护"));
-          if (metric.routeType === "refinementCarryover") line.append(node("span", `· +${metric.refinementAtLevel ?? level} 精炼继承`));
+          if (metric.expectedProtects === 0 && mirrorTarget == null) line.append(node("span", t("无需保护")));
+          if (metric.routeType === "refinementCarryover") line.append(node("span", t`· +${metric.refinementAtLevel ?? level} 精炼继承`));
           return line;
         }
         if (route.routeType === "philosophersMirror") {
@@ -9744,14 +11143,14 @@ function getPriceTier(price, direction) {
             merge.append(stage(route.mirrorStartLevel, "/items/philosophers_mirror"), arrow(), stage(item.enhancementLevel));
             routes.append(merge);
           }
-          const parts = disclosure("组成装备与数量", `route:${app.materialCart.key(item)}`);
+          const parts = disclosure(t("组成装备与数量"), `route:${app.materialCart.key(item)}`);
           for (const {part, level} of components) parts.append(path({itemHrid:part.itemHrid}, part, level, part.quantity * quantity));
           const mirrors = node("p");
-          mirrors.append(app.itemUI.identity({itemHrid:"/items/philosophers_mirror"}, spriteBase, names["/items/philosophers_mirror"] || "贤者之镜"), node("span", ` ×${number(route.mirrorCount * quantity)}`));
-          parts.append(mirrors); panel.append(parts, node("small", "需另备组成装备，镜子合成与精炼步骤需手动操作。"));
+          mirrors.append(app.itemUI.identity({itemHrid:"/items/philosophers_mirror"}, spriteBase, names["/items/philosophers_mirror"] || t("贤者之镜")), node("span", ` ×${number(route.mirrorCount * quantity)}`));
+          parts.append(mirrors); panel.append(parts, node("small", t("需另备组成装备，镜子合成与精炼步骤需手动操作。")));
         } else routes.append(path(item, route, item.enhancementLevel));
-        if (route.routeType === "refinementCarryover") panel.append(node("small", "先强化未精炼底子，再按标示等级精炼继承；需分步手动操作。"));
-        if (simulated) panel.append(node("small", "下方强化预填按当前行情方案执行；模拟方案仅用于比较。"));
+        if (route.routeType === "refinementCarryover") panel.append(node("small", t("先强化未精炼底子，再按标示等级精炼继承；需分步手动操作。")));
+        if (simulated) panel.append(node("small", t("下方强化预填按当前行情方案执行；模拟方案仅用于比较。")));
         app.itemUI.decorate(panel, spriteBase, names);
         restoreFocus();
       }
@@ -9770,6 +11169,7 @@ function getPriceTier(price, direction) {
         let materialSignature = "";
         let refreshEconomics = () => {};
         simulation.bind(comparison => {
+          const savedView = section.isConnected ? rememberView() : null;
           updateMetrics();
           refreshEconomics();
           const current = comparison?.simulated;
@@ -9784,11 +11184,11 @@ function getPriceTier(price, direction) {
           const identity = app.itemUI.identity(item, spriteBase, `${item.name} +0`);
           identity.title = `${item.name} +0`;
           const options = node("div", null, "v3-source-options");
-          options.setAttribute("role", "radiogroup"); options.setAttribute("aria-label", "底子取得方式");
-          for (const [source, label, cost] of [["market", "采购", base?.readyMadeCost], ["craft", "自制", base?.craftingCost]]) {
+          options.setAttribute("role", "radiogroup"); options.setAttribute("aria-label", t("底子取得方式"));
+          for (const [source, label, cost] of [["market", t("采购"), base?.readyMadeCost], ["craft", t("自制"), base?.craftingCost]]) {
             const choice = node("label", null, "v3-source-choice");
             const input = node("input"); input.type = "radio"; input.name = `base-source:${key}`; input.value = source;
-            input.checked = selectedSource === source; input.setAttribute("aria-label", `${label}底子：${item.name}`);
+            input.checked = selectedSource === source; input.setAttribute("aria-label", t`${label}底子：${item.name}`);
             input.dataset.focusKey = `base-source:${key}:${source}`;
             input.addEventListener("change", () => {
               if (!input.checked) return;
@@ -9805,36 +11205,36 @@ function getPriceTier(price, direction) {
               });
             });
             choice.append(input, node("span", `${label} ${number(cost > 0 ? cost : null)}`));
-            choice.title = `${label}底子及同物品保护；同角色的该物品各强化等级共用此选择${source === "market" ? "；采购报价缺失时使用自制成本" : ""}`;
+            choice.title = t`${label}底子及同物品保护；同角色的该物品各强化等级共用此选择${source === "market" ? t("；采购报价缺失时使用自制成本") : ""}`;
             options.append(choice);
           }
           top.append(identity, options);
           const bottom = node("div", null, "v3-source-bottom");
           const protection = node("span", null, "v3-source-protection");
           if (route?.protectionItemHrid === item.itemHrid || !route) {
-            protection.append(node("span", "同物品保护："), node("strong", actualSource === "craft" ? "同步自制" : "同步采购"));
+            protection.append(node("span", t("同物品保护：")), node("strong", actualSource === "craft" ? t("同步自制") : t("同步采购")));
           } else if (route.protectionItemHrid) {
-            protection.append(node("span", "保护："), app.itemUI.identity({ itemHrid:route.protectionItemHrid }, spriteBase,
+            protection.append(node("span", t("保护：")), app.itemUI.identity({ itemHrid:route.protectionItemHrid }, spriteBase,
               names[route.protectionItemHrid] || route.protectionItemHrid.slice(7)));
-          } else protection.append(node("span", route.routeType === "philosophersMirror" ? "保护随组成装备来源" : "无需保护"));
-          const label = !route ? "方案未就绪" : route.routeType === "traditional"
-            ? route.expectedProtects > 0 ? `普通保护 · +${route.protectAt} 起保` : "普通路线 · 无需保护"
-            : route.routeType === "philosophersMirror" ? "贤者之镜路线" : "精炼继承路线";
+          } else protection.append(node("span", route.routeType === "philosophersMirror" ? t("保护随组成装备来源") : t("无需保护")));
+          const label = !route ? t("方案未就绪") : route.routeType === "traditional"
+            ? route.expectedProtects > 0 ? t`普通保护 · +${route.protectAt} 起保` : t("普通路线 · 无需保护")
+            : route.routeType === "philosophersMirror" ? t("贤者之镜路线") : t("精炼继承路线");
           const routeLabel = node("span", label, "v3-source-route");
           const difference = base?.hourlyWageDifference;
-          const saving = node("span", craftFallback ? "缺价，按自制" : difference == null ? "工时费差未知" : difference === 0 ? "工时费相同"
-            : `${difference > 0 ? "获得" : "失去"}${number(Math.abs(difference))}/h收益`, `v3-source-difference${difference < 0 ? " v3-source-extra" : ""}`);
+          const saving = node("span", craftFallback ? t("缺价，按自制") : difference == null ? t("工时费差未知") : difference === 0 ? t("工时费相同")
+            : t`${difference > 0 ? t("获得") : t("失去")}${number(Math.abs(difference))}/h收益`, `v3-source-difference${difference < 0 ? " v3-source-extra" : ""}`);
           saving.dataset.value = difference ?? "";
-          saving.title = craftFallback ? "采购报价缺失，底子及同物品保护按自制成本计算；采购报价恢复后按采购成本计算。"
-            : `当前${selectedSource === "market" ? "采购" : "自制"}方案相对${selectedSource === "market" ? "自制" : "采购"}方案的预计工时费差；使用相同售价、角色参数和当前模拟报价，分别计算完整强化方案。${difference == null ? "缺少有效售价或可比较的方案。" : "按未缩写数值计算。"}`;
+          saving.title = craftFallback ? t("采购报价缺失，底子及同物品保护按自制成本计算；采购报价恢复后按采购成本计算。")
+            : t`当前${selectedSource === "market" ? t("采购") : t("自制")}方案相对${selectedSource === "market" ? t("自制") : t("采购")}方案的预计工时费差；使用相同售价、角色参数和当前模拟报价，分别计算完整强化方案。${difference == null ? t("缺少有效售价或可比较的方案。") : t("按未缩写数值计算。")}`;
           bottom.append(protection, routeLabel, saving); strategy.append(top, bottom);
-          if (!route) strategy.title = current?.reason || "等待路线计算；采购报价缺失时使用自制成本，自制成本也缺失时无法估算";
+          if (!route) strategy.title = current?.reason || t("等待路线计算；采购报价缺失时使用自制成本，自制成本也缺失时无法估算");
           else strategy.removeAttribute("title");
           app.itemUI.decorate(strategy, spriteBase, names);
           if (focusKey) [...strategy.querySelectorAll("[data-focus-key]")].find(el => el.dataset.focusKey === focusKey)?.focus({ preventScroll:true });
           renderEnhancementPlan(plan, item, current?.metrics, quantity, comparison?.changed);
           if (current?.preparationBasis === "minCostWithoutSale") {
-            const cost = node("small", `无有效售价 · 最低成本强化方案 · 单件预计成本 ${number(route.totalCost)} · 预计耗时 ${number(route.totalTimeHours)} 小时`, "v3-min-cost-summary");
+            const cost = node("small", t`无有效售价 · 最低成本强化方案 · 单件预计成本 ${number(route.totalCost)} · 预计耗时 ${number(route.totalTimeHours)} 小时`, "v3-min-cost-summary");
             cost.dataset.totalCost = route.totalCost; cost.dataset.totalTimeHours = route.totalTimeHours; plan.append(cost);
           }
           const projected = wages.materials(item, current, quantity);
@@ -9848,41 +11248,41 @@ function getPriceTier(price, direction) {
             if (focusKey) [...combinedMaterials.querySelectorAll("[data-focus-key]")]
               .find(el => el.dataset.focusKey === focusKey)?.focus({ preventScroll: true });
           }
+          if (savedView) restoreView(savedView);
         });
         const left = node("div", null, "v3-workbench-materials"); const title = node("div", null, "mwi-layu-level-heading");
-        title.append(node("strong", "配方材料与调价模拟"));
-        const reset = button("恢复左一", () => simulation.reset(), "恢复全部材料当前报价");
-        reset.title = "重新读取已收到的当前行情，清除全部模拟调价"; reset.className = "v3-sim-reset";
+        title.append(node("strong", t("配方材料与调价模拟")));
+        const reset = button(t("恢复左一"), () => simulation.reset(), t("恢复全部材料当前报价"));
+        reset.title = t("重新读取已收到的当前行情，清除全部模拟调价"); reset.className = "v3-sim-reset";
         reset.disabled = !simulationEnabled.has(key);
-        const toggle = button("价格模拟", () => {
+        const toggle = button(t("价格模拟"), () => {
           if (simulationEnabled.has(key)) simulationEnabled.delete(key); else simulationEnabled.add(key);
           // Disabling restores real quotes; re-enabling starts from fresh received data.
           simulation.reset(); onChange();
-        }, simulationEnabled.has(key) ? "关闭价格模拟" : "开启价格模拟");
+        }, simulationEnabled.has(key) ? t("关闭价格模拟") : t("开启价格模拟"));
         toggle.className = "v3-sim-toggle"; toggle.setAttribute("aria-pressed", String(simulationEnabled.has(key)));
         toggle.dataset.focusKey = `simulation-toggle:${key}`;
-        toggle.title = simulationEnabled.has(key) ? "关闭并清除模拟调价，恢复当前行情计算" : "开启后显示材料调价按钮";
+        toggle.title = simulationEnabled.has(key) ? t("关闭并清除模拟调价，恢复当前行情计算") : t("开启后显示材料调价按钮");
         const simulationActions = node("div", null, "v3-sim-actions"); simulationActions.append(reset, toggle);
-        title.append(simulationActions); left.append(title);
+        title.append(simulationActions); left.append(plan, title);
         const inventory = wages.materialInfo(item).inventoryCount;
-        const planLabel = cartItems.some(entry => app.materialCart.key(entry) === key) ? `计划 ${number(quantity)} 件` : "单件备料预览 · 未加入计划";
-        left.append(node("p", `${planLabel} · 库存同等级 ${number(inventory)} 件`, "mwi-layu-group-note"));
+        const planLabel = cartItems.some(entry => app.materialCart.key(entry) === key) ? t`计划 ${number(quantity)} 件` : t("单件备料预览 · 未加入计划");
+        left.append(node("p", t`${planLabel} · 库存同等级 ${number(inventory)} 件`, "mwi-layu-group-note"));
         left.append(strategy, combinedMaterials);
         const actions = node("div", null, "mwi-layu-level-actions");
-        left.append(plan);
         const craftType = wages.preparation(item).recipe?.actionHrid?.split("/")[2];
-        const craftLabel = ({ tailoring: "缝纫", crafting: "制作", cheesesmithing: "锻造", cooking: "烹饪", brewing: "冲泡" })[craftType] || "制作";
-        const enhanceAction = button("强化", (b) => onEnhance(item, b), `强化：${label}`);
-        enhanceAction.title = "前往强化并预填，请在游戏中确认后开始";
-        const marketAction = button("市场", (b) => onOpen(item, b), `市场：${label}`);
+        const craftLabel = ({ tailoring: t("缝纫"), crafting: t("制作"), cheesesmithing: t("锻造"), cooking: t("烹饪"), brewing: t("冲泡") })[craftType] || t("制作");
+        const enhanceAction = button(t("强化"), (b) => onEnhance(item, b), t`强化：${label}`);
+        enhanceAction.title = t("前往强化并预填，请在游戏中确认后开始");
+        const marketAction = button(t("市场"), (b) => onOpen(item, b), t`市场：${label}`);
         const craftAction = button(craftLabel, (b) => onCraft(item, b), `${craftLabel}：${label}`);
-        actions.append(marketAction, craftAction, enhanceAction); left.append(actions);
-        const planAction = button("计划", () => attempt(() => {
-          if (!cartScope) throw new Error("角色尚未就绪，请先刷新角色。");
+        actions.append(marketAction, craftAction, enhanceAction); plan.after(actions);
+        const planAction = button(t("计划"), () => attempt(() => {
+          if (!cartScope) throw new Error(t("角色尚未就绪，请先刷新角色。"));
           if (!cart.read(cartScope).some(entry => app.materialCart.key(entry) === key)) cart.add(cartScope, item, quantity);
           drawerOpen = true; savePage();
-        }), `计划：${label}`);
-        planAction.title = cartItems.some(entry => app.materialCart.key(entry) === key) ? "查看采购清单" : "加入备料并查看采购";
+        }), t`计划：${label}`);
+        planAction.title = cartItems.some(entry => app.materialCart.key(entry) === key) ? t("查看采购清单") : t("加入备料并查看采购");
         actions.append(planAction);
         for (const action of actions.children) action.prepend(app.itemUI.icon(item.itemHrid, spriteBase));
         // These actions execute the real preparation route, never a price simulation.
@@ -9892,9 +11292,9 @@ function getPriceTier(price, direction) {
         if (primaryAction) primaryAction.classList.add("v3-primary");
         actions.dataset.nextAction = nextAction || "unknown";
         const right = node("div", null, "v3-workbench-market"); const book = prices.orderBook(item);
-        const heading = node("div", null, "mwi-layu-level-heading"); heading.append(node("h3", "市场卖单深度与本人在售状态"), node("span", book ? `${book.cached ? "本地缓存 · 待复核 · " : book.stale ? "已过期 · " : "订单簿 · "}${time(new Date(book.at).toISOString())}` : "尚未读取订单簿", "mwi-layu-group-note")); right.append(heading);
+        const heading = node("div", null, "mwi-layu-level-heading"); heading.append(node("h3", t("市场卖单深度与本人在售状态")), node("span", book ? `${book.cached ? t("本地缓存 · 待复核 · ") : book.stale ? t("已过期 · ") : t("订单簿 · ")}${time(new Date(book.at).toISOString())}` : t("尚未读取订单簿"), "mwi-layu-group-note")); right.append(heading);
         const economicView = node("div"); right.append(economicView);
-        const simulationNote = node("p", "模拟收益 · 以下各售价按当前模拟材料成本重算", "mwi-layu-group-note");
+        const simulationNote = node("p", t("模拟收益 · 以下各售价按当前模拟材料成本重算"), "mwi-layu-group-note");
         const ladderPanel = node("div", null, "mwi-layu-price-ladder");
         const economicDetails = node("div", null, "v3-order-depth");
         economicView.append(economicDetails, simulationNote, ladderPanel);
@@ -9903,7 +11303,7 @@ function getPriceTier(price, direction) {
             .map(el => [el.getAttribute("aria-label"), el.scrollLeft, el.scrollTop]);
           economicDetails.replaceChildren();
           const active = simulation.active();
-          const displayedResult = active ? simulation.current()?.simulated || { reason: "模拟报价无效，请修正" } : wages.calculate(item, quote);
+          const displayedResult = active ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, quote);
           const effectiveQuote = active ? { ...quote, price: simulation.sellPrice() } : quote;
           const calculateAt = (target, atPrice) => active ? simulation.calculateAt(atPrice.price) : wages.calculate(target, atPrice);
           economicView.dataset.simulated = String(active);
@@ -9917,39 +11317,41 @@ function getPriceTier(price, direction) {
           for (const child of [...ladderPanel.children]) if (child !== retainedRegion) child.remove();
           if (ladder.rows.length) {
             const region = retainedRegion || node("div", null, "mwi-layu-group-scroll"); region.tabIndex = 0;
-            region.setAttribute("role", "region"); region.setAttribute("aria-label", `${label}价格档位工时费`);
+            region.setAttribute("role", "region"); region.setAttribute("aria-label", t`${label}价格档位工时费`);
             const grid = node("table", null, "mwi-layu-group-table");
-            grid.setAttribute("aria-label", "各售价对应工时费、利润和利润率，售价从低到高");
+            grid.setAttribute("aria-label", t("各售价对应工时费、利润和利润率，售价从高到低"));
             const head = node("thead"); const priceRow = node("tr");
             const body = node("tbody"); const wageRow = node("tr");
             const profitRow = node("tr"); const marginRow = node("tr");
-            for (const [tr, text] of [[priceRow, "售价档位"], [wageRow, "工时费 / h"], [profitRow, "单件利润"], [marginRow, "利润率"]]) {
+            for (const [tr, text] of [[priceRow, t("售价档位")], [wageRow, t("工时费 / h")], [profitRow, t("单件利润")], [marginRow, t("利润率")]]) {
               const label = node("th", text); label.scope = "row"; label.className = "v3-ladder-label"; tr.append(label);
             }
             const knownBand = book && !book.stale && book.bandMin > 0 && book.bandMax > 0;
             let outsideBand = false;
-            for (const entry of ladder.rows) {
+            for (const entry of [...ladder.rows].reverse()) {
               const outside = knownBand && (entry.price < book.bandMin || entry.price > book.bandMax);
               outsideBand ||= outside;
               const th = node("th", number(entry.price)); th.scope = "col"; th.dataset.price = entry.price;
-              th.title = `售价：${entry.price.toLocaleString()}`;
-              if (entry.current) th.append(node("small", entry.offGrid ? "左一 · 非现档" : "左一"));
-              if (outside) th.append(node("small", "区间外"));
-              const td = node("td", entry.hourlyWage == null ? "未知" : number(entry.hourlyWage));
+              th.title = t`售价：${entry.price.toLocaleString(app.i18n?.locale)}`;
+              if (entry.current) th.append(node("small", entry.offGrid ? t("左一 · 非现档") : t("左一")));
+              if (entry.bid) th.append(node("small", entry.offGrid ? t("右一 · 非现档") : t("右一")));
+              if (outside) th.append(node("small", t("区间外")));
+              const td = node("td", entry.hourlyWage == null ? t("未知") : number(entry.hourlyWage));
               td.dataset.wage = entry.hourlyWage ?? "";
               if (entry.hourlyWage != null) {
                 td.style.color = entry.hourlyColor || "inherit";
-                td.title = `工时费：${entry.hourlyWage.toLocaleString()} / h`;
+                td.title = t`工时费：${entry.hourlyWage.toLocaleString(app.i18n?.locale)} / h`;
               }
-              td.setAttribute("aria-label", `工时费 / h：${td.textContent}`);
+              td.setAttribute("aria-label", t`工时费 / h：${td.textContent}`);
               const profitCell = node("td"); const marginCell = node("td");
               profitCell.append(profit({ evaluation: entry })); marginCell.append(profitMargin({ evaluation: entry }));
               profitCell.dataset.profit = entry.profit ?? ""; marginCell.dataset.margin = entry.profitMargin ?? "";
-              profitCell.setAttribute("aria-label", `利润：${profitCell.textContent}`);
-              marginCell.setAttribute("aria-label", `利润率：${marginCell.textContent}`);
-              profitCell.title = `利润：${profitCell.textContent}`;
-              marginCell.title = `利润率：${marginCell.textContent}`;
+              profitCell.setAttribute("aria-label", t`利润：${profitCell.textContent}`);
+              marginCell.setAttribute("aria-label", t`利润率：${marginCell.textContent}`);
+              profitCell.title = t`利润：${profitCell.textContent}`;
+              marginCell.title = t`利润率：${marginCell.textContent}`;
               if (entry.current) for (const cell of [th, td, profitCell, marginCell]) cell.classList.add("mwi-layu-ladder-current");
+              if (entry.bid) for (const cell of [th, td, profitCell, marginCell]) cell.classList.add("mwi-layu-ladder-bid");
               priceRow.append(th); wageRow.append(td); profitRow.append(profitCell); marginRow.append(marginCell);
             }
             head.append(priceRow); body.append(wageRow, profitRow, marginRow); grid.append(head, body);
@@ -9967,50 +11369,51 @@ function getPriceTier(price, direction) {
               });
             }
             region.scrollLeft = ladderLeft; region.scrollTop = ladderTop;
-            if (outsideBand) ladderPanel.append(node("p", "存在区间外报价", "mwi-layu-group-note"));
-            if (!knownBand) ladderPanel.append(node("p", "可交易区间尚未读取，以游戏挂单窗口为准。", "mwi-layu-group-note"));
-            if (ladder.rows.some(entry => entry.offGrid)) ladderPanel.append(node("p", "左一非现档", "mwi-layu-group-note"));
+            if (outsideBand) ladderPanel.append(node("p", t("存在区间外报价"), "mwi-layu-group-note"));
+            if (!knownBand) ladderPanel.append(node("p", t("可交易区间尚未读取，以游戏挂单窗口为准。"), "mwi-layu-group-note"));
+            if (ladder.rows.some(entry => entry.current && entry.offGrid)) ladderPanel.append(node("p", t("左一非现档"), "mwi-layu-group-note"));
+            if (ladder.rows.some(entry => entry.bid && entry.offGrid)) ladderPanel.append(node("p", t("右一非现档"), "mwi-layu-group-note"));
           }
           if (ladder.reason) ladderPanel.append(node("p", ladder.reason, "mwi-layu-group-note"));
           if (!ladder.rows.length) retainedRegion?.remove();
           const comparisons = app.marketPartitions.compareListings(own?.listings || [], item, quote);
           if (comparisons.length) {
-            const comparison = table(["方向", "我的价格", "左一／右一", "价格比较"], "本人挂单价格比较");
-            for (const order of comparisons) row(comparison.body, [order.isSell ? "出售" : "购买", number(order.price),
-              number(order.best), `${own.cached || order.stale ? "旧 · " : ""}${order.label}`], `mwi-layu-order-${order.standing}`);
-            const allOrders = disclosure("本人完整挂单价格比较", `comparison:${key}`);
+            const comparison = table([t("方向"), t("我的价格"), t("左一／右一"), t("价格比较")], t("本人挂单价格比较"));
+            for (const order of comparisons) row(comparison.body, [order.isSell ? t("出售") : t("购买"), number(order.price),
+              number(order.best), `${own.cached || order.stale ? t("旧 · ") : ""}${order.label}`], `mwi-layu-order-${order.standing}`);
+            const allOrders = disclosure(t("本人完整挂单价格比较"), `comparison:${key}`);
             allOrders.append(comparison.region); economicDetails.append(allOrders);
           }
           const rows = app.marketPartitions.visibleOrders(book, own?.listings || [], item);
           const ownOrders = rows.filter(order => order.own);
           if (ownOrders.length) {
             const remaining = ownOrders.every(order => Number.isFinite(order.quantity)) ? ownOrders.reduce((sum, order) => sum + order.quantity, 0) : null;
-            economicDetails.append(node("p", `本人在售 ${ownOrders.length} 单 · 剩余 ${number(remaining)} 件；等待成交时间未知。`, "mwi-layu-group-note"));
+            economicDetails.append(node("p", t`本人在售 ${ownOrders.length} 单 · 剩余 ${number(remaining)} 件；等待成交时间未知。`, "mwi-layu-group-note"));
           }
-          const t = table(["位置", "售价", "挂单量", "工时费"], `${label}卖单`); let last = 0;
+          const ordersTable = table([t("位置"), t("售价"), t("挂单量"), t("工时费")], t`${label}卖单`); let last = 0;
           for (const order of rows) {
             if (order.position > last + 1 || (order.position == null && last !== null)) {
-              const tr = node("tr", null, "mwi-layu-order-gap"); const td = node("td", order.position == null ? "其余本人订单 · 公开订单簿未给出位置" : `省略第 ${last + 1}–${order.position - 1} 条`); td.colSpan = 4; tr.append(td); t.body.append(tr);
+              const tr = node("tr", null, "mwi-layu-order-gap"); const td = node("td", order.position == null ? t("其余本人订单 · 公开订单簿未给出位置") : t`省略第 ${last + 1}–${order.position - 1} 条`); td.colSpan = 4; tr.append(td); ordersTable.body.append(tr);
             }
             last = order.position;
             const metric = calculateAt(item, { price: order.price });
-            const wageCell = node("span", Number.isFinite(metric?.hourlyWage) ? `${number(metric.hourlyWage)}/h` : metric?.reason || "未知");
+            const wageCell = node("span", Number.isFinite(metric?.hourlyWage) ? `${number(metric.hourlyWage)}/h` : metric?.reason || t("未知"));
             if (Number.isFinite(metric?.hourlyWage)) wageCell.className = metric.hourlyWage < 0 ? "mwi-layu-shortage" : "mwi-layu-profit";
             if (metric?.evaluation?.hourlyColor) wageCell.style.color = metric.evaluation.hourlyColor;
-            const badge = node("small", order.own ? `本人 · ${order.standing === "behind" ? "被压价" : order.standing === "leading" ? "左一" : "待复核"}` : order.position === 1 ? "市场左一" : "", "v3-order-badge");
+            const badge = node("small", order.own ? t`本人 · ${order.standing === "behind" ? t("被压价") : order.standing === "leading" ? t("左一") : t("待复核")}` : order.position === 1 ? t("市场左一") : "", "v3-order-badge");
             if (badge.textContent) wageCell.append(badge);
-            const position = order.position == null ? "未知" : order.positionStale ? `旧 ${order.position}` : order.position;
-            const tr = row(t.body, [position, number(order.price), number(order.quantity), wageCell], order.own ? `mwi-layu-own-order mwi-layu-order-${order.standing}` : "");
-            if (order.positionStale) tr.cells[0].title = "旧订单簿中的位置；请打开该物品市场更新";
+            const position = order.position == null ? t("未知") : order.positionStale ? t`旧 ${order.position}` : order.position;
+            const tr = row(ordersTable.body, [position, number(order.price), number(order.quantity), wageCell], order.own ? `mwi-layu-own-order mwi-layu-order-${order.standing}` : "");
+            if (order.positionStale) tr.cells[0].title = t("旧订单簿中的位置；请打开该物品市场更新");
             if (order.own) {
-              tr.title = order.standing === "leading" ? "本人订单：与我的左一订单同价" : order.standing === "behind" ? "本人订单：前方有其他玩家订单或售价高于左一" : "本人订单：左一归属未知，请读取最新订单簿";
+              tr.title = order.standing === "leading" ? t("本人订单：与我的左一订单同价") : order.standing === "behind" ? t("本人订单：前方有其他玩家订单或售价高于左一") : t("本人订单：左一归属未知，请读取最新订单簿");
               tr.setAttribute("aria-label", tr.title);
             }
           }
-          if (rows.length) economicDetails.append(t.region);
-          else economicDetails.append(node("p", book ? "该等级暂无卖单。" : "打开该物品市场后读取前三卖单。", "mwi-layu-group-note"));
-          if (!own) economicDetails.append(node("p", "本人挂单尚未读取，归属暂不可确认。", "mwi-layu-group-note"));
-          if (quote) economicDetails.append(node("p", `${active ? simulation.sellPrice() > 0 ? `模拟固定售价 ${number(simulation.sellPrice())}` : "无有效售价 · 最低成本模拟" : `${quote.cached ? "缓存 · " : ""}${quote.stale ? "旧报价 · " : ""}${quote.source}左一 ${number(quote.price)}`} · 估算工时费 ${Number.isFinite(displayedResult?.hourlyWage) ? number(displayedResult.hourlyWage) + "/h" : displayedResult?.reason || "未知"}`, "mwi-layu-group-note"));
+          if (rows.length) economicDetails.append(ordersTable.region);
+          else economicDetails.append(node("p", book ? t("该等级暂无卖单。") : t("打开该物品市场后读取前三卖单。"), "mwi-layu-group-note"));
+          if (!own) economicDetails.append(node("p", t("本人挂单尚未读取，归属暂不可确认。"), "mwi-layu-group-note"));
+          if (quote) economicDetails.append(node("p", t`${active ? simulation.sellPrice() > 0 ? t`模拟固定售价 ${number(simulation.sellPrice())}` : t("无有效售价 · 最低成本模拟") : t`${quote.cached ? t("缓存 · ") : ""}${quote.stale ? t("旧报价 · ") : ""}${quote.source}左一 ${number(quote.price)}`} · 估算工时费 ${Number.isFinite(displayedResult?.hourlyWage) ? number(displayedResult.hourlyWage) + "/h" : displayedResult?.reason || t("未知")}`, "mwi-layu-group-note"));
           for (const [label, left, top] of detailScrolls) {
             const region = [...economicDetails.querySelectorAll(".mwi-layu-group-scroll")]
               .find(el => el.getAttribute("aria-label") === label);
@@ -10018,17 +11421,17 @@ function getPriceTier(price, direction) {
           }
         };
         refreshEconomics();
-        const historySection = node("section", null, "mwi-layu-trade-history"); historySection.append(app.itemUI.identity(item, spriteBase, `${label} · 本人已成交历史订单记录`));
+        const historySection = node("section", null, "mwi-layu-trade-history"); historySection.append(app.itemUI.identity(item, spriteBase, t`${label} · 本人已成交历史订单记录`));
         const sales = (history || []).filter((r) => r.itemHrid === item.itemHrid && r.enhancementLevel === item.enhancementLevel);
         if (sales.length) {
-          const h = table(["原挂单价", "累计成交", "挂单时间", "成交耗时上限", "记录时间"], `${label}本人成交记录`);
+          const h = table([t("原挂单价"), t("累计成交"), t("挂单时间"), t("成交耗时上限"), t("记录时间")], t`${label}本人成交记录`);
           for (const sale of (historyExpanded.has(key) ? sales : sales.slice(0, 3))) {
             const tr = row(h.body, [number(sale.listingPrice), number(sale.filledQuantity), time(sale.listedAt), waitUpperBound(sale.waitUpperBoundMs), time(sale.observedAt)]);
-            tr.title = `本人卖出订单 #${sale.id}`;
+            tr.title = t`本人卖出订单 #${sale.id}`;
           }
           historySection.append(h.region);
-          if (sales.length > 3) historySection.append(button(historyExpanded.has(key) ? "收起历史" : `查看全部 ${sales.length} 条`, () => { if (historyExpanded.has(key)) historyExpanded.delete(key); else historyExpanded.add(key); saveView(); onChange(); }));
-        } else historySection.append(node("p", historyError ? `历史读取失败：${historyError}` : history == null ? "正在读取本人记录…" : "尚未记录到该等级的本人卖出成交。", "mwi-layu-group-note"));
+          if (sales.length > 3) historySection.append(button(historyExpanded.has(key) ? t("收起历史") : t`查看全部 ${sales.length} 条`, () => { if (historyExpanded.has(key)) historyExpanded.delete(key); else historyExpanded.add(key); saveView(); onChange(); }));
+        } else historySection.append(node("p", historyError ? t`历史读取失败：${historyError}` : history == null ? t("正在读取本人记录…") : t("尚未记录到该等级的本人卖出成交。"), "mwi-layu-group-note"));
         right.append(historySection);
         section.append(left, right); return section;
       }
@@ -10036,19 +11439,19 @@ function getPriceTier(price, direction) {
     function manager(groups, entries, spriteBase, wages, names) {
       for (const id of partitionEdits.keys()) if (!groups.some(group => group.id === id)) partitionEdits.delete(id);
       const section = node("section", null, "v3-partition-matrix-layout");
-      const sidebar = node("aside", null, "v3-partition-sidebar"); sidebar.append(node("h3", "分区分类管理"));
-      const create = node("div", null, "v3-create-partition"), input = node("input"); input.placeholder = "新分区名称"; input.maxLength = 40; input.setAttribute("aria-label", "新分区名称");
-      create.append(input, button("新增分区", () => attempt(() => partitions.add(input.value)))); sidebar.append(create);
+      const sidebar = node("aside", null, "v3-partition-sidebar"); sidebar.append(node("h3", t("分区分类管理")));
+      const create = node("div", null, "v3-create-partition"), input = node("input"); input.placeholder = t("新分区名称"); input.maxLength = 40; input.setAttribute("aria-label", t("新分区名称"));
+      create.append(input, button(t("新增分区"), () => attempt(() => partitions.add(input.value)))); sidebar.append(create);
       for (const group of groups) {
         const card = node("div", null, "v3-partition-card");
         const count = entries.filter(({item}) => partitions.groupsOf(item.itemHrid).includes(group.id)).length;
-        card.append(node("strong", group.name), node("span", `${count} 件`, "v3-tag"));
+        card.append(node("strong", group.name), node("span", t`${count} 件`, "v3-tag"));
         if (partitions.read().groups.some(saved => saved.id === group.id)) {
           const saved = partitionEdits.get(group.id);
           const draft = saved?.originalName === group.name ? saved : { originalName:group.name, value:group.name, pendingMerge:null };
-          const edit = node("div", null, "v3-partition-edit"), name = node("input"); name.value = draft.value; name.maxLength = 40; name.setAttribute("aria-label", `重命名分区：${group.name}`);
+          const edit = node("div", null, "v3-partition-edit"), name = node("input"); name.value = draft.value; name.maxLength = 40; name.setAttribute("aria-label", t`重命名分区：${group.name}`);
           name.dataset.focusKey = `partition-name:${group.id}`;
-          const saveName = button("保存名称", () => {
+          const saveName = button(t("保存名称"), () => {
             const target = partitions.groups().find(other => other.id !== group.id && other.name === name.value.trim());
             if (!target) { attempt(() => { partitions.rename(group.id, name.value); partitionEdits.delete(group.id); }); return; }
             if (draft.pendingMerge?.id === target.id && draft.pendingMerge.name === target.name) {
@@ -10061,9 +11464,9 @@ function getPriceTier(price, direction) {
           function updateSaveName() {
             const target = partitions.groups().find(other => other.id === draft.pendingMerge?.id && other.name === draft.pendingMerge.name && other.name === draft.value.trim());
             if (!target) draft.pendingMerge = null;
-            saveName.textContent = target ? "合并分区" : "保存名称";
+            saveName.textContent = target ? t("合并分区") : t("保存名称");
             if (target) {
-              saveName.title = `再次点击，将“${group.name}”的物品归属合并到“${target.name}”，并移除当前分区`;
+              saveName.title = t`再次点击，将“${group.name}”的物品归属合并到“${target.name}”，并移除当前分区`;
               saveName.setAttribute("aria-description", saveName.title);
             } else { saveName.removeAttribute("title"); saveName.removeAttribute("aria-description"); }
           }
@@ -10072,21 +11475,21 @@ function getPriceTier(price, direction) {
             partitionEdits.set(group.id, draft); updateSaveName();
           });
           updateSaveName();
-          edit.append(name, saveName, button("删除分区并移出物品", () => attempt(() => partitions.remove(group.id)))); card.append(edit);
-        } else card.append(node("span", group.id === "unassigned" ? "系统兜底" : "内置分区", "mwi-layu-group-note"));
+          edit.append(name, saveName, button(t("删除分区并移出物品"), () => attempt(() => partitions.remove(group.id)))); card.append(edit);
+        } else card.append(node("span", group.id === "unassigned" ? t("系统兜底") : t("内置分区"), "mwi-layu-group-note"));
         sidebar.append(card);
       }
       const main = node("div", null, "v3-matrix-panel"), heading = node("header", null, "v3-section-heading"), copy = node("div");
-      copy.append(node("h3", "物品多分区归属矩阵"), node("p", "同物品各强化等级共享归属；全部取消后退回未分区。", "mwi-layu-group-note"));
-      const search = node("input"); search.type = "search"; search.placeholder = "快速过滤物品"; search.setAttribute("aria-label", "搜索分区归属物品"); search.value = matrixQuery;
+      copy.append(node("h3", t("物品多分区归属矩阵")), node("p", t("同物品各强化等级共享归属；全部取消后退回未分区。"), "mwi-layu-group-note"));
+      const search = node("input"); search.type = "search"; search.placeholder = t("快速过滤物品"); search.setAttribute("aria-label", t("搜索分区归属物品")); search.value = matrixQuery;
       heading.append(copy, search); main.append(heading);
-      const grid = table(["物品", ...groups.map(group => group.name), "操作"], "物品多分区归属矩阵"); grid.body.parentElement.classList.add("v3-matrix-table");
+      const grid = table([t("物品"), ...groups.map(group => group.name), t("操作")], t("物品多分区归属矩阵")); grid.body.parentElement.classList.add("v3-matrix-table");
       for (const { item } of entries) {
         const label = names[item.itemHrid] || item.name;
         const values = [app.itemUI.identity(item, spriteBase, label)];
         for (const group of groups) {
           const toggle = node("input"); toggle.type = "checkbox"; toggle.checked = partitions.groupsOf(item.itemHrid).includes(group.id);
-          toggle.setAttribute("aria-label", `${label}所属分区：${group.name}`);
+          toggle.setAttribute("aria-label", t`${label}所属分区：${group.name}`);
           toggle.onchange = () => attempt(() => {
             const current = partitions.groupsOf(item.itemHrid);
             let next = toggle.checked ? [...current, group.id] : current.filter(id => id !== group.id);
@@ -10094,13 +11497,13 @@ function getPriceTier(price, direction) {
             partitions.setGroups(item.itemHrid, next);
           }); values.push(toggle);
         }
-        values.push(button("移出", () => attempt(() => partitions.setGroups(item.itemHrid, [])), `移出所有分区：${label}`));
+        values.push(button(t("移出"), () => attempt(() => partitions.setGroups(item.itemHrid, [])), t`移出所有分区：${label}`));
         const tr = row(grid.body, values); tr.dataset.searchText = `${label} ${item.itemHrid}`.toLocaleLowerCase();
       }
       const filter = () => { matrixQuery = search.value; for (const tr of grid.body.children) tr.hidden = !tr.dataset.searchText.includes(matrixQuery.trim().toLocaleLowerCase()); };
       search.oninput = filter; filter(); main.append(grid.region); section.append(sidebar, main); return section;
     }
-    return Object.freeze({ element, render, show(tab) { workspaceTab = workspaceTab === tab && ["manage", "settings"].includes(tab) ? "projects" : tab; drawerOpen = false; savePage(); onChange(); }, destroy() { partitionGesture?.cancel(); drawerObserver.disconnect(); resizeSession?.cancel(); } });
+    return Object.freeze({ element, render, show(tab) { workspaceTab = workspaceTab === tab && ["manage", "settings"].includes(tab) ? "projects" : tab; drawerOpen = false; savePage(); onChange(); }, destroy() { lootPage?.destroy(); partitionGesture?.cancel(); drawerObserver.disconnect(); resizeSession?.cancel(); } });
   }
   app.v3Workspace = Object.freeze({ create, number, preparationAction, enhancementPlanMetrics });
 })(globalThis);
@@ -10110,14 +11513,15 @@ function getPriceTier(price, direction) {
 (function initV3Application(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const currentSelector = '[class*="MarketplacePanel_currentItem"]';
   const panelId = "mwi-layu-favorites";
 
   function compactClothingName(itemHrid) {
     const match = /^\/items\/(dairyhands|foragers|lumberjacks|cheesemakers|crafters|tailors|chefs|brewers|alchemists|enhancers)_(top|bottoms)(?:_refined)?$/.exec(itemHrid || "");
     if (!match) return null;
-    const jobs = { dairyhands: "挤奶", foragers: "采摘", lumberjacks: "伐木", cheesemakers: "奶酪", crafters: "工匠", tailors: "裁缝", chefs: "厨师", brewers: "饮品", alchemists: "炼金", enhancers: "强化" };
-    return jobs[match[1]] + (match[2] === "top" ? "衣" : "裤");
+    const jobs = { dairyhands: t("挤奶"), foragers: t("采摘"), lumberjacks: t("伐木"), cheesemakers: t("奶酪"), crafters: t("工匠"), tailors: t("裁缝"), chefs: t("厨师"), brewers: t("饮品"), alchemists: t("炼金"), enhancers: t("强化") };
+    return jobs[match[1]] + (match[2] === "top" ? t("衣") : t("裤"));
   }
 
   function formatPrice(value) {
@@ -10127,7 +11531,7 @@ function getPriceTier(price, direction) {
       { threshold: 1_000, suffix: "k" }
     ];
     const unit = units.find(({ threshold }) => value >= threshold);
-    if (!unit) return new Intl.NumberFormat().format(value);
+    if (!unit) return new Intl.NumberFormat(app.i18n?.locale).format(value);
     const scaled = (value / unit.threshold).toFixed(2).replace(/\.?(0+)$/, "");
     return `${scaled}${unit.suffix}`;
   }
@@ -10141,7 +11545,7 @@ function getPriceTier(price, direction) {
     const match = levelText.trim().match(/^\+?(\d+)$/);
     if (levelText.trim() && !match) return null;
     const nativeName = use.closest?.('svg[role="img"]')?.getAttribute("aria-label") || "";
-    const name = names[`/items/${slug}`] || (/[\u3400-\u9fff]/.test(nativeName) ? nativeName : "") || container.querySelector('[class*="Item_name"]')?.textContent?.trim() || slug;
+    const name = names[`/items/${slug}`] || (nativeName || "") || container.querySelector('[class*="Item_name"]')?.textContent?.trim() || slug;
     return app.marketFavoritesStore.normalize({ itemHrid: `/items/${slug}`, enhancementLevel: match ? Number(match[1]) : 0, name });
   }
 
@@ -10151,10 +11555,15 @@ function getPriceTier(price, direction) {
     const partitions = app.marketPartitions.create();
     const cart = app.materialCart.create();
     const element = document.createElement("section"); element.id = panelId; element.className = "mwi-layu-panel";
-    element.setAttribute("role", "tabpanel"); element.setAttribute("aria-label", "强化助手"); element.hidden = true;
+    element.lang = app.i18n?.locale || "zh-CN";
+    element.setAttribute("role", "tabpanel"); element.setAttribute("aria-label", t("强化助手")); element.hidden = true;
     const notifications = app.v3Notifications.create({ onEmptyFocus: () => refresh.focus({ preventScroll: true }) });
     const createStatus = notifications.createStatus;
     const status = createStatus();
+    const lootStatus = createStatus();
+    const onLootSaved = () => { lootStatus.textContent = app.lootRecorder?.state().error || ""; };
+    document.addEventListener(app.lootHistory.changeEvent, onLootSaved);
+    onLootSaved();
     const preferenceStatus = createStatus();
     const onPreferenceError = event => { preferenceStatus.textContent = event.detail; };
     document.addEventListener(app.viewPreferences.errorEvent, onPreferenceError);
@@ -10167,7 +11576,11 @@ function getPriceTier(price, direction) {
     let own = null, history = null, historyError = "", ownSaveError = "", currentCharacterId = null;
     const listingServer = `${/^test\./.test(root.location.hostname) ? "api-test" : "api"}.${root.location.hostname.includes("milkywayidlecn") ? "milkywayidlecn" : "milkywayidle"}.com`;
     let historyDirty = true, historyReadAt = 0, historySignature = "";
-    const names = {}, buttons = new Map(), materialNames = new Set();
+    const fallbackNames = {};
+    const names = new Proxy({}, { get(target, key) {
+      if (typeof key === "string" && key.startsWith("/items/") && app.i18n?.language === "en") return target[key] || fallbackNames[key] || app.i18n.itemFallback(key);
+      return target[key];
+    } }), buttons = new Map(), materialNames = new Set();
     const prices = app.marketPrices.create({ onChange: schedule });
     const wages = app.marketWages.create({ prices, onChange: schedule });
     const presets = app.partitionPresets.create({ getCatalog: () => wages.presetCatalog() });
@@ -10176,42 +11589,44 @@ function getPriceTier(price, direction) {
       onEnhance: (item, button) => prepareItem(item, button, "enhancing"),
       onPrice: (item, value) => store.setCustomPrice(item, value), onStatus: (text) => { status.textContent = text; } });
     const toolbar = document.createElement("div"); toolbar.className = "mwi-layu-group-toolbar";
-    const refresh = document.createElement("button"); refresh.type = "button"; refresh.textContent = "刷新行情"; refresh.className = "v3-primary";
+    const refresh = document.createElement("button"); refresh.type = "button"; refresh.textContent = t("刷新行情"); refresh.className = "v3-primary";
     refresh.onclick = async () => { refresh.disabled = true; historyDirty = true; try {
       await Promise.all([prices.refresh(true), wages.refreshCharacter(), syncListings()]);
-      status.textContent = prices.state().error ? "行情更新失败，已保留旧价格；角色与挂单状态见页面提示。"
-        : ownSaveError || !own || own.cached ? "已更新买卖一价；本人挂单保存状态见上方提示。" : "已更新买卖一价并自动保存本人挂单；可直接查看价格比较结果。";
+      status.textContent = prices.state().error ? t("行情更新失败，已保留旧价格；角色与挂单状态见页面提示。")
+        : ownSaveError || !own || own.cached ? t("已更新买卖一价；本人挂单保存状态见上方提示。") : t("已更新买卖一价并自动保存本人挂单；可直接查看价格比较结果。");
     } finally { refresh.disabled = false; } };
     toolbar.append(refresh);
     const header = document.createElement("header"); header.className = "v3-header";
-    const brand = document.createElement("strong"); brand.append(app.itemUI.identity({itemHrid:"/items/celestial_enhancer"}, spriteBase, "柆雨强化助手"));
-    const settingsButton = document.createElement("button"); settingsButton.type = "button"; settingsButton.textContent = "设置与备份";
-    const manageButton = document.createElement("button"); manageButton.type = "button"; manageButton.textContent = "管理预设";
+    const brand = document.createElement("strong"); brand.append(app.itemUI.identity({itemHrid:"/items/celestial_enhancer"}, spriteBase, t("柆雨强化助手")));
+    const settingsButton = document.createElement("button"); settingsButton.type = "button"; settingsButton.textContent = t("设置与备份");
+    const manageButton = document.createElement("button"); manageButton.type = "button"; manageButton.textContent = t("管理预设");
     manageButton.dataset.view = "manage"; manageButton.onclick = () => view.show("manage");
-    toolbar.append(manageButton, settingsButton); header.append(brand, toolbar);
+    const lootButton = document.createElement("button"); lootButton.type = "button"; lootButton.textContent = t("掉落与经验");
+    lootButton.dataset.view = "loot"; lootButton.onclick = () => view.show("loot");
+    toolbar.append(lootButton, manageButton, settingsButton); header.append(brand, toolbar);
     settingsButton.dataset.view = "settings"; settingsButton.onclick = () => view.show("settings");
     const health = document.createElement("details"); health.className = "v3-health";
-    const healthTitle = document.createElement("summary"); healthTitle.textContent = "行情与角色状态";
+    const healthTitle = document.createElement("summary"); healthTitle.textContent = t("行情与角色状态");
     health.append(healthTitle, priceStatus, wageStatus);
     header.insertBefore(health, toolbar);
     element.append(header, notifications.element, view.element); document.body.append(element);
-    function fail() { status.textContent = "无法读取或保存收藏，请检查浏览器存储设置后重试。"; }
+    function fail() { status.textContent = t("无法读取或保存收藏，请检查浏览器存储设置后重试。"); }
     function change(item, button, remove = false) {
       try {
         const saved = store.list().find(row => app.marketFavoritesStore.key(row) === app.marketFavoritesStore.key(item));
         if (remove) store.remove(item); else store.toggle(item);
         if (saved) {
-          undo.replaceChildren(app.itemUI.identity(saved, spriteBase, `${names[saved.itemHrid] || saved.name} +${saved.enhancementLevel}`), document.createTextNode(" 已取消收藏 "));
-          const restore = document.createElement("button"); restore.type = "button"; restore.textContent = "撤销取消收藏";
+          undo.replaceChildren(app.itemUI.identity(saved, spriteBase, `${names[saved.itemHrid] || saved.name} +${saved.enhancementLevel}`), document.createTextNode(t(" 已取消收藏 ")));
+          const restore = document.createElement("button"); restore.type = "button"; restore.textContent = t("撤销取消收藏");
           restore.onclick = () => {
             try {
               const result = store.restore(saved);
-              undo.textContent = result.conflict ? "该项目已有新的收藏记录，保留现值。" : "已恢复收藏及原参考售价。";
+              undo.textContent = result.conflict ? t("该项目已有新的收藏记录，保留现值。") : t("已恢复收藏及原参考售价。");
               signature = ""; scan();
               const key = app.marketFavoritesStore.key(saved);
               const project = [...view.element.querySelectorAll(".mwi-layu-project-row")].find(row => row.dataset.favoriteKey === key);
               (project?.querySelector(".mwi-layu-project-identity") || undo).focus();
-            } catch (error) { status.textContent = `撤销失败：${error.message}`; }
+            } catch (error) { status.textContent = t`撤销失败：${error.message}`; }
           }; undo.append(restore);
           if (!element.hidden) restore.focus();
         }
@@ -10228,7 +11643,7 @@ function getPriceTier(price, direction) {
         const characterId = response.listingCharacterId;
         if (!Number.isSafeInteger(characterId) || characterId <= 0) {
           currentCharacterId = null;
-          own = null; history = null; historyError = "角色尚未就绪";
+          own = null; history = null; historyError = t("角色尚未就绪");
           render(); return;
         }
         if (currentCharacterId !== characterId) {
@@ -10237,7 +11652,7 @@ function getPriceTier(price, direction) {
         currentCharacterId = characterId;
         if (!response.accepted || !Array.isArray(response.listings)) {
           try { own = await app.listingHistory.readSaved(listingServer, characterId); ownSaveError = ""; }
-          catch (_) { own = null; ownSaveError = "本地挂单不可用，请检查浏览器存储权限"; }
+          catch (_) { own = null; ownSaveError = t("本地挂单不可用，请检查浏览器存储权限"); }
           if (destroyed) return;
         } else {
           own = { characterId, listings: response.listings, cached: false };
@@ -10245,7 +11660,7 @@ function getPriceTier(price, direction) {
             const saved = await app.listingHistory.saveCurrent(listingServer, characterId, response.listings);
             if (destroyed) return;
             own = { ...saved, cached: false }; ownSaveError = "";
-          } catch (_) { ownSaveError = "挂单保存失败，本次数据仅在当前页面有效；请检查浏览器存储空间或权限"; }
+          } catch (_) { ownSaveError = t("挂单保存失败，本次数据仅在当前页面有效；请检查浏览器存储空间或权限"); }
           const incoming = response.listings.map((item) => ({ ...item, name: names[item.itemHrid] }));
           if (wages.settings().features.autoFavoriteListings) store.ingestListings(own.characterId, incoming);
         }
@@ -10254,9 +11669,9 @@ function getPriceTier(price, direction) {
         if (history !== null && !historyDirty && ownSignature === historySignature && Date.now() - historyReadAt < 30000) return;
         historyDirty = false; historySignature = ownSignature; historyReadAt = Date.now();
         try { const records = await app.listingHistory.readOwn(listingServer, characterId); if (!destroyed && currentCharacterId === characterId) { history = records; historyError = ""; } }
-        catch (_) { history = null; historyError = "本地历史不可用，请检查浏览器存储权限后重试"; }
+        catch (_) { history = null; historyError = t("本地历史不可用，请检查浏览器存储权限后重试"); }
         if (!destroyed) scan();
-      } catch (_) { own = null; history = null; historyError = "本人记录读取失败"; fail(); render(); }
+      } catch (_) { own = null; history = null; historyError = t("本人记录读取失败"); fail(); render(); }
       finally { listingPending = false; }
     }
     function render() {
@@ -10267,21 +11682,21 @@ function getPriceTier(price, direction) {
         document.activeElement.blur();
       }
       try {
-        const items = store.list();
+        const items = store.list().map(item => ({ ...item, name: names[item.itemHrid] || item.name }));
         const cartScope = app.materialCart.scope(currentCharacterId);
         let cartItems = [], cartError = "";
         try { cartItems = cart.read(cartScope); } catch (error) { cartError = error.message; }
         const priceState = prices.state();
         const next = JSON.stringify([items, cartItems, cartError, own, history, historyError, ownSaveError, priceState, wages.state(), partitions.read(), names, spriteBase, skillSpriteBase, Math.floor(Date.now() / 60000), cartScope]);
         if (next === signature) return;
-        priceStatus.textContent = priceState.snapshotAt ? `市场快照 ${new Date(priceState.snapshotAt).toLocaleString()}${priceState.error ? " · 更新失败，保留已有价格" : ""}`
-          : priceState.error ? `行情读取失败：${priceState.errorMessage}` : "正在获取市场快照…";
-        priceStatus.textContent += ` 已保留 ${priceState.bookCount} 份订单簿。`;
-        if (own) priceStatus.textContent += ` 本人挂单 ${own.listings.length} 单 · ${own.cached ? "本地保存，待更新" : ownSaveError ? "尚未保存" : "已自动保存"}${own.observedAt ? ` · 数据变更于 ${new Date(own.observedAt).toLocaleString()}` : ""}。`;
+        priceStatus.textContent = priceState.snapshotAt ? t`市场快照 ${new Date(priceState.snapshotAt).toLocaleString(app.i18n?.locale)}${priceState.error ? t(" · 更新失败，保留已有价格") : ""}`
+          : priceState.error ? t`行情读取失败：${priceState.errorMessage}` : t("正在获取市场快照…");
+        priceStatus.textContent += t` 已保留 ${priceState.bookCount} 份订单簿。`;
+        if (own) priceStatus.textContent += t` 本人挂单 ${own.listings.length} 单 · ${own.cached ? t("本地保存，待更新") : ownSaveError ? t("尚未保存") : t("已自动保存")}${own.observedAt ? t` · 数据变更于 ${new Date(own.observedAt).toLocaleString(app.i18n?.locale)}` : ""}。`;
         if (ownSaveError) priceStatus.textContent += ` ${ownSaveError}。`;
         if (priceState.cacheError) priceStatus.textContent += ` ${priceState.cacheError}。`;
         wageStatus.textContent = wages.status();
-        healthTitle.textContent = `${priceState.snapshotAt ? `快照 ${new Date(priceState.snapshotAt).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}` : "行情待更新"} · ${priceState.bookCount} 订单簿${priceState.error ? " · 更新失败" : ""}`;
+        healthTitle.textContent = t`${priceState.snapshotAt ? t`快照 ${new Date(priceState.snapshotAt).toLocaleTimeString(app.i18n?.locale, {hour:"2-digit", minute:"2-digit"})}` : t("行情待更新")} · ${priceState.bookCount} 订单簿${priceState.error ? t(" · 更新失败") : ""}`;
         materialNames.clear();
         for (const item of [...items, ...cartItems]) for (const material of wages.materials(item, wages.calculate(item, prices.quote(item)), item.quantity || 1).inputs) {
           materialNames.add(material.itemHrid);
@@ -10290,7 +11705,7 @@ function getPriceTier(price, direction) {
         element.dataset.cartOwner = owner;
         app.itemUI.decorate(element, spriteBase, names);
         signature = next;
-      } catch (error) { status.textContent = `分区读取失败：${error.message}。原有数据保留。`; }
+      } catch (error) { status.textContent = t`分区读取失败：${error.message}。原有数据保留。`; }
     }
     const onMarketMessage = (event) => { try { prices.ingest(JSON.parse(event.detail)); } catch (_) { /* Ignore unrelated messages. */ } };
     document.addEventListener(app.config.bridgeEvent, onMarketMessage);
@@ -10311,27 +11726,27 @@ function getPriceTier(price, direction) {
     async function prepareItem(item, button, destination) {
       if (preparing) return;
       preparing = true; button.disabled = true;
-      status.textContent = destination === "crafting" ? "正在打开制作页面…" : "正在打开强化页面并填写设置…";
+      status.textContent = destination === "crafting" ? t("正在打开制作页面…") : t("正在打开强化页面并填写设置…");
       try {
         const owner = wages.state().simulationOwner;
         await wages.refreshCharacter();
         if (owner !== wages.state().simulationOwner) {
-          status.textContent = "角色已切换，请在当前角色的方案中重新操作。"; return;
+          status.textContent = t("角色已切换，请在当前角色的方案中重新操作。"); return;
         }
         const scope = app.materialCart.scope(owner);
         const quantity = destination === "crafting"
           ? cart.read(scope).find(entry => app.materialCart.key(entry) === app.materialCart.key(item))?.quantity || 1 : 1;
         const plan = wages.preparation(item, { route: "selected", quantity });
         const result = await app.marketBridge.prepareItem(item, plan, destination);
-        if (!destroyed) status.textContent = result.accepted ? result.notice || ({
-          market: "材料不足，已打开白板物品市场。", crafting: `已预填生产数量 ${plan.productionQuantity}，请核对材料和用茶后手动开始。`, enhancing: "已填写强化目标和保护设置，请确认后手动开始。"
-        }[result.destination] || "") : "未能完成页面跳转或预填，请刷新游戏后重试。";
-      } catch (_error) { if (!destroyed) status.textContent = "读取库存或预填失败，请重试。"; }
+        if (!destroyed) status.textContent = result.accepted ? t(result.notice) || ({
+          market: t("材料不足，已打开白板物品市场。"), crafting: t`已预填生产数量 ${plan.productionQuantity}，请核对材料和用茶后手动开始。`, enhancing: t("已填写强化目标和保护设置，请确认后手动开始。")
+        }[result.destination] || "") : t("未能完成页面跳转或预填，请刷新游戏后重试。");
+      } catch (_error) { if (!destroyed) status.textContent = t("读取库存或预填失败，请重试。"); }
       finally { preparing = false; button.disabled = false; }
     }
     async function openMarket(item, button, purchaseMode = null, allLevels = false) {
       button.disabled = true;
-      status.textContent = "正在打开市场…";
+      status.textContent = t("正在打开市场…");
       try {
         let quantity = null;
         let reservedCoins = 0;
@@ -10340,7 +11755,7 @@ function getPriceTier(price, direction) {
           const owner = wages.state().simulationOwner;
           await wages.refreshCharacter();
           if (owner !== wages.state().simulationOwner) {
-            status.textContent = "角色已切换，请在当前角色的材料卡片重新打开市场。"; return;
+            status.textContent = t("角色已切换，请在当前角色的材料卡片重新打开市场。"); return;
           }
           if (purchaseMode.type === "material") {
             // Card previews also work without a cart entry. Keep the displayed exact
@@ -10361,9 +11776,9 @@ function getPriceTier(price, direction) {
           if (!Number.isSafeInteger(quantity) || quantity < 0) {
             if (purchaseMode.type === "material") {
               purchaseMode = null;
-              purchaseNotice = "已打开市场；需求、库存或待收货数量未知，本次不预填采购数量，请手动填写。";
+              purchaseNotice = t("已打开市场；需求、库存或待收货数量未知，本次不预填采购数量，请手动填写。");
             } else {
-              status.textContent = "采购数量尚未确定，请等待库存、挂单和行情更新后重试。"; return;
+              status.textContent = t("采购数量尚未确定，请等待库存、挂单和行情更新后重试。"); return;
             }
           }
         }
@@ -10373,11 +11788,11 @@ function getPriceTier(price, direction) {
         if (destroyed) return;
         const error = app.marketBridge?.lastError();
         element.dataset.marketBridgeStatus = opened ? "ready" : error || "unknown";
-        status.textContent = opened ? purchaseMode ? "已打开市场；两分钟内打开该物品的购买表单将预填数量，超出当前价格可负担数量时自动减至上限，请核对后手动确认。" : purchaseNotice : error === "bridge_timeout"
-          ? "游戏桥接未响应，请确认脚本更新后已刷新游戏。"
-          : "未找到游戏市场入口，请刷新游戏后重试。";
+        status.textContent = opened ? purchaseMode ? t("已打开市场；两分钟内打开该物品的购买表单将预填数量，超出当前价格可负担数量时自动减至上限，请核对后手动确认。") : purchaseNotice : error === "bridge_timeout"
+          ? t("游戏桥接未响应，请确认脚本更新后已刷新游戏。")
+          : t("未找到游戏市场入口，请刷新游戏后重试。");
       } catch (_error) {
-        if (!destroyed) status.textContent = "打开市场失败，请重试。";
+        if (!destroyed) status.textContent = t("打开市场失败，请重试。");
       } finally { button.disabled = false; }
     }
     function scan() {
@@ -10421,14 +11836,17 @@ function getPriceTier(price, direction) {
         const href = use.getAttribute("href") || use.getAttribute("xlink:href") || "";
         const slug = href.includes("items_sprite") && href.split("#")[1];
         const name = use.closest("svg").getAttribute("aria-label");
-        if (/^[a-z0-9_]+$/.test(slug || "") && /[\u3400-\u9fff]/.test(name || "")) names[`/items/${slug}`] = name;
+        if (/^[a-z0-9_]+$/.test(slug || "") && (app.i18n?.language === "en" ? Boolean(name) && !/[\u3400-\u9fff]/.test(name) : /[\u3400-\u9fff]/.test(name || ""))) names[`/items/${slug}`] = name;
       }
       // V3 management uses its own workspace state, not the legacy managerOpen flag.
       // Resolve the whole catalog so uncollected items also have official Chinese names.
       const presetCatalog = wages.presetCatalog();
       const presetItems = [...presetCatalog.groups.flatMap(group => group.items), ...presetCatalog.unknown];
+      if (app.i18n?.language === "en") for (const item of presetItems) {
+        if (!Object.hasOwn(names, item.itemHrid) && item.name && !/[\u3400-\u9fff]/.test(item.name)) fallbackNames[item.itemHrid] = item.name;
+      }
       const missing = [...new Set([...items, ...presetItems, ...[...materialNames].map((itemHrid) => ({ itemHrid })), ...targets.map(({ container }) => readItem(container)).filter(Boolean)]
-        .map((item) => item.itemHrid).filter((hrid) => !names[hrid]))];
+        .map((item) => item.itemHrid).filter((hrid) => !Object.hasOwn(names, hrid)))];
       if (missing.length && !nameLookupPending && Date.now() >= nextNameLookup) {
         nextNameLookup = Date.now() + 2000;
         nameLookupPending = true;
@@ -10438,7 +11856,7 @@ function getPriceTier(price, direction) {
           if (Object.keys(resolved).length) { signature = ""; schedule(); }
         }).finally(() => { nameLookupPending = false; });
       }
-      try { items = store.updateNames(names); } catch (_error) { fail(); }
+      try { items = app.i18n?.language === "en" ? store.list() : store.updateNames(names); } catch (_error) { fail(); }
       const activeContainers = new Set(targets.map(({ container }) => container));
       for (const [container, button] of buttons) {
         if (!activeContainers.has(container)) {
@@ -10486,8 +11904,8 @@ function getPriceTier(price, direction) {
         if (button.getAttribute("aria-pressed") !== String(saved)) button.setAttribute("aria-pressed", String(saved));
         {
           const label = `${item.name}${item.enhancementLevel ? ` +${item.enhancementLevel}` : ""}`;
-          const title = rowButton ? (saved ? `从柆雨收藏移除：${label}` : `收藏到柆雨：${label}`)
-            : (saved ? "从柆雨收藏移除" : "收藏到柆雨");
+          const title = rowButton ? (saved ? t`从柆雨收藏移除：${label}` : t`收藏到柆雨：${label}`)
+            : (saved ? t("从柆雨收藏移除") : t("收藏到柆雨"));
           if (button.title !== title) button.title = title;
           if (button.getAttribute("aria-label") !== title) button.setAttribute("aria-label", title);
         }
@@ -10515,7 +11933,7 @@ function getPriceTier(price, direction) {
       disableFallback() {}, enableFallback() {}, open() {}
     };
     const sidebar = app.sidebarIntegration.createController({
-      panel, i18n: { language: "zh", t: () => "强化助手" },
+      panel, i18n: { language: app.i18n?.language || "zh", t: () => t("强化助手") },
       owner: "mwi-layu-favorites", tabMarker: "mwiLayuTab", displayKey: "mwiLayuPreviousDisplay",
       isOwnedTab: (node) => node?.dataset?.mwiLayuTab === "true" && !node.id &&
         !node.hasAttribute("data-mwitools-character-tab") && !node.hasAttribute("data-mwi-credit-tab") &&
@@ -10542,6 +11960,7 @@ function getPriceTier(price, direction) {
     return Object.freeze({
       destroy() {
         destroyed = true;
+        document.removeEventListener(app.lootHistory.changeEvent, onLootSaved);
         document.removeEventListener(app.viewPreferences.errorEvent, onPreferenceError);
         observer.disconnect();
         root.clearTimeout(timer);
@@ -10581,6 +12000,8 @@ function getPriceTier(price, direction) {
   let listingSort = null;
   let destroyed = false;
   const history = app.listingHistory.create();
+  const loot = app.lootHistory.create();
+  app.lootRecorder = loot;
   app.bridge.inject();
   app.bridge.replay();
   function mount() {
@@ -10590,13 +12011,23 @@ function getPriceTier(price, direction) {
     panel = app.v3Application.create();
     app.bridge.replay();
   }
+  const stopLanguage = app.i18n.subscribe(() => {
+    if (!panel || destroyed) return;
+    const wasOpen = !root.document.getElementById("mwi-layu-favorites")?.hidden;
+    panel.destroy(); panel = null; mount();
+    if (wasOpen) root.document.querySelector('[data-mwi-layu-tab="true"]')?.click();
+  });
+  const languageTimer = root.setInterval(() => { if (!destroyed) app.i18n.refresh(); }, 2000);
+  app.i18n.refresh();
   app.runtime = Object.freeze({
     destroy() {
       destroyed = true;
+      stopLanguage(); root.clearInterval(languageTimer);
       root.document.removeEventListener("DOMContentLoaded", mount);
       panel?.destroy();
       listingSort?.destroy();
       history.destroy();
+      loot.destroy();
     }
   });
   if (root.document.body) mount();

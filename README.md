@@ -4,6 +4,8 @@
 
 ## 功能
 
+- 中文 / English 双语界面，默认跟随游戏语言，也可手动选择。
+
 - 强化路线、期望消耗、工时费和利润计算。
 - 强化方案显示期望时间与强化次数，始终按单件显示，不随计划数量变化；时间仅计强化耗时。
 - 强化与制造经验预估，显示当前和预计进度、跨级提示及对应技能图标。
@@ -25,6 +27,14 @@
 更新由 Tampermonkey 的更新设置控制，也可在其管理面板手动检查更新。作者在 GitHub 更新正式脚本后，由 Greasy Fork 已配置的同步方式拉取；同步和客户端检查可能有延迟。
 
 支持 `www.milkywayidle.com` 与 `www.milkywayidlecn.com`。同一浏览器和游戏域名下沿用原主版本的 `mwi-layu:*` 数据；独立 V3 试用版的隔离数据不自动合并。浏览器、游戏域名和角色作用域按现有规则隔离。
+
+## 语言设置 / Language
+
+在「设置与备份 → Language / 语言」选择「跟随游戏 / Follow game」「中文」或「English」，点击「应用语言 / Apply language」即可生效。偏好保存在当前浏览器与站点，并包含在本地备份中。
+
+切换语言会重建插件界面，不刷新游戏；请先保存其他设置及未提交输入，临时价格模拟会重置。自定义分区名称保持原文。英文物品名称优先使用游戏官方词典，缺失时使用游戏物品数据或可读的 HRID 名称。
+
+The interface follows the game language by default. To override it, open **Settings & backup → Language**, choose **English** or **中文**, then click **Apply language**. Save other settings and unfinished inputs first: changing language rebuilds the plugin interface and resets temporary price simulations. Your custom group names remain unchanged. All game actions and trades still require manual confirmation.
 
 ## 隐私与许可
 
