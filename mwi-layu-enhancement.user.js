@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.13
+// @version      0.3.14
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:en      Enhancement Assistant
@@ -314,7 +314,7 @@
     return { dispose, report, client };
   }
   if (typeof module !== "undefined" && module.exports) module.exports = { createUsageClient, boot };
-  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.13","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
+  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.14","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
 setValue: typeof GM_setValue === "function" ? GM_setValue : null,
 menu: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : null,
 unmenu: typeof GM_unregisterMenuCommand === "function" ? GM_unregisterMenuCommand : null,
@@ -591,6 +591,20 @@ SOFTWARE.
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   app.englishMessages = Object.freeze({
+  "市场左价": "Market ask",
+  "市场右价": "Market bid",
+  "左": "Ask",
+  "左−": "Ask\u2212",
+  "右": "Bid",
+  "右+": "Bid+",
+  "使用市场左一降一档计算整表收益": "Use one tick below best ask for all project returns",
+  "使用市场右一升一档计算整表收益": "Use one tick above best bid for all project returns",
+  "按市场左一降一档计算收益": "Returns based on one tick below best ask",
+  "按市场右一升一档计算收益": "Returns based on one tick above best bid",
+  "使用市场左一计算整表收益": "Use best ask for all project returns",
+  "使用市场右一计算整表收益": "Use best bid for all project returns",
+  "按市场左一计算收益": "Returns based on best ask",
+  "按市场右一计算收益": "Returns based on best bid",
   "调整左右区块比例": "Resize workbench panels",
   "拖动调整比例；双击恢复 60:40；方向键微调，Esc 取消。": "Drag to resize; double-click to reset to 60:40; use arrow keys to adjust, Esc to cancel.",
   "左侧 {0}%，右侧 {1}%": "Left {0}%, right {1}%",
@@ -3098,7 +3112,7 @@ SOFTWARE.
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:partitions:v1";
-  const projectColumns = Object.freeze(Object.entries({ name: 180, market: 100, profit: 80, wage: 90,
+  const projectColumns = Object.freeze(Object.entries({ name: 180, market: 100, bid: 100, profit: 80, wage: 90,
     margin: 80, own: 130, reference: 100, prepare: 110 }).map(([key, width]) => Object.freeze({
       key, width, min: ({ name: 112, own: 100, prepare: 90 })[key] || 80, max: 640
     })));
@@ -7916,7 +7930,7 @@ function getPriceTier(price, direction) {
       const result = calculator.calculate(target.itemHrid, target.enhancementLevel, atPrice);
       return result && Number.isFinite(result.hourlyWage) ? result : { reason: t("缺少可用的材料、底子或保护物价格，请先读取对应行情后刷新页面。") };
     }
-    const baseline = calculate(baselineEngine);
+    const initialBaseline = calculate(baselineEngine);
     const inputs = references(target, baselineEngine, ruleData).map(entry => {
       const row = baselineMarket.marketData?.[entry.itemHrid]?.["0"];
       const observed = quoteFor?.(entry);
@@ -7926,7 +7940,9 @@ function getPriceTier(price, direction) {
         stale: Boolean(observed?.stale), cached: Boolean(observed?.cached) };
     });
     const allowed = new Set(inputs.map(entry => entry.itemHrid));
-    function evaluate(overrides = {}) {
+    function evaluate(overrides = {}, salePrice = sale) {
+      const currentSale = positive(salePrice);
+      const baseline = currentSale === sale ? initialBaseline : calculate(baselineEngine, currentSale);
       if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) throw new TypeError(t("模拟报价格式无效"));
       const data = clone(baselineMarket);
       data.marketData = data.marketData || {};
@@ -7943,7 +7959,7 @@ function getPriceTier(price, direction) {
       // Independent engine instances prevent quote and route caches leaking
       // between scenarios or back into the live calculation service.
       const calculator = changed ? engine(data) : baselineEngine;
-      const simulated = changed ? calculate(calculator) : clone(baseline);
+      const simulated = changed ? calculate(calculator, currentSale) : clone(baseline);
       const materialPrices = {};
       const manufacturingPrices = calculator.simulationManufacturingPrices(target.itemHrid);
       for (const entry of inputs) {
@@ -7957,8 +7973,8 @@ function getPriceTier(price, direction) {
       const baseComparison = { craftingCost: base.craftingCost, readyMadeCost: base.productPrice, baseItemSource: base.source, hourlyWageDifference: null };
       // Compare complete routes under the same sale, character and overridden
       // quotes. A per-base price difference misses protection and route changes.
-      if (sale && base.craftingCost > 0 && base.productPrice > 0 && ["market", "craft"].includes(acquisitionSource)) {
-        const alternative = calculate(engine(data, acquisitionSource === "market" ? "craft" : "market"));
+      if (currentSale && base.craftingCost > 0 && base.productPrice > 0 && ["market", "craft"].includes(acquisitionSource)) {
+        const alternative = calculate(engine(data, acquisitionSource === "market" ? "craft" : "market"), currentSale);
         baseComparison.hourlyWageDifference = diff(alternative.hourlyWage, simulated.hourlyWage);
       }
       return { baseline: clone(baseline), simulated, changed, materialPrices,
@@ -8651,7 +8667,7 @@ function getPriceTier(price, direction) {
     // Accept backups from the former whole-table slider; the UI ignores this legacy field.
     if (own(value, "projectWidth")) check(integer(value.projectWidth, 880, 1800));
     if (own(value, "projectColumnWidths")) {
-      const minimums = { name: 112, market: 80, profit: 80, wage: 80, margin: 80, own: 100, reference: 80, prepare: 90 };
+      const minimums = { name: 112, market: 80, bid: 80, profit: 80, wage: 80, margin: 80, own: 100, reference: 80, prepare: 90 };
       check(object(value.projectColumnWidths));
       for (const [key, width] of Object.entries(value.projectColumnWidths)) check(own(minimums, key) && integer(width, minimums[key], 640));
     }
@@ -8726,8 +8742,9 @@ function getPriceTier(price, direction) {
     if (key === `${prefix}favorite-view:v1`) return view(value);
     if (key === `${prefix}view-preferences:v1`) { check(app.viewPreferences.valid(value)); return 1; }
     if (key === `${prefix}workspace:v1`) {
-      shape(value, ["workspaceTab", "managementTab", "drawerOpen", "drawerHeight", "partitionOrder"], ["workspaceTab", "managementTab", "drawerOpen"]);
+      shape(value, ["workspaceTab", "managementTab", "drawerOpen", "drawerHeight", "partitionOrder", "salePriceSide"], ["workspaceTab", "managementTab", "drawerOpen"]);
       check(["projects", "materials", "manage", "settings"].includes(value.workspaceTab) && ["presets", "partitions", "favorites"].includes(value.managementTab) && typeof value.drawerOpen === "boolean");
+      if (own(value, "salePriceSide")) check(["ask", "bid", "ask-minus", "bid-plus"].includes(value.salePriceSide));
       if (own(value, "drawerHeight")) check(integer(value.drawerHeight, 180, 10000));
       if (own(value, "partitionOrder")) check(Array.isArray(value.partitionOrder) && value.partitionOrder.length <= limits.groups + 3 &&
         new Set(value.partitionOrder).size === value.partitionOrder.length && value.partitionOrder.every(id =>
@@ -9278,6 +9295,7 @@ function getPriceTier(price, direction) {
     }
     const key = `${item.itemHrid}:${item.enhancementLevel}`;
     let snapshot = null;
+    let salePrice = null;
     let latest = null;
     let onResult = () => {};
     const materialControls = new Set();
@@ -9293,11 +9311,11 @@ function getPriceTier(price, direction) {
       el.addEventListener("click", action); return el;
     }
     function calculate() {
-      try { publish(snapshot.evaluate(Object.fromEntries(drafts))); }
+      try { publish(snapshot.evaluate(Object.fromEntries(drafts), salePrice)); }
       catch (_error) { publish(null); }
     }
     function initialize() {
-      try { snapshot = capture(); calculate(); }
+      try { snapshot = capture(); salePrice = snapshot.sellPrice; calculate(); }
       catch (_error) { snapshot = null; publish(null); }
     }
     function setPrice(hrid, side, price) {
@@ -9433,7 +9451,8 @@ function getPriceTier(price, direction) {
       materialControls.add(update); update(); return control;
     }
     return Object.freeze({ reset() { drafts.clear(); snapshot = null; initialize(); }, refreshSource() { initialize(); }, current: () => latest, active: () => drafts.size > 0,
-      sellPrice: () => snapshot?.sellPrice, calculateAt: price => latest?.calculateAt(price) || { reason: t("模拟报价无效，请修正") }, createMaterialControl, clearMaterialControls: () => materialControls.clear(), bind(listener) {
+      setSellPrice(price) { salePrice = Number.isFinite(price) && price > 0 ? price : null; if (snapshot) calculate(); },
+      sellPrice: () => salePrice, calculateAt: price => latest?.calculateAt(price) || { reason: t("模拟报价无效，请修正") }, createMaterialControl, clearMaterialControls: () => materialControls.clear(), bind(listener) {
       onResult = listener; materialControls.clear();
       if (!snapshot) initialize(); else onResult(latest);
     }, updateAppearance(value) {
@@ -9905,10 +9924,11 @@ function getPriceTier(price, direction) {
   const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:workspace:v1";
   const drawerHeight = Object.freeze({ min:180, max:10000, initial:380 });
-  const defaults = Object.freeze({ workspaceTab:"projects", managementTab:"presets", drawerOpen:false, drawerHeight:drawerHeight.initial });
+  const defaults = Object.freeze({ workspaceTab:"projects", managementTab:"presets", drawerOpen:false, drawerHeight:drawerHeight.initial, salePriceSide:"ask" });
   function normalize(value) {
     return { partitionOrder:Array.isArray(value?.partitionOrder) ? [...new Set(value.partitionOrder.filter(id => typeof id === "string" && id !== "all"))] : [], workspaceTab:["projects", "materials", "manage", "settings", "loot"].includes(value?.workspaceTab) ? value.workspaceTab : defaults.workspaceTab,
       managementTab:["presets", "partitions", "favorites"].includes(value?.managementTab) ? value.managementTab : defaults.managementTab,
+      salePriceSide:["bid", "ask-minus", "bid-plus"].includes(value?.salePriceSide) ? value.salePriceSide : "ask",
       drawerOpen:value?.drawerOpen === true,
       drawerHeight:Number.isFinite(value?.drawerHeight) ? Math.max(drawerHeight.min, Math.min(drawerHeight.max, Math.round(value.drawerHeight))) : defaults.drawerHeight };
   }
@@ -10020,6 +10040,14 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-item-choice {display:inline-flex;align-items:center;gap:5px;}
 .mwi-layu-panel .mwi-layu-project-level {color:#7dd3fc;font-weight:700;white-space:nowrap;}
 .mwi-layu-panel .mwi-layu-disclosure-sign {color:#94a3b8;flex-shrink:0;}
+.mwi-layu-panel .v3-sale-price-group {display:flex;flex-direction:column;gap:5px;font-size:11px;}
+.mwi-layu-panel .v3-sale-price-options {display:flex;gap:4px;}
+.mwi-layu-panel .v3-sale-price-choice {display:flex;flex:1;flex-direction:column;align-items:center;gap:3px;min-width:0;text-align:center;padding:3px 4px;color:var(--v3-muted);font-size:11px;}
+.mwi-layu-panel .v3-sale-price-choice small {font-size:10px;font-weight:400;white-space:normal;}
+.mwi-layu-panel .v3-sale-price-choice[aria-pressed=true] {color:#7dd3fc;border-color:#7dd3fc;background:rgba(56,189,248,.12);}
+.mwi-layu-panel th[data-sale-price-selected=true] {box-shadow:inset 0 -2px #7dd3fc;}
+.mwi-layu-panel td[data-sale-price-selected=true] {background:rgba(56,189,248,.06);}
+.mwi-layu-panel .v3-sale-basis-note {color:var(--v3-muted);font-size:11px;}
 .mwi-layu-panel .mwi-layu-column-sort {border:0;background:transparent;padding:0;font-size:11px;color:#a0aec2;}
 .mwi-layu-panel .mwi-layu-column-sort[data-direction=ascending]::after {content:" ↑";color:#38bdf8;}
 .mwi-layu-panel .mwi-layu-column-sort[data-direction=descending]::after {content:" ↓";color:#38bdf8;}
@@ -10498,10 +10526,22 @@ function getPriceTier(price, direction) {
     }
     const marketAgeTimer = root.setInterval(updateMarketAges, 1000);
     const pageState = app.v3ViewState.create(root.localStorage, onStatus);
-    let { workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder } = pageState.read();
+    let { workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide } = pageState.read();
     let lootPage = null;
     let settingsPage = null, matrixQuery = "";
-    const savePage = () => pageState.save({ workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder });
+    const savePage = () => pageState.save({ workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide });
+    let salePriceWages = null;
+    const calculationQuote = (quote, item) => {
+      let price = salePriceSide.startsWith("bid") ? quote?.bid ?? null : quote?.price ?? null;
+      if (salePriceSide === "ask-minus" || salePriceSide === "bid-plus") {
+        const vendorPrice = salePriceWages?.materialInfo(item)?.vendorPrice ?? 0;
+        price = salePriceSide === "ask-minus" ? app.marketPrices.previousPrice(price, item.enhancementLevel, vendorPrice)
+          : app.marketPrices.nextPrice(price, item.enhancementLevel, vendorPrice);
+      }
+      return { ...quote, price };
+    };
+    const saleBasisLabel = () => ({ ask:t("按市场左一计算收益"), bid:t("按市场右一计算收益"),
+      "ask-minus":t("按市场左一降一档计算收益"), "bid-plus":t("按市场右一升一档计算收益") })[salePriceSide];
     const favoriteManager = app.v3FavoriteManagement.create({ store: app.marketFavoritesStore.createStore(root.localStorage), partitions, onChange, createStatus });
     const presetView = presets ? app.partitionPresetUI.create({ presets, onChange, preferences, onOpen, createStatus }) : null;
     let partitionGesture = null;
@@ -10887,6 +10927,7 @@ function getPriceTier(price, direction) {
       // Keep the workspace stable even when filters leave no project table.
       syncProjectWidth(partitions.columnWidths());
       let { items, wages, prices, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError } = snapshot;
+      salePriceWages = wages;
       if (cartError || !cartItems.some(item => item.quantity === 1 && `${cartScope}|${app.materialCart.key(item)}` === pendingRemoval)) clearPendingRemoval();
       // Calculation revisions include routinely refreshed role/buff metadata.
       // A frozen scenario belongs to a confirmed character, not a cache epoch.
@@ -10915,7 +10956,7 @@ function getPriceTier(price, direction) {
         !(showMaterials && materialRows.has(app.materialCart.key(item)))).map(item => {
         const quote = prices.quote(item);
         const simulation = simulationPanels.get(app.materialCart.key(item));
-        const result = simulation?.active() ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, quote);
+        const result = simulation?.active() ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, calculationQuote(quote, item));
         const quantity = cartItems.find(row => app.materialCart.key(row) === app.materialCart.key(item))?.quantity || 1;
         const orders = app.marketPartitions.compareListings(own?.listings || [], item, quote);
         const ownPrices = orders.map(row => row.price).filter(Number.isFinite);
@@ -10941,7 +10982,7 @@ function getPriceTier(price, direction) {
       projectOrderScope = nextOrderScope;
       projectOrder = chosen.map(plan => app.materialCart.key(plan.item));
       const nextStructure = JSON.stringify([items, cartItems, cartScope, cartError, partitions.read(), names, spriteBase, skillSpriteBase,
-        workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, search, listingFilter, sort, direction,
+        workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide, search, listingFilter, sort, direction,
         materialSort, materialDirection, shortagesOnly, [...expanded], [...historyExpanded], [...simulationEnabled],
         [...quantityDrafts], [...priceDrafts], pendingRemoval, allocationOwner,
         chosen.map(plan => app.materialCart.key(plan.item)).sort(), catalog.rows.map(app.materialCart.key).sort(), wages.settings()]);
@@ -11020,6 +11061,7 @@ function getPriceTier(price, direction) {
       searchInput.addEventListener("compositionend", () => { composingSearch = false; search = searchInput.value; saveView(); onChange(); });
       searchInput.oninput = () => { search = searchInput.value; if (!composingSearch) { saveView(); onChange(); } };
       toolbar.append(searchInput);
+      if (showProjects) toolbar.append(sortSelect);
       if (search) toolbar.append(button(t("清除搜索"), () => { search = ""; saveView(); onChange(); }));
       if (showProjects) {
         const filters = node("div", null, "mwi-layu-listing-filters"); filters.setAttribute("aria-label", t("挂单快速筛选"));
@@ -11071,9 +11113,35 @@ function getPriceTier(price, direction) {
           node("span", t`${chosen.length} 个项目`, "mwi-layu-group-note")); main.append(title);
         if (!chosen.length) main.append(node("p", search || listingFilter !== "all" ? t("没有符合搜索或挂单筛选的项目。") : t("所选分区暂无项目。"), "mwi-layu-group-empty"));
         else {
-          const listing = table([t("物品 / 等级"), t("市场左一"), t("利润"), t("工时费 / h"), t("利润率"), t("我的挂单"), t("参考售价"), t("备料")], t("收藏项目列表"));
+          const listing = table([t("物品 / 等级"), t("市场左一"), t("市场右一"), t("利润"), t("工时费 / h"), t("利润率"), t("我的挂单"), t("参考售价"), t("备料")], t("收藏项目列表"));
           listing.region.classList.add("mwi-layu-project-scroll"); listing.body.parentElement.classList.add("mwi-layu-project-table");
-          sortableHeaders(listing, ["name", "market", "profit", "wage", "margin", "own", "reference", null], false);
+          sortableHeaders(listing, ["name", null, null, "profit", "wage", "margin", "own", "reference", null], false);
+          for (const [index, label, options] of [
+            [1, t("市场左价"), [["ask", t("左"), t("使用市场左一计算整表收益")], ["ask-minus", t("左−"), t("使用市场左一降一档计算整表收益")]]],
+            [2, t("市场右价"), [["bid", t("右"), t("使用市场右一计算整表收益")], ["bid-plus", t("右+"), t("使用市场右一升一档计算整表收益")]]]
+          ]) {
+            const th = listing.body.parentElement.tHead.rows[0].cells[index];
+            const group = node("div", null, "v3-sale-price-group");
+            group.append(node("span", label));
+            const controls = node("div", null, "v3-sale-price-options");
+            for (const [side, text, description] of options) {
+              const choice = button(null, () => {
+                if (salePriceSide === side) return;
+                salePriceSide = side;
+                savePage();
+                for (const item of items) simulationPanels.get(app.materialCart.key(item))?.setSellPrice(calculationQuote(prices.quote(item), item).price);
+                onChange();
+              }, description);
+              choice.className = "v3-sale-price-choice"; choice.dataset.salePriceSide = side;
+              choice.dataset.focusKey = `sale-price-side:${side}`;
+              choice.setAttribute("aria-pressed", String(salePriceSide === side));
+              choice.append(node("span", (salePriceSide === side ? "✓ " : "") + text));
+              choice.title = description;
+              controls.append(choice);
+            }
+            group.append(controls); th.replaceChildren(group);
+            th.dataset.salePriceSelected = String(options.some(([side]) => salePriceSide === side));
+          }
           resizableColumns(listing);
           projectBody = listing.body;
           for (const plan of chosen) {
@@ -11125,7 +11193,7 @@ function getPriceTier(price, direction) {
           // Identity, inputs, row and table stay connected. Only quote/order cells change.
           // Moving a cell changes the source row's live HTMLCollection indices.
           // Keep named references so the reference-price input cannot become the own-order cell.
-          for (const key of ["market", "own"]) {
+          for (const key of ["market", "bid", "own"]) {
             entry.liveCells[key].replaceWith(fresh.liveCells[key]);
             entry.liveCells[key] = fresh.liveCells[key];
           }
@@ -11307,13 +11375,18 @@ function getPriceTier(price, direction) {
         const identity = button(null, () => { if (expanded.has(key)) expanded.delete(key); else expanded.add(key); saveView(); onChange(); }, t`项目明细：${label}`);
         identity.className = "mwi-layu-project-identity"; identity.setAttribute("aria-expanded", String(expanded.has(key)));
         identity.append(node("span", expanded.has(key) ? "▼" : "▶", "mwi-layu-disclosure-sign"), app.itemUI.identity(item, spriteBase), node("span", `+${item.enhancementLevel}`, "mwi-layu-project-level"));
-        const price = node("span", quote?.price == null ? t("未知") : number(quote.price));
-        price.title = quote ? `${quote.cached ? t("本地缓存 · ") : ""}${quote.source} · ${time(new Date(quote.at).toISOString())}` : t("等待行情");
-        if (quote) {
-          const stale = Date.now() - quote.at >= 5 * 60000;
-          price.append(node("small", stale ? t("旧") : quote.cached ? t("缓存") : quote.source === t("市场快照") ? t("快照") : t("订单簿"), "mwi-layu-quote-source"));
-          if (stale) price.title += t("；报价超过 5 分钟，请打开市场复核");
+        function quoteCell(value) {
+          const price = node("span", value == null ? "—" : number(value));
+          price.title = quote ? `${quote.cached ? t("本地缓存 · ") : ""}${quote.source} · ${time(new Date(quote.at).toISOString())}` : t("等待行情");
+          if (quote) {
+            const stale = Date.now() - quote.at >= 5 * 60000;
+            price.append(node("small", stale ? t("旧") : quote.cached ? t("缓存") : quote.source === t("市场快照") ? t("快照") : t("订单簿"), "mwi-layu-quote-source"));
+            if (stale) price.title += t("；报价超过 5 分钟，请打开市场复核");
+          }
+          if (value == null) price.append(node("small", t("暂无报价"), "mwi-layu-quote-source"));
+          return price;
         }
+        const price = quoteCell(quote?.price), bid = quoteCell(quote?.bid);
         const { orders } = plan;
         const mine = node("span", !own ? t("未读取") : orders.length ? "" : "—");
         for (const isSell of [true, false]) {
@@ -11331,32 +11404,34 @@ function getPriceTier(price, direction) {
           mine.append(line);
         }
         const saved = cartItems.find(row => app.materialCart.key(row) === key);
-        const tr = row(body, [identity, price, profit(result), wage(result), profitMargin(result), mine, priceInput(item), projectQuantity(item)], "mwi-layu-project-row"); tr.dataset.favoriteKey = key;
-        const liveCells = { market:tr.cells[1], own:tr.cells[5] };
+        const tr = row(body, [identity, price, bid, profit(result), wage(result), profitMargin(result), mine, priceInput(item), projectQuantity(item)], "mwi-layu-project-row"); tr.dataset.favoriteKey = key;
+        const liveCells = { market:tr.cells[1], bid:tr.cells[2], own:tr.cells[6] };
+        tr.cells[salePriceSide.startsWith("bid") ? 2 : 1].dataset.salePriceSelected = "true";
         const metricRow = retainedRow || tr;
         const updateMetrics = () => {
           const simulation = simulationPanels.get(key);
           const active = simulation?.active();
-          const metric = active ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, prices.quote(item));
-          metricRow.cells[2].replaceChildren(profit(metric)); metricRow.cells[3].replaceChildren(wage(metric)); metricRow.cells[4].replaceChildren(profitMargin(metric));
+          const metric = active ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, calculationQuote(prices.quote(item), item));
+          metricRow.cells[3].replaceChildren(profit(metric)); metricRow.cells[4].replaceChildren(wage(metric)); metricRow.cells[5].replaceChildren(profitMargin(metric));
           metricRow.dataset.simulated = String(Boolean(active));
-          if (active) metricRow.cells[2].append(node("small", t("模拟"), "mwi-layu-quote-source"));
-          for (const [index, value] of [[2, metric?.evaluation?.profit], [3, metric?.hourlyWage], [4, metric?.evaluation?.profitMargin]]) {
+          if (active) metricRow.cells[3].append(node("small", t("模拟"), "mwi-layu-quote-source"));
+          for (const [index, value] of [[3, metric?.evaluation?.profit], [4, metric?.hourlyWage], [5, metric?.evaluation?.profitMargin]]) {
+            metricRow.cells[index].dataset.metric = ({3:"profit", 4:"wage", 5:"margin"})[index];
             metricRow.cells[index].dataset.value = value ?? "";
-            metricRow.cells[index].title = active ? t`材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : t("按当前行情计算");
+            metricRow.cells[index].title = active ? t`材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : saleBasisLabel();
           }
         };
         updateMetrics();
         if (own && orders.length) {
           const standing = orders.some(order => order.standing === "leading") ? "leading" :
             orders.every(order => order.standing === "behind") ? "behind" : "unknown";
-          tr.cells[5].classList.add(`mwi-layu-order-${standing}`);
+          tr.cells[6].classList.add(`mwi-layu-order-${standing}`);
           mine.setAttribute("aria-label", mine.textContent);
         }
         if (saved) tr.classList.add("mwi-layu-project-selected");
         let detailRow = null;
         if (expanded.has(key)) {
-          detailRow = node("tr", null, "mwi-layu-project-detail-row"); const cell = node("td"); cell.colSpan = 8;
+          detailRow = node("tr", null, "mwi-layu-project-detail-row"); const cell = node("td"); cell.colSpan = 9;
           cell.append(levelSection(plan, quantity, updateMetrics)); detailRow.append(cell); body.append(detailRow);
         }
         return { tr, detail: detailRow, liveCells };
@@ -11724,7 +11799,7 @@ function getPriceTier(price, direction) {
         const section = node("section", null, "mwi-layu-group-level"); section.dataset.favoriteKey = key;
         if (!simulationPanels.has(key) || !simulationEnabled.has(key)) simulationPanels.set(key, app.priceSimulationUI.create({ item, spriteBase, names,
           onStatus, readQuote: entry => prices.quote(entry),
-          capture: () => wages.createSimulation(item, prices.quote(item)) }));
+          capture: () => wages.createSimulation(item, calculationQuote(prices.quote(item), item)) }));
         const simulation = simulationPanels.get(key);
         section.classList.toggle("v3-simulation-enabled", simulationEnabled.has(key));
         simulation.updateAppearance({ spriteBase, names });
@@ -11816,7 +11891,7 @@ function getPriceTier(price, direction) {
           if (savedView) restoreView(savedView);
         });
         const left = node("div", null, "v3-workbench-materials"); const title = node("div", null, "mwi-layu-level-heading");
-        title.append(node("strong", t("配方材料与调价模拟")));
+        title.append(node("strong", t("配方材料与调价模拟")), node("small", saleBasisLabel(), "v3-sale-basis-note"));
         const reset = button(t("恢复左一"), () => simulation.reset(), t("恢复全部材料当前报价"));
         reset.title = t("重新读取已收到的当前行情，清除全部模拟调价"); reset.className = "v3-sim-reset";
         reset.disabled = !simulationEnabled.has(key);
