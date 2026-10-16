@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.14
+// @version      0.3.15
 // @author       柆雨
 // @description  强化路线、工时费、物品收藏与材料导航
 // @name:en      Enhancement Assistant
@@ -314,7 +314,7 @@
     return { dispose, report, client };
   }
   if (typeof module !== "undefined" && module.exports) module.exports = { createUsageClient, boot };
-  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.14","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
+  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.15","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
 setValue: typeof GM_setValue === "function" ? GM_setValue : null,
 menu: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : null,
 unmenu: typeof GM_unregisterMenuCommand === "function" ? GM_unregisterMenuCommand : null,
@@ -591,6 +591,63 @@ SOFTWARE.
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   app.englishMessages = Object.freeze({
+  "制作进度待确认": "Production progress unknown",
+  "待购买材料": "Materials needed",
+  "材料待到账": "Materials pending delivery",
+  "材料齐全，待缝纫": "Materials ready; awaiting tailoring",
+  "材料齐全，待制造": "Materials ready; awaiting production",
+  "底子已就绪，待强化": "Base ready; awaiting enhancement",
+  "已有强化底子，待继续强化": "Enhanced base ready; awaiting continuation",
+  "目标等级已备齐": "Target level ready",
+  "待购买底子": "Base purchase needed",
+  "底子待到账": "Base pending delivery",
+  "达标 {0}/{1} · 底子 {2}/{3}": "At target {0}/{1} \u00b7 Bases {2}/{3}",
+  "按备料车顺序分配共享库存；待到账不算备齐。底子就绪不代表强化耗材齐全，详见下方材料表。": "Shared stock is allocated in cart order; pending deliveries are not ready. Base readiness excludes enhancement supplies; see the material table below.",
+
+  " · 无需再购 {0}/{1} 种": " · No purchase needed: {0}/{1} types",
+  "按当前{0}分配采购": "Allocate purchases to available {0}",
+  "工作区页面与备料计划": "Workspace pages & preparation plans",
+  "强化备料": "Enhancement",
+  "工作区页面": "Workspace pages",
+  "列表": "List",
+  "分区": "Partitions",
+  "设置": "Settings",
+  "备料与采购": "Preparation & purchasing",
+  "前往列表添加计划": "Add plans from the list",
+  "排序": "Sort",
+  "备料材料排序": "Sort preparation materials",
+  "缺料优先": "Shortages first",
+  "预算降序": "Budget: high to low",
+  "单价降序": "Price: high to low",
+  "待核算": "Unknown",
+  "缺料": "Short",
+  "已备齐": "Ready",
+  "待到账": "Pending",
+  "材料 {0} 种": "{0} materials",
+  "买单未成": "Unfilled buys",
+  "成交待领": "Unclaimed",
+  "净缺口": "Net shortage",
+  "计划需求": "Plan requirements",
+  "库存与买单": "Inventory & buy orders",
+  "采购核算": "Purchase estimate",
+  "材料明细：{0}": "Material details: {0}",
+  "采购：{0}": "Purchase: {0}",
+  "前往市场并预填缺口，请在游戏中确认购买": "Open the market and prefill the shortage; confirm your purchase in game",
+  "需求核对": "Requirement details",
+  "参与抵扣 {0} · 建议购买 {1}": "Available for this plan {0} \u00b7 Suggested purchase {1}",
+  "净缺口已扣库存和买单待收；已占用作底子的装备不会重复抵扣。": "Net shortage deducts inventory and pending buys; equipment reserved as a base is not deducted twice.",
+  "买单未成仍需等待成交；成交待领需在游戏中领取。": "Unfilled buys still await a match; claim filled orders in game.",
+  "数量按备料方案计算，采购数量向上取整。": "Requirements follow the preparation plan; purchase quantities are rounded up.",
+  "当前筛选下没有缺料。": "No shortages match this filter.",
+
+  "使用参考售价计算整表收益": "Use reference sale prices for all project returns",
+  "未设 · 用右一": "Unset · use bid",
+  "未设 · 用左一": "Unset · use ask",
+  "按参考售价计算收益": "Returns based on reference sale price",
+  "保护材料备料倍率": "Protection preparation multiplier",
+  "保护材料覆盖率（%）": "Protection coverage (%)",
+  "两类备料独立调整；覆盖率按同一近似公式估算，不代表两类材料同时够用的概率。倍率不改变期望成本与收益。": "Adjust the two supplies independently. Coverage uses the same approximation, not the probability that both supplies suffice. Multipliers do not change expected costs or profits.",
+  "切换整表利润、利润率和工时费的成品售价；保留材料计价与模拟调价。未设置参考售价时沿用此前选择的左一或右一；该侧无报价时显示未知。排序请使用上方排序菜单。": "Change the sale price used for all project profit, margin and hourly returns. Keep material pricing and simulation edits. Unset reference prices use the previously selected ask or bid; missing quotes on that side remain unknown. Use the sorting menu above to sort.",
   "市场左价": "Market ask",
   "市场右价": "Market bid",
   "左": "Ask",
@@ -601,10 +658,25 @@ SOFTWARE.
   "使用市场右一升一档计算整表收益": "Use one tick above best bid for all project returns",
   "按市场左一降一档计算收益": "Returns based on one tick below best ask",
   "按市场右一升一档计算收益": "Returns based on one tick above best bid",
+  "未设 · 用左−": "Unset \u00b7 Ask\u2212",
+  "未设 · 用右+": "Unset \u00b7 Bid+",
+  "点击用于计算": "Use for calculation",
+  "✓ 计算采用": "\u2713 Used for calculation",
   "使用市场左一计算整表收益": "Use best ask for all project returns",
   "使用市场右一计算整表收益": "Use best bid for all project returns",
   "按市场左一计算收益": "Returns based on best ask",
   "按市场右一计算收益": "Returns based on best bid",
+  "市场右一": "Market best bid",
+  "固定比例：整体宽度变化时，左右按当前比例一起伸缩。": "Lock ratio: both panels resize proportionally with the overall width.",
+  "固定右宽：保持右侧宽度，整体宽度变化由左侧吸收。": "Lock right width: keep the right panel width; the left panel absorbs width changes.",
+  "固定比例": "Lock ratio",
+  "固定右宽": "Lock right width",
+  "继续拖动收起左侧": "Keep dragging to collapse left",
+  "继续拖动收起右侧": "Keep dragging to collapse right",
+  "左侧已收起，向右拖动恢复": "Left collapsed; drag right to restore",
+  "右侧已收起，向左拖动恢复": "Right collapsed; drag left to restore",
+  "左侧 {0} 像素，右侧 {1} 像素": "Left {0} px, right {1} px",
+  "拖到最小宽度后继续拖动收起；反向拖动恢复。双击或 Enter 恢复双栏；方向键微调，Esc 取消。": "Drag past the minimum width to collapse; reverse to restore. Double-click or Enter resets both panels; arrows adjust, Esc cancels.",
   "调整左右区块比例": "Resize workbench panels",
   "拖动调整比例；双击恢复 60:40；方向键微调，Esc 取消。": "Drag to resize; double-click to reset to 60:40; use arrow keys to adjust, Esc to cancel.",
   "左侧 {0}%，右侧 {1}%": "Left {0}%, right {1}%",
@@ -664,11 +736,12 @@ SOFTWARE.
   "已填写强化目标和保护设置，请确认后手动开始。": "Enhancement target and protection settings filled. Review and start manually.",
   "未能完成页面跳转或预填，请刷新游戏后重试。": "Could not navigate or fill settings. Refresh the game and retry.",
   "读取库存或预填失败，请重试。": "Could not read inventory or fill settings. Please retry.",
+  "市场跳转提示": "Market navigation notice",
   "正在打开市场…": "Opening market…",
   "角色已切换，请在当前角色的材料卡片重新打开市场。": "Character changed. Open the market again from the current character's material card.",
-  "已打开市场；需求、库存或待收货数量未知，本次不预填采购数量，请手动填写。": "Market opened. Requirements, inventory or incoming quantity are unknown; enter the purchase quantity manually.",
+  "市场已打开，采购数量未知，请手动填写。": "Market opened. Purchase quantity unknown; enter it manually.",
   "采购数量尚未确定，请等待库存、挂单和行情更新后重试。": "Purchase quantity is not ready. Wait for inventory, listings and market data to update, then retry.",
-  "已打开市场；两分钟内打开该物品的购买表单将预填数量，超出当前价格可负担数量时自动减至上限，请核对后手动确认。": "Market opened. Open this item's buy form within two minutes to fill the quantity, capped at what you can afford at the current price. Review and confirm manually.",
+  "市场已打开。2 分钟内可预填数量（不超过余额），请核对后确认。": "Market opened. Open the buy form within 2 minutes to fill an affordable quantity. Review and confirm.",
   "游戏桥接未响应，请确认脚本更新后已刷新游戏。": "Game bridge did not respond. Refresh the game after updating the script.",
   "未找到游戏市场入口，请刷新游戏后重试。": "Game market entry not found. Refresh the game and retry.",
   "打开市场失败，请重试。": "Could not open market. Please retry.",
@@ -1155,6 +1228,8 @@ SOFTWARE.
   "暂无利润": "Profit unavailable",
   "暂无利润率": "Margin unavailable",
   "自定义价格：{0}": "Custom price: {0}",
+  "支持 K / M / B（大小写均可），例如 500K、170m、1.2B；清空表示未设置。": "Supports K / M / B (case insensitive), e.g. 500K, 170m, 1.2B; clear to leave unset.",
+  "参考售价支持 K / M / B，换算后须为非负安全整数金币；清空表示未设置。": "Reference prices support K / M / B and must resolve to a non-negative safe integer in coins; clear to leave unset.",
   "参考售价请输入非负整数金币，清空表示未设置。": "Enter a non-negative integer reference price in coins; clear to leave unset.",
   "计划备料数量：{0}": "Planned quantity: {0}",
   "输入整数数量，0 表示移出备料计划": "Enter an integer; 0 removes it from the plan",
@@ -1543,7 +1618,26 @@ SOFTWARE.
   "制作所需参数尚未完整，已打开白板市场，请先核对配方与用茶设置。": "Production parameters are incomplete. Opened the +0 market; check the recipe and drink settings.",
   "库存中已有达到目标等级的物品，无需继续强化。": "Inventory already contains an item at the target level. No more enhancement needed.",
   "已填目标等级；所选方案的保护物不足，请补齐后选择保护物。": "Target level filled. Protection is insufficient; obtain it and select it manually.",
-  "已填目标等级；保护方案暂不可用，请手动确认保护设置。": "Target level filled. Protection plan unavailable; review protection settings manually."
+  "已填目标等级；保护方案暂不可用，请手动确认保护设置。": "Target level filled. Protection plan unavailable; review protection settings manually.",
+  "该等级没有可用库存底子": "No eligible inventory base at this level",
+  "装备库存未知，暂不抵扣制造用量": "Equipment inventory is unknown; manufacturing requirements have not been reduced",
+  "现有装备库存已满足当前计划，无需继续生产。": "Existing equipment covers this plan. No additional production is needed.",
+  "所选库存底子已不可用，请刷新角色后重新选择。": "The selected inventory base is no longer available. Refresh your character and select again.",
+  "库存续强化单独估算；市场收益仍按完整成本测算。": "Inventory continuation is estimated separately; market profits still use full costs.",
+  "自制 · 用库存": "Craft · Use stock",
+  "本人挂单（缓存）· 不抵扣": "My listings (cached) · Excluded",
+  "本人挂单 · 不抵扣": "My listings · Excluded",
+  "各等级库存与本人挂单": "Inventory and my listings by level",
+  "+{0}：库存 {1}，本人挂单 {2}": "+{0}: inventory {1}, my listings {2}",
+  "本次底子": "Selected base",
+  "不低于目标等级，不作底子": "At or above target; not an eligible base",
+  "自制模式下可选为底子": "Can be selected as a base in Craft mode",
+  "没有可用库存底子": "No eligible inventory base",
+  "库 {0}": "Stock {0}",
+  "挂 {0}": "Listed {0}",
+  "使用库存 {0}；还需制造 {1} 件底子": "Use stock {0}; craft {1} missing base(s)",
+  "使用库存 {0}；无需制造底子": "Use stock {0}; no base manufacturing needed",
+  "无可用低等级库存，按自制备料": "No eligible lower-level stock; prepare crafting materials"
 });
 })(globalThis);
 
@@ -1552,6 +1646,9 @@ SOFTWARE.
 (function initLanguage(root) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  // The mounted runtime owns these subscriptions; duplicate injections must
+  // reuse the same language service so switching still remounts the workspace.
+  if (app.i18n) return;
   const storageKey = "mwi-layu:language:v1";
   const normalize = value => /^en(?:[-_]|$)/i.test(String(value || "")) ? "en" : /^zh(?:[-_]|$)/i.test(String(value || "")) ? "zh" : null;
   let preference = "auto", gameLanguage = null;
@@ -1844,6 +1941,11 @@ SOFTWARE.
     const owned = inventory.filter((item) => item.itemHrid === request.itemHrid);
     const candidates = owned.filter((item) => Number.isInteger(item.enhancementLevel) && item.enhancementLevel >= 0 && item.enhancementLevel < request.enhancementLevel && (request.destination !== "enhancing" || item.hash))
       .sort((a, b) => b.enhancementLevel - a.enhancementLevel);
+    if (request.startLevel != null) {
+      const selected = Number.isInteger(request.startLevel) && candidates.find(item => item.enhancementLevel === request.startLevel);
+      if (!selected) return { destination: "manual", notice: "所选库存底子已不可用，请刷新角色后重新选择。" };
+      return { destination: "enhancing", item: selected };
+    }
     if (request.enhancementLevel > 0 && candidates.length) return { destination: "enhancing", item: candidates[0] };
     if (request.destination === "enhancing") return { destination: "manual", notice: request.enhancementLevel === 0
       ? "目标等级为 +0，无需强化。"
@@ -2393,7 +2495,10 @@ SOFTWARE.
     /^(?:settings-group|help-topic):[\w\u3400-\u9fff与]+$/.test(value) ||
     /^(?:sources|manufacturing|route|comparison|favorite-management):/.test(value) && itemKey(value.slice(value.indexOf(":") + 1)));
   const schema = {
-    workbenchSplit: value => Number.isInteger(value) && value >= 40 && value <= 70,
+    workbenchSplit: value => Number.isInteger(value) && value >= 1 && value <= 99,
+    workbenchLock: oneOf(["ratio", "right"]),
+    workbenchRightWidth: value => Number.isFinite(value) && value >= 1 && value <= 10000,
+    workbenchCollapsed: oneOf(["", "left", "right"]),
     // Retained for backups/preferences saved by the archived three-view UI; unused by the restored layout.
     workspaceView: oneOf(["projects", "cart", "settings"]),
     detailTab: oneOf(["materials", "market", "history"]),
@@ -2416,7 +2521,7 @@ SOFTWARE.
   };
   const defaults = () => ({ workspaceView: "projects", detailTab: "materials", settingsTab: "general", sort: "wage", direction: -1, materialSort: "shortage", materialDirection: -1,
     search: "", listingFilter: "all", shortagesOnly: false, managerOpen: false, presetHideOrdinary: true, presetLevels: [], expanded: [], historyExpanded: [],
-    disclosures: {}, nativeSort: "", nativeDirection: 1, workbenchSplit: 60 });
+    disclosures: {}, nativeSort: "", nativeDirection: 1, workbenchSplit: 60, workbenchLock: "ratio", workbenchRightWidth: 360, workbenchCollapsed: "" });
   const clone = value => JSON.parse(JSON.stringify(value));
   function valid(value) {
     return object(value) && Object.entries(value).every(([key, entry]) => Object.hasOwn(schema, key) && schema[key](entry));
@@ -3112,8 +3217,8 @@ SOFTWARE.
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:partitions:v1";
-  const projectColumns = Object.freeze(Object.entries({ name: 180, market: 100, bid: 100, profit: 80, wage: 90,
-    margin: 80, own: 130, reference: 100, prepare: 110 }).map(([key, width]) => Object.freeze({
+  const projectColumns = Object.freeze(Object.entries({ name: 180, market: 100, bid: 100, reference: 100, profit: 80, wage: 90,
+    margin: 80, own: 130, prepare: 110 }).map(([key, width]) => Object.freeze({
       key, width, min: ({ name: 112, own: 100, prepare: 90 })[key] || 80, max: 640
     })));
   const validColumnWidth = (column, value) => column && Number.isInteger(value) && value >= column.min && value <= column.max;
@@ -3537,23 +3642,26 @@ SOFTWARE.
   const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:material-cart:v1";
   const key = (item) => `${item.itemHrid}:${item.enhancementLevel}`;
-  function pendingPurchases(listings, item) {
-    if (!Array.isArray(listings)) return null;
-    let count = 0;
+  function pendingPurchaseBreakdown(listings, item) {
+    const unknown = { unfilledCount:null, unclaimedCount:null, total:null };
+    if (!Array.isArray(listings)) return unknown;
+    let unfilledCount = 0, unclaimedCount = 0;
     for (const listing of listings) {
       if (listing.itemHrid !== item.itemHrid || listing.enhancementLevel !== (item.enhancementLevel || 0)) continue;
       const status = listing.status?.split("/").pop();
       if (!["active", "filled", "cancelled", "expired"].includes(status) ||
-          !Number.isSafeInteger(listing.unclaimedItemCount) || listing.unclaimedItemCount < 0) return null;
-      count += listing.unclaimedItemCount;
+          !Number.isSafeInteger(listing.unclaimedItemCount) || listing.unclaimedItemCount < 0) return unknown;
+      unclaimedCount += listing.unclaimedItemCount;
       if (status === "active") {
         if (!Number.isSafeInteger(listing.orderQuantity) || !Number.isSafeInteger(listing.filledQuantity) ||
-            listing.filledQuantity < 0 || listing.orderQuantity < listing.filledQuantity) return null;
-        count += listing.orderQuantity - listing.filledQuantity;
+            listing.filledQuantity < 0 || listing.orderQuantity < listing.filledQuantity) return unknown;
+        unfilledCount += listing.orderQuantity - listing.filledQuantity;
       }
     }
-    return Number.isSafeInteger(count) ? count : null;
+    const total = unfilledCount + unclaimedCount;
+    return Number.isSafeInteger(total) ? { unfilledCount, unclaimedCount, total } : unknown;
   }
+  function pendingPurchases(listings, item) { return pendingPurchaseBreakdown(listings, item).total; }
   function scope(characterId) {
     return Number.isSafeInteger(characterId) && characterId > 0 ? `${root.location.hostname}:${characterId}` : null;
   }
@@ -3611,12 +3719,23 @@ SOFTWARE.
     };
     for (const item of items) {
       const result = wages.calculate(item, prices.quote(item));
-      const plan = wages.materials(item, result, item.quantity);
+      const plan = wages.materials(item, result, item.quantity, reservedProducts);
       if (plan.craftingDemands) {
         for (const demand of plan.craftingDemands) {
-          if (!products.has(demand.itemHrid)) products.set(demand.itemHrid, { ...wages.materialInfo({itemHrid:demand.itemHrid, enhancementLevel:0}), quantity:0, base:0, protects:0 });
+          if (!products.has(demand.itemHrid)) products.set(demand.itemHrid, { ...wages.materialInfo({itemHrid:demand.itemHrid, enhancementLevel:0}), quantity:0, base:0, protects:0,
+            allocatedQuantity:0, allocatedBase:0, allocatedProtects:0, allocatedDeducted:0 });
           const product = products.get(demand.itemHrid);
-          product.base += demand.base; product.protects += demand.protects * plan.multiplier;
+          if (plan.inventoryAllocated) {
+            if (!Number.isFinite(demand.required)) { manufacturingReady = false; addWarning(warnings, warningItems, item, t("装备库存未知，暂不抵扣制造用量")); }
+            else {
+              const protects = demand.protects * (plan.protectionMultiplier ?? plan.multiplier);
+              product.allocatedBase += demand.base; product.allocatedProtects += protects;
+              product.allocatedDeducted += Math.ceil(demand.base) + Math.ceil(protects) - demand.required;
+              product.allocatedQuantity = Math.max(0, Math.ceil(product.allocatedBase) + Math.ceil(product.allocatedProtects) - product.allocatedDeducted);
+            }
+          } else {
+            product.base += demand.base; product.protects += demand.protects * (plan.protectionMultiplier ?? plan.multiplier);
+          }
           product.quantity = Math.ceil(product.base) + Math.ceil(product.protects);
         }
       } else {
@@ -3633,7 +3752,9 @@ SOFTWARE.
           if (!Number.isFinite(input.count) || input.count < 0) manufacturingReady = false;
           else row.manufacturing += input.count;
         }
-        const required = input.expectedEnhancement * item.quantity * plan.multiplier;
+        const protection = input.expectedProtection ?? 0;
+        const required = ((input.expectedEnhancement - protection) * plan.multiplier +
+          protection * (plan.protectionMultiplier ?? plan.multiplier)) * item.quantity;
         if (!Number.isFinite(required) || required < 0) enhancementReady = false;
         else if (plan.enhancementReady) row.expectedEnhancement += required;
       }
@@ -3642,14 +3763,15 @@ SOFTWARE.
     for (const item of products.values()) {
       const info = wages.materialInfo({ ...item, enhancementLevel: 0 });
       const stock = info.inventoryCount == null || info.pendingPurchaseCount === null ? null : info.inventoryCount + (info.pendingPurchaseCount || 0);
-      if (!Number.isFinite(stock) || stock < 0) {
+      if (item.quantity > 0 && (!Number.isFinite(stock) || stock < 0)) {
         manufacturingReady = false;
         addWarning(warnings, warningItems, item, t("未强化装备库存未知，制造用量待确认"), false);
         continue;
       }
-      const reserved = Math.min(item.quantity, Math.floor(stock));
-      reservedProducts.set(`${item.itemHrid}:0`, reserved);
-      const quantity = item.quantity - reserved;
+      const key = `${item.itemHrid}:0`, before = reservedProducts.get(key) || 0;
+      const reserved = item.quantity > 0 ? Math.min(item.quantity, Math.max(0, Math.floor(stock) - before)) : 0;
+      reservedProducts.set(key, before + reserved);
+      const quantity = item.quantity - reserved + (item.allocatedQuantity || 0);
       if (!quantity) continue;
       const plan = wages.materials({ ...item, enhancementLevel: 0 }, null, quantity);
       if (plan.batches == null) { manufacturingReady = false; addWarning(warnings, warningItems, item, t("制造配方未就绪"), false); }
@@ -3677,6 +3799,68 @@ SOFTWARE.
     }).filter(row => row.required !== 0);
     return { rows, minimumCostItems, warnings: [...new Set(warnings)], warningItems: uniqueWarnings(warningItems), complete: manufacturingReady && enhancementReady && warnings.length === 0,
       quantity: items.reduce((sum, item) => sum + item.quantity, 0) };
+  }
+  // Observed inventory is evidence of readiness, never proof of how an item was acquired.
+  // Reserve finished equipment first, then bases, then manufacturing inputs in cart order.
+  function progress(items, wages) {
+    const reserved = new Map();
+    const reserve = (item, count) => reserved.set(key(item), (reserved.get(key(item)) || 0) + count);
+    const available = item => {
+      const count = wages.materialInfo(item).inventoryCount;
+      return Number.isFinite(count) && count >= 0 ? Math.max(0, count - (reserved.get(key(item)) || 0)) : null;
+    };
+    const rows = items.map(item => {
+      const stock = available(item), completed = stock == null ? null : Math.min(item.quantity, Math.floor(stock));
+      if (completed) reserve(item, completed);
+      return { item, completed, bases: 0, started: 0, missing: item.quantity - (completed || 0), state: "unknown" };
+    });
+    for (const row of rows) {
+      if (row.completed == null) continue;
+      for (const level of wages.inventoryLevels(row.item).filter(entry => entry.enhancementLevel < row.item.enhancementLevel).sort((a, b) => b.enhancementLevel - a.enhancementLevel)) {
+        const base = { ...row.item, enhancementLevel: level.enhancementLevel }, stock = available(base);
+        if (stock == null) { row.bases = null; break; }
+        const count = Math.min(row.missing, Math.floor(stock));
+        reserve(base, count); row.bases += count; row.missing -= count;
+        if (level.enhancementLevel > 0) row.started += count;
+      }
+    }
+    for (const row of rows) {
+      const { item } = row;
+      if (row.completed == null || row.bases == null) continue;
+      if (row.completed === item.quantity) { row.state = "complete"; continue; }
+      if (!row.missing) { row.state = row.started ? "enhancing" : "enhance"; continue; }
+      if (wages.baseItemSource(item) !== "craft") {
+        const base = { ...item, enhancementLevel: 0 }, info = wages.materialInfo(base);
+        const pending = info.pendingPurchaseCount;
+        row.state = Number.isFinite(pending) ? (pending >= row.missing + (reserved.get(`pending:${key(base)}`) || 0) ? "basePending" : "buyBase") : "unknown";
+        reserved.set(`pending:${key(base)}`, (reserved.get(`pending:${key(base)}`) || 0) + row.missing);
+        continue;
+      }
+      const recipe = wages.craftingRecipe(item.itemHrid);
+      row.tailoring = recipe?.actionHrid?.startsWith("/actions/tailoring/") || false;
+      if (!recipe) continue;
+      const plan = wages.materials({ ...item, enhancementLevel: 0 }, null, row.missing);
+      if (plan.batches == null) continue;
+      const inputs = new Map();
+      for (const input of plan.inputs) {
+        const id = key(input), prior = inputs.get(id);
+        inputs.set(id, { ...input, count: prior ? (Number.isFinite(prior.count) && Number.isFinite(input.count) ? prior.count + input.count : null) : input.count });
+      }
+      let unknown = false, shortage = false, pending = false;
+      for (const input of inputs.values()) {
+        const stock = available(input), info = wages.materialInfo(input);
+        if (!Number.isFinite(input.count) || input.count < 0 || stock == null) { unknown = true; continue; }
+        if (stock < input.count) {
+          if (!Number.isFinite(info.pendingPurchaseCount)) unknown = true;
+          else if (stock + Math.max(0, info.pendingPurchaseCount - (reserved.get(`pending:${key(input)}`) || 0)) < input.count) shortage = true;
+          else pending = true;
+          reserved.set(`pending:${key(input)}`, (reserved.get(`pending:${key(input)}`) || 0) + Math.max(0, input.count - stock));
+        }
+        reserve(input, input.count);
+      }
+      row.state = unknown ? "unknown" : shortage ? "buy" : pending ? "pending" : "craft";
+    }
+    return rows;
   }
   // Discover direct recipe/route inputs independently of the selected production quantities.
   function catalog(items, cartItems, wages, prices) {
@@ -3765,7 +3949,7 @@ SOFTWARE.
     return { ...result, available: true, insufficient: full.amount > coins, coins, remaining: coins - result.amount,
       manufacturingComplete: manufacturingFraction === 1, enhancementFraction };
   }
-  app.materialCart = Object.freeze({ storageKey, scope, key, create, summarize, catalog, budget, allocate, pendingPurchases });
+  app.materialCart = Object.freeze({ storageKey, scope, key, create, summarize, progress, catalog, budget, allocate, pendingPurchases, pendingPurchaseBreakdown });
 })(globalThis);
 
 
@@ -7812,6 +7996,33 @@ function getPriceTier(price, direction) {
       materialComponents: components.map(({ itemHrid, quantity, plan }) => ({ ...plan, itemHrid, quantity }))
     });
     return Object.freeze({
+      // Host-only inventory preparation readout. Reuse the upstream Markov
+      // simulation at its supported starting level; never value owned gear at
+      // zero in the market profitability calculation below.
+      continuation: (hrid, level, startLevel, selectedProtectAt = null) => {
+        if (!Number.isInteger(startLevel) || startLevel < 0 || startLevel >= level || level > 20) return null;
+        const context = mooncakeBuildEnhancementCostContext(hrid, market, {
+          resolveMaterialPrice: mooncakeResolveGenericMaterialPrice,
+          resolveProtectionPrice: protectHrid => hostProtectionPrice(hrid, protectHrid, market),
+          resolveBaseItemPrice: () => ({ price: 1, source: "craft" })
+        });
+        if (!context) return null;
+        let best = null;
+        for (let protectAt = level === 1 ? 1 : 2; protectAt <= level; protectAt++) {
+          if (selectedProtectAt != null && protectAt !== selectedProtectAt) continue;
+          const sim = Enhancelate(hrid, level, protectAt, null, startLevel);
+          if (!(sim.actions > 0) || !Number.isFinite(sim.actions) || !Number.isFinite(sim.protectCount) ||
+              sim.protectCount > 1e-9 && !(context.minProtectCost > 0)) continue;
+          const cost = context.perActionCost * sim.actions + context.minProtectCost * sim.protectCount;
+          if (!best || cost < best.remainingCost) best = {
+            routeType: "traditional", startLevel, protectAt, baseItemSource: "craft",
+            protectionItemHrid: sim.protectCount > 1e-9 ? context.protectionItemHrid : null,
+            expectedActions: sim.actions, expectedProtects: sim.protectCount,
+            totalTimeHours: context.secondsPerAction * sim.actions / 3600, remainingCost: cost
+          };
+        }
+        return best;
+      },
       calculate: (hrid, level, price) => calcHourlyWageAndMetrics(hrid, level, market, price),
       // Host-only preparation readout. The upstream entry requires a positive
       // price, but 'profit' selects minimum total cost independently of it.
@@ -7978,6 +8189,7 @@ function getPriceTier(price, direction) {
         baseComparison.hourlyWageDifference = diff(alternative.hourlyWage, simulated.hourlyWage);
       }
       return { baseline: clone(baseline), simulated, changed, materialPrices,
+        continuation: (startLevel, protectAt) => calculator.continuation(target.itemHrid, target.enhancementLevel, startLevel, protectAt),
         baseComparison,
         calculateAt: atPrice => positive(atPrice) ? calculate(calculator, atPrice) : { reason: t("暂无有效售价") },
         routeChanged: baseline.metrics && simulated.metrics ? routeKey(baseline.metrics) !== routeKey(simulated.metrics) : null, delta: {
@@ -8031,7 +8243,8 @@ function getPriceTier(price, direction) {
     const extra = actionHrid && actions ? actions[actionHrid] ?? 0 : 0;
     return Number.isFinite(bonus) && Number.isFinite(extra) && 1 + bonus + extra >= 0 ? 1 + bonus + extra : null;
   }
-  function rewardPerAction(itemLevel, target, protect, params, rates) {
+  function rewardPerAction(itemLevel, target, protect, params, rates, startLevel = 0) {
+    if (!Number.isInteger(startLevel) || startLevel < 0 || startLevel >= target) return null;
     if (!valid(itemLevel) || !Number.isInteger(target) || target < 1 || target > 20 || !Number.isInteger(protect) || protect < 1 || protect > target || !params || !Array.isArray(rates)) return null;
     const concentration = 1 + (params.drink_concentration_bonus || 0) / 100;
     const level = params.enhancing_level + concentration * ((params.tea_enhancing ? 3 : 0) + (params.tea_super_enhancing ? 6 : 0) + (params.tea_ultra_enhancing ? 8 : 0));
@@ -8039,7 +8252,7 @@ function getPriceTier(price, direction) {
     const successMultiplier = (level >= itemLevel ? 1 + 0.0005 * (level - itemLevel) : 1 - 0.5 * (1 - level / itemLevel)) + bonus / 100;
     const blessed = params.tea_blessed ? 0.01 * concentration : 0;
     if (!valid(successMultiplier) || !valid(blessed) || blessed > 1) return null;
-    const key = JSON.stringify([itemLevel, target, protect, successMultiplier, blessed, rates.slice(0, target)]);
+    const key = JSON.stringify([itemLevel, target, protect, successMultiplier, blessed, rates.slice(0, target), startLevel]);
     if (cache.has(key)) return cache.get(key);
     const matrix = Array.from({length:target}, (_, i) => Array.from({length:target}, (_, j) => i === j ? 1 : 0));
     const rewards = [];
@@ -8052,7 +8265,7 @@ function getPriceTier(price, direction) {
       rewards.push(1.4 * (i + 1) * (10 + itemLevel) * (success + 0.1 * (1 - success)));
     }
     try {
-      const visits = app.wageMath.inv(matrix)[0];
+      const visits = app.wageMath.inv(matrix)[startLevel];
       const attempts = visits.reduce((sum, n) => sum + n, 0);
       const value = visits.reduce((sum, n, i) => sum + n * rewards[i], 0) / attempts;
       if (!valid(value)) return null;
@@ -8065,7 +8278,7 @@ function getPriceTier(price, direction) {
     if (route.expectedActions === 0 && !route.mirrorCount) return 0;
     const multiplier = wisdom(character, "/action_types/enhancing", "/actions/enhancing/enhance");
     if (multiplier == null) return null;
-    const parts = route.routeType === "philosophersMirror" ? route.materialComponents : [{...route, itemHrid:item.itemHrid, quantity:1}];
+    const parts = route.preparationParts || (route.routeType === "philosophersMirror" ? route.materialComponents : [{...route, itemHrid:item.itemHrid, quantity:1}]);
     if (!Array.isArray(parts) || !parts.length) return null;
     let xp = 0;
     for (const [index, part] of parts.entries()) {
@@ -8073,7 +8286,7 @@ function getPriceTier(price, direction) {
       if (part.expectedActions === 0) continue;
       const hrid = part.routeType === "refinementCarryover" ? recipe(part.itemHrid)?.upgradeItemHrid : part.itemHrid;
       const target = part.refinementAtLevel ?? (route.routeType === "philosophersMirror" ? route.componentDetails?.[index]?.level : item.enhancementLevel);
-      const perAction = rewardPerAction(rules.itemDetailMap?.[hrid]?.itemLevel, target, part.protectAt, params, rules.enhancementLevelSuccessRateTable);
+      const perAction = rewardPerAction(rules.itemDetailMap?.[hrid]?.itemLevel, target, part.protectAt, params, rules.enhancementLevelSuccessRateTable, part.startLevel || 0);
       if (perAction == null) return null;
       // Exact-level components retry overshoots. Their route action count already
       // includes retries; the per-cycle state distribution remains unchanged.
@@ -8118,8 +8331,8 @@ function getPriceTier(price, direction) {
         gains.set(skill, gains.has(skill) && gains.get(skill) == null || xp == null ? null : before + xp);
       };
       for (const demand of materials?.craftingDemands || []) {
-        const units = valid(demand.base) && valid(demand.protects) && valid(materials.multiplier) ? Math.ceil(demand.base) + Math.ceil(demand.protects * materials.multiplier) : null;
-        add(demand.itemHrid, units, true);
+        const units = valid(demand.base) && valid(demand.protects) && valid(materials.protectionMultiplier ?? materials.multiplier) ? Math.ceil(demand.base) + Math.ceil(demand.protects * (materials.protectionMultiplier ?? materials.multiplier)) : null;
+        add(demand.itemHrid, materials.inventoryAllocated ? demand.required : units, !materials.inventoryAllocated);
       }
       const parts = route?.routeType === "philosophersMirror" ? route.materialComponents : route ? [{...route,itemHrid:item.itemHrid,quantity:1}] : [];
       for (const part of parts || []) if (part.routeType === "refinementCarryover") add(part.itemHrid, part.quantity * quantity, false);
@@ -8148,7 +8361,7 @@ function getPriceTier(price, direction) {
     virtual: clone(reference.defaults.virtual),
     features: { marketHourlyWage: true, enhancingCommunityBuff: false, manufacturingArtisanTea: true, autoFavoriteListings: true },
     preferences: {
-      enhancementRouteObjective: "hourly", enhancementStandardHourlyM: 15, enhancementMaterialMultiplier: 1.2,
+      enhancementRouteObjective: "hourly", enhancementStandardHourlyM: 15, enhancementMaterialMultiplier: 1.2, protectionMaterialMultiplier: 1.2,
       baseItemCostPricePolicy: { material: ["ask", "bid"], product: "ask" }, baseItemSources: {},
       hourlyWageColorProfile: clone(reference.defaults.colors)
     }
@@ -8178,6 +8391,10 @@ function getPriceTier(price, direction) {
     if (prefs.enhancementStandardHourlyM !== "" && Number.isFinite(Number(prefs.enhancementStandardHourlyM)) && Number(prefs.enhancementStandardHourlyM) >= 0 && Number(prefs.enhancementStandardHourlyM) <= 1e6) result.preferences.enhancementStandardHourlyM = Number(prefs.enhancementStandardHourlyM);
     if (typeof prefs.enhancementMaterialMultiplier === "number" && Number.isFinite(prefs.enhancementMaterialMultiplier) &&
         prefs.enhancementMaterialMultiplier >= 0 && prefs.enhancementMaterialMultiplier <= 100) result.preferences.enhancementMaterialMultiplier = prefs.enhancementMaterialMultiplier;
+    // Older settings used one multiplier for both roles; migrate without changing quantities.
+    result.preferences.protectionMaterialMultiplier = result.preferences.enhancementMaterialMultiplier;
+    if (typeof prefs.protectionMaterialMultiplier === "number" && Number.isFinite(prefs.protectionMaterialMultiplier) &&
+        prefs.protectionMaterialMultiplier >= 0 && prefs.protectionMaterialMultiplier <= 100) result.preferences.protectionMaterialMultiplier = prefs.protectionMaterialMultiplier;
     result.preferences.baseItemCostPricePolicy = reference.normalizePolicy(prefs.baseItemCostPricePolicy);
     for (const [scope, entries] of Object.entries(prefs.baseItemSources || {})) {
       if (!/^(virtual|[1-9][0-9]*)$/.test(scope) || !entries || typeof entries !== "object" || Array.isArray(entries)) continue;
@@ -8256,9 +8473,9 @@ function getPriceTier(price, direction) {
     let experienceRevision = 0;
     let pending = null;
     let destroyed = false;
-    const results = new Map(), engines = new Map();
+    const results = new Map(), engines = new Map(), stockChoices = new Map(), continuationResults = new Map();
     let engineMarketData = null;
-    function invalidate() { engine = null; engines.clear(); results.clear(); calculationRevision += 1; revision += 1; onChange(); }
+    function invalidate() { engine = null; engines.clear(); results.clear(); continuationResults.clear(); calculationRevision += 1; revision += 1; onChange(); }
     function save(value) {
       const next = normalize(value);
       storage.setItem(storageKey, JSON.stringify(next));
@@ -8365,7 +8582,7 @@ function getPriceTier(price, direction) {
       const priceRevision = prices.state().revision;
       if (!engineMarketData || key !== engineKey || priceRevision !== enginePriceRevision) {
         const market = prices.calculationData(), signature = JSON.stringify(market.marketData);
-        if (key !== engineKey || signature !== engineMarketSignature) { engines.clear(); results.clear(); }
+        if (key !== engineKey || signature !== engineMarketSignature) { engines.clear(); results.clear(); continuationResults.clear(); }
         engineMarketData = market; engineMarketSignature = signature; engineKey = key; enginePriceRevision = priceRevision;
       }
       if (!engines.has(acquisitionSource)) engines.set(acquisitionSource,
@@ -8407,30 +8624,39 @@ function getPriceTier(price, direction) {
       if (!["selected", "minCost"].includes(selection)) throw new RangeError(t("无效的准备路线"));
       if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000) throw new RangeError(t("无效的计划数量"));
       const result = preparationResult(item, calculate(item, prices.quote(item)));
-      const route = result?.preparationBasis === "minCostWithoutSale" ? result.metrics
+      let route = result?.preparationBasis === "minCostWithoutSale" ? result.metrics
         : selection === "minCost" ? result?.routePair?.highestProfit : result?.metrics;
+      const actualPlan = materials(item, route ? { ...result, metrics: route } : result, quantity);
+      route = actualPlan.preparationRoute?.preparationParts?.[0] || route;
       const artisan = manufacturingReduction();
       const rawRecipe = craftingRecipe(item.itemHrid);
       const recipe = rawRecipe && { ...rawRecipe, inputs: rawRecipe.inputs.map(input => ({ ...input,
         count: Number.isFinite(input.count) && input.count >= 0 && (input.isFixedUpgradeItem || artisan.multiplier != null)
           ? input.count * (input.isFixedUpgradeItem ? 1 : artisan.multiplier) : null
       })) };
-      const unsupported = Boolean(item.enhancementLevel > 0 && route && route.routeType !== "traditional");
+      const inventoryNotReady = actualPlan.inventoryAllocated && !actualPlan.enhancementReady;
+      const unsupported = inventoryNotReady || Boolean(item.enhancementLevel > 0 && route && route.routeType !== "traditional");
       let productionQuantity = null;
       let productionNotice = t("生产需求或成品库存未知，请待数据就绪后重试。");
-      if (unsupported) productionNotice = t("所选路线包含镜子或精炼步骤，请按路线明细手动设置各步骤的生产数量。");
+      if (inventoryNotReady) productionNotice = actualPlan.enhancementReason;
+      else if (unsupported) productionNotice = t("所选路线包含镜子或精炼步骤，请按路线明细手动设置各步骤的生产数量。");
+      else if (actualPlan.inventoryAllocated && actualPlan.craftingDemands.every(demand => demand.required === 0)) {
+        productionQuantity = 0;
+        productionNotice = t("现有装备库存已满足当前计划，无需继续生产。");
+      }
       else if (recipe?.outputCount > 0 && Number.isFinite(recipe.outputCount) && (item.enhancementLevel === 0 || route)) {
         // Clicking manufacture explicitly requests this product, even when its
         // acquisition source is market. Reuse the selected route's batch rounding.
-        const plan = materials(item, route ? { ...result, metrics: { ...route, baseItemSource: "craft" } } : result, quantity);
+        const plan = baseItemSource(item) === "craft" ? actualPlan
+          : materials(item, route ? { ...result, metrics: { ...route, baseItemSource: "craft" } } : result, quantity);
         const demand = plan.craftingDemands.find(entry => entry.itemHrid === item.itemHrid);
         const stock = inventoryCount(item.itemHrid, 0);
         if (plan.enhancementReady && demand && Number.isFinite(stock) && stock >= 0) {
-          const required = Math.ceil(demand.base) + Math.ceil(demand.protects * plan.multiplier);
-          const count = Math.ceil(Math.max(0, required - Math.floor(stock)) / recipe.outputCount);
+          const required = Math.ceil(demand.base) + Math.ceil(demand.protects * plan.protectionMultiplier);
+          const count = Math.ceil((plan.inventoryAllocated ? demand.required : Math.max(0, required - Math.floor(stock))) / recipe.outputCount);
           if (Number.isSafeInteger(count) && count >= 0 && count <= 1e10) {
             productionQuantity = count;
-            productionNotice = count === 0 ? t("同名 +0 成品库存已满足当前计划，无需继续生产。") : "";
+            productionNotice = count === 0 ? t("现有装备库存已满足当前计划，无需继续生产。") : "";
           }
         }
       }
@@ -8438,7 +8664,8 @@ function getPriceTier(price, direction) {
         routeType: route?.routeType || null, protectAt: Number.isInteger(route?.protectAt) ? route.protectAt : null,
         protectionItemHrid: route?.protectionItemHrid || null, artisan };
       return { recipe, info, unsupported, productionQuantity, productionNotice,
-        notice: unsupported ? t("所选路线包含镜子或精炼步骤，无法预填为一次普通强化。请按路线明细手动准备各步骤。") : "",
+        ...(actualPlan.stockAllocation?.used.length ? { startLevel: actualPlan.stockAllocation.used[0].enhancementLevel } : {}),
+        notice: inventoryNotReady ? actualPlan.enhancementReason : unsupported ? t("所选路线包含镜子或精炼步骤，无法预填为一次普通强化。请按路线明细手动准备各步骤。") : "",
         protection: !unsupported && route && Number.isInteger(route.protectAt) ? {
           level: route.protectAt, itemHrid: route.protectionItemHrid, needed: route.expectedProtects > 0
         } : null };
@@ -8448,6 +8675,37 @@ function getPriceTier(price, direction) {
       const owned = character.inventoryItems.filter((item) => item.itemHrid === itemHrid && item.enhancementLevel === enhancementLevel);
       if (owned.some((item) => !Number.isFinite(item.count) || item.count < 0)) return null;
       return owned.reduce((sum, item) => sum + item.count, 0);
+    }
+    function inventoryLevels(item) {
+      return Array.from({ length: 21 }, (_, enhancementLevel) => ({ enhancementLevel,
+        count: inventoryCount(item.itemHrid, enhancementLevel) }));
+    }
+    const stockChoiceKey = item => `${sourceScope()}:${quantityKey(item)}`;
+    function setStockLevel(item, level) {
+      if (baseItemSource(item) !== "craft" || !Number.isInteger(level) || level < 0 || level >= item.enhancementLevel ||
+          !(inventoryCount(item.itemHrid, level) >= 1)) throw new RangeError(t("该等级没有可用库存底子"));
+      stockChoices.set(stockChoiceKey(item), level); revision += 1; onChange();
+    }
+    function stockAllocation(item, quantity, reserved = new Map()) {
+      const rows = inventoryLevels(item).filter(row => row.enhancementLevel < item.enhancementLevel);
+      if (rows.some(row => row.count == null)) return { known: false, used: [], missing: quantity };
+      rows.sort((a, b) => b.enhancementLevel - a.enhancementLevel);
+      const selected = stockChoices.get(stockChoiceKey(item));
+      const preferred = rows.findIndex(row => row.enhancementLevel === selected && row.count >= 1);
+      if (preferred > 0) rows.unshift(rows.splice(preferred, 1)[0]);
+      const used = []; let missing = quantity;
+      for (const row of rows) {
+        const key = `${item.itemHrid}:${row.enhancementLevel}`;
+        const count = Math.min(missing, Math.max(0, Math.floor(row.count) - (reserved.get(key) || 0)));
+        if (count) { used.push({ itemHrid: item.itemHrid, enhancementLevel: row.enhancementLevel, count }); missing -= count; }
+      }
+      return { known: true, used, missing };
+    }
+    function continuation(item, level, protectAt) {
+      ensureEngine(item);
+      const key = `${baseItemSource(item)}:${item.itemHrid}:${item.enhancementLevel}:${level}:${protectAt}`;
+      if (!continuationResults.has(key)) continuationResults.set(key, engine.continuation(item.itemHrid, item.enhancementLevel, level, protectAt));
+      return continuationResults.get(key);
     }
     function manufacturingReduction() {
       if (!settings.features.manufacturingArtisanTea) return { multiplier: 1, concentration: 0, enabled: false };
@@ -8465,25 +8723,52 @@ function getPriceTier(price, direction) {
       return { multiplier: parameters.artisanMaterialMultiplier(), concentration: parameters.drinkConcentrationBonus(),
         enabled: true, virtual: settings.virtual.enabled };
     }
-    function materials(item, result, planQuantity = targetQuantity(item)) {
+    function materials(item, result, planQuantity = targetQuantity(item), reserved = new Map(), continuationFor = null) {
       result = preparationResult(item, result);
       const quantity = Number.isSafeInteger(planQuantity) && planQuantity >= 1 && planQuantity <= 1000000 ? planQuantity : targetQuantity(item);
       const multiplier = settings.preferences.enhancementMaterialMultiplier;
+      const protectionMultiplier = settings.preferences.protectionMaterialMultiplier;
       const inputs = new Map(), manufacture = new Map();
       const artisan = manufacturingReduction(), route = result?.metrics;
+      const useInventory = item.enhancementLevel > 0 && baseItemSource(item) === "craft";
+      const allocation = useInventory ? stockAllocation(item, quantity, reserved) : null;
+      const reservedStock = [];
+      const reserve = entry => {
+        const key = `${entry.itemHrid}:${entry.enhancementLevel}`;
+        reserved.set(key, (reserved.get(key) || 0) + entry.count); reservedStock.push(entry);
+      };
+      for (const entry of allocation?.used || []) reserve(entry);
+      let preparationRoute = null;
+      if (allocation?.used.length && rules?.itemDetailMap && (settings.virtual.enabled || ready())) {
+        const protectAt = route?.routeType === "traditional" ? route.protectAt : null;
+        const parts = [...allocation.used.map(entry => ({ ...entry, fromInventory: true })),
+          ...(allocation.missing ? [{ itemHrid: item.itemHrid, enhancementLevel: 0, count: allocation.missing, fromInventory: false }] : [])]
+          .map(entry => ({ ...(continuationFor ? continuationFor(entry.enhancementLevel, protectAt) : continuation(item, entry.enhancementLevel, protectAt)), ...entry, quantity: entry.count / quantity }));
+        if (parts.every(part => Number.isFinite(part.expectedActions))) preparationRoute = {
+          ...parts[0], routeType: "traditional", preparationParts: parts,
+          expectedActions: parts.reduce((sum, part) => sum + part.expectedActions * part.quantity, 0),
+          expectedProtects: parts.reduce((sum, part) => sum + part.expectedProtects * part.quantity, 0),
+          totalTimeHours: parts.reduce((sum, part) => sum + part.totalTimeHours * part.quantity, 0)
+        };
+      }
       const recipe = rules?.itemDetailMap ? craftingRecipe(item.itemHrid) : null;
       let enhancementReady = item.enhancementLevel === 0 || Boolean(route), reason = "", batches = 0;
+      if (allocation?.used.length) enhancementReady = Boolean(preparationRoute);
+      if (allocation && !allocation.known) { enhancementReady = false; reason = t("装备库存未知，暂不抵扣制造用量"); }
       const ensure = (hrid, level = 0) => {
         const key = `${hrid}:${level}`;
         if (!inputs.has(key)) inputs.set(key, { itemHrid: hrid, enhancementLevel: level,
-          name: rules?.itemDetailMap?.[hrid]?.name || hrid.split("/").pop(), count: 0, expectedEnhancement: 0,
+          name: rules?.itemDetailMap?.[hrid]?.name || hrid.split("/").pop(), count: 0, expectedEnhancement: 0, expectedProtection: 0,
           inventoryCount: inventoryCount(hrid, level),
           pendingPurchaseCount: app.materialCart.pendingPurchases(character?.purchaseListings, { itemHrid: hrid, enhancementLevel: level }) });
         return inputs.get(key);
       };
-      const addExpected = (hrid, count, level = 0) => {
+      const addExpected = (hrid, count, level = 0, protection = false) => {
         if (!hrid || !Number.isFinite(count) || count < 0) { enhancementReady = false; return; }
-        if (count > 0) ensure(hrid, level).expectedEnhancement += count;
+        if (count > 0) {
+          const entry = ensure(hrid, level); entry.expectedEnhancement += count;
+          if (protection) entry.expectedProtection += count;
+        }
       };
       const addBase = (hrid, count, source, protects = 0) => {
         if (!hrid || !Number.isFinite(count) || count < 0 || !Number.isFinite(protects) || protects < 0) { enhancementReady = false; return; }
@@ -8493,7 +8778,7 @@ function getPriceTier(price, direction) {
           manufacture.set(hrid, demand);
         } else if (source === "market") {
           const entry = ensure(hrid); entry.purchasedBase = true; entry.count += count;
-          addExpected(hrid, protects / quantity);
+          addExpected(hrid, protects / quantity, 0, true);
         } else enhancementReady = false;
       };
       const addRecipe = (hrid, units, refinementOnly = false) => {
@@ -8511,7 +8796,16 @@ function getPriceTier(price, direction) {
             ? entry.count + input.count * count * reduction : null;
         }
       };
-      if (route && item.enhancementLevel > 0) {
+      if (preparationRoute) {
+        for (const part of preparationRoute.preparationParts) {
+          const sameProtection = part.protectionItemHrid === item.itemHrid;
+          addBase(item.itemHrid, part.fromInventory ? 0 : part.count, "craft", sameProtection ? part.expectedProtects * part.count : 0);
+          const costs = rules?.itemDetailMap?.[item.itemHrid]?.enhancementCosts;
+          if (!Array.isArray(costs)) enhancementReady = false;
+          for (const cost of costs || []) addExpected(cost.itemHrid, cost.count * part.expectedActions * part.quantity, cost.enhancementLevel ?? 0);
+          if (!sameProtection && part.expectedProtects > 0) addExpected(part.protectionItemHrid, part.expectedProtects * part.quantity, 0, true);
+        }
+      } else if (route && item.enhancementLevel > 0) {
         const parts = route.routeType === "philosophersMirror" ? route.materialComponents : [{ ...route, itemHrid: item.itemHrid, quantity: 1 }];
         if (!Array.isArray(parts) || !parts.length) enhancementReady = false;
         for (const part of parts || []) {
@@ -8532,7 +8826,7 @@ function getPriceTier(price, direction) {
             for (const cost of costs || []) addExpected(cost.itemHrid, cost.count * part.expectedActions * part.quantity, cost.enhancementLevel ?? 0);
           }
           if (!Number.isFinite(part.expectedProtects) || part.expectedProtects < 0) enhancementReady = false;
-          else if (!sameProtection && part.expectedProtects > 0) addExpected(part.protectionItemHrid, part.expectedProtects * part.quantity);
+          else if (!sameProtection && part.expectedProtects > 0) addExpected(part.protectionItemHrid, part.expectedProtects * part.quantity, 0, true);
         }
         if (route.mirrorCount > 0) addExpected("/items/philosophers_mirror", route.mirrorCount);
       } else {
@@ -8547,20 +8841,38 @@ function getPriceTier(price, direction) {
       }
       const directInputs = [...inputs.values()].map(entry => ({ ...entry }));
       const craftingDemands = [...manufacture].map(([itemHrid, demand]) => ({ itemHrid, ...demand }));
+      // Inventory reservations are shared across cart projects. Only actual
+      // inventory qualifies; market orders and unclaimed purchases never do.
+      if (useInventory) for (const demand of craftingDemands) {
+        const count = inventoryCount(demand.itemHrid, 0), key = `${demand.itemHrid}:0`;
+        const required = Math.ceil(demand.base) + Math.ceil(demand.protects * protectionMultiplier);
+        if (count == null) { reason = t("装备库存未知，暂不抵扣制造用量"); enhancementReady = false; continue; }
+        const used = Math.min(required, Math.max(0, Math.floor(count) - (reserved.get(key) || 0)));
+        if (used) reserve({ itemHrid: demand.itemHrid, enhancementLevel: 0, count: used });
+        demand.required = required - used;
+      }
       for (const [hrid, demand] of manufacture) {
         // Round protection equipment before expanding its recipe. Applying the
         // safety multiplier to each ingredient would produce incomplete batches.
-        addRecipe(hrid, Math.ceil(demand.base) + Math.ceil(demand.protects * multiplier));
+        const adjusted = craftingDemands.find(entry => entry.itemHrid === hrid);
+        const units = adjusted.required ?? Math.ceil(demand.base) + Math.ceil(demand.protects * protectionMultiplier);
+        if (units > 0) addRecipe(hrid, units);
       }
       for (const entry of inputs.values()) {
-        entry.enhancementCount = enhancementReady ? Math.ceil(entry.expectedEnhancement * quantity * multiplier) : null;
+        entry.enhancementCount = enhancementReady ? Math.ceil(((entry.expectedEnhancement - entry.expectedProtection) * multiplier + entry.expectedProtection * protectionMultiplier) * quantity) : null;
         entry.totalCount = entry.count != null && entry.enhancementCount != null ? entry.count + entry.enhancementCount : null;
       }
-      return { inputs: [...inputs.values()], directInputs, craftingDemands, outputCount: recipe?.outputCount, targetQuantity: quantity, batches: reason ? null : batches, multiplier, artisan,
+      return { inputs: [...inputs.values()], directInputs, craftingDemands, reservedStock, inventoryAllocated: useInventory,
+        stockAllocation: allocation, preparationRoute, outputCount: recipe?.outputCount, targetQuantity: quantity, batches: reason ? null : batches, multiplier, protectionMultiplier, artisan,
         enhancementReady, preparationBasis: result?.preparationBasis || null,
         enhancementReason: !enhancementReady ? result?.reason || reason || t("强化方案未就绪") : "",
-        mirrorRoute: route?.routeType === "philosophersMirror",
+        mirrorRoute: !preparationRoute && route?.routeType === "philosophersMirror",
         reason: !rules?.itemDetailMap ? t("材料数据尚未就绪，请重新读取角色或刷新游戏。") : reason };
+    }
+    function isListItemVisible(item) {
+      // Hide base equipment only in item lists; material and inventory calculations
+      // still need the original +0 item. Unknown categories stay visible.
+      return item.enhancementLevel !== 0 || app.marketFavoritesStore.category(item, rules?.itemDetailMap) !== "equipment";
     }
     function materialInfo(item) {
       const detail = rules?.itemDetailMap?.[item.itemHrid];
@@ -8568,11 +8880,12 @@ function getPriceTier(price, direction) {
         sortIndex: Number.isFinite(detail?.sortIndex) ? detail.sortIndex : null,
         vendorPrice: Number.isFinite(detail?.sellPrice) && detail.sellPrice >= 0 ? detail.sellPrice : null,
         inventoryCount: inventoryCount(item.itemHrid, item.enhancementLevel || 0),
-        pendingPurchaseCount: app.materialCart.pendingPurchases(character?.purchaseListings, item) };
+        pendingPurchaseCount: app.materialCart.pendingPurchases(character?.purchaseListings, item),
+        pendingPurchases: app.materialCart.pendingPurchaseBreakdown(character?.purchaseListings, item) };
     }
     function experiencePlan(item, result, quantity, projected = materials(item, result, quantity)) {
       if (rules?.itemDetailMap && (settings.virtual.enabled || ready())) ensureEngine(item);
-      const route = result?.metrics;
+      const route = projected.preparationRoute || result?.metrics;
       const showManufacturing = baseItemSource(item) === "craft" || route?.baseItemSource === "craft" ||
         route?.materialComponents?.some(part => part.baseItemSource === "craft");
       return app.experiencePlan.estimate({ item, route, quantity, rules, character, params: engine?.params(), materials: projected,
@@ -8581,7 +8894,7 @@ function getPriceTier(price, direction) {
     return Object.freeze({ parameters() {
       if (!rules?.itemDetailMap || (!settings.virtual.enabled && !ready())) return null;
       ensureEngine(); return { ...engine.params() };
-    }, presetCatalog: () => app.partitionPresets.catalog(rules), save, calculate, baseItemSource, setBaseItemSource, createSimulation, materials, materialInfo, experiencePlan, targetQuantity, setTargetQuantity, preparation, refreshCharacter, status, settings: () => clone(settings),
+    }, presetCatalog: () => app.partitionPresets.catalog(rules), save, calculate, craftingRecipe, baseItemSource, setBaseItemSource, inventoryLevels, setStockLevel, createSimulation, materials, materialInfo, isListItemVisible, experiencePlan, targetQuantity, setTargetQuantity, preparation, refreshCharacter, status, settings: () => clone(settings),
       state: () => ({ revision, calculationRevision, inventoryRevision, experienceRevision, storageError, simulationOwner }), destroy() { destroyed = true; results.clear(); engines.clear(); } });
   }
   app.marketWages = Object.freeze({ create, normalize, collectMaterialReferences, defaults: () => clone(defaults), storageKey, numericVirtual });
@@ -8603,7 +8916,7 @@ function getPriceTier(price, direction) {
     get [`${prefix}material-quantities:v1`]() { return t("旧版目标数量"); },
     get [`${prefix}favorite-view:v1`]() { return t("旧版收藏视图"); },
     get [`${prefix}view-preferences:v1`]() { return t("界面排序、筛选与展开状态"); },
-    get [`${prefix}workspace:v1`]() { return t("工作台页面与备料抽屉"); }
+    get [`${prefix}workspace:v1`]() { return t("工作区页面与备料计划"); }
   });
   const limits = Object.freeze({ bytes: 2 * 1024 * 1024, entries: 128, items: 10000, groups: 200 });
   const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
@@ -8693,10 +9006,11 @@ function getPriceTier(price, direction) {
     }
     if (own(value, "preferences")) {
       const p = value.preferences;
-      shape(p, ["enhancementRouteObjective", "enhancementStandardHourlyM", "enhancementMaterialMultiplier", "baseItemCostPricePolicy", "baseItemSources", "hourlyWageColorProfile"]);
+      shape(p, ["enhancementRouteObjective", "enhancementStandardHourlyM", "enhancementMaterialMultiplier", "protectionMaterialMultiplier", "baseItemCostPricePolicy", "baseItemSources", "hourlyWageColorProfile"]);
       if (own(p, "enhancementRouteObjective")) check(["hourly", "profit", "standard"].includes(p.enhancementRouteObjective));
       if (own(p, "enhancementStandardHourlyM")) check(numeric(p.enhancementStandardHourlyM, 0, 1e6));
       if (own(p, "enhancementMaterialMultiplier")) check(numeric(p.enhancementMaterialMultiplier, 0, 100));
+      if (own(p, "protectionMaterialMultiplier")) check(numeric(p.protectionMaterialMultiplier, 0, 100));
       if (own(p, "baseItemCostPricePolicy")) {
         const policy = p.baseItemCostPricePolicy; const sources = ["ask", "askMinusOne", "bidPlusOne", "bid"];
         shape(policy, ["material", "product"], ["material", "product"]); array(policy.material, 4);
@@ -8742,9 +9056,10 @@ function getPriceTier(price, direction) {
     if (key === `${prefix}favorite-view:v1`) return view(value);
     if (key === `${prefix}view-preferences:v1`) { check(app.viewPreferences.valid(value)); return 1; }
     if (key === `${prefix}workspace:v1`) {
-      shape(value, ["workspaceTab", "managementTab", "drawerOpen", "drawerHeight", "partitionOrder", "salePriceSide"], ["workspaceTab", "managementTab", "drawerOpen"]);
-      check(["projects", "materials", "manage", "settings"].includes(value.workspaceTab) && ["presets", "partitions", "favorites"].includes(value.managementTab) && typeof value.drawerOpen === "boolean");
-      if (own(value, "salePriceSide")) check(["ask", "bid", "ask-minus", "bid-plus"].includes(value.salePriceSide));
+      shape(value, ["workspaceTab", "managementTab", "drawerOpen", "drawerHeight", "partitionOrder", "salePriceSide", "referenceFallbackSide"], ["workspaceTab", "managementTab", "drawerOpen"]);
+      check(["projects", "materials", "cart", "manage", "settings"].includes(value.workspaceTab) && ["presets", "partitions", "favorites"].includes(value.managementTab) && typeof value.drawerOpen === "boolean");
+      if (own(value, "salePriceSide")) check(["ask", "bid", "ask-minus", "bid-plus", "reference"].includes(value.salePriceSide));
+      if (own(value, "referenceFallbackSide")) check(["ask", "bid", "ask-minus", "bid-plus"].includes(value.referenceFallbackSide));
       if (own(value, "drawerHeight")) check(integer(value.drawerHeight, 180, 10000));
       if (own(value, "partitionOrder")) check(Array.isArray(value.partitionOrder) && value.partitionOrder.length <= limits.groups + 3 &&
         new Set(value.partitionOrder).size === value.partitionOrder.length && value.partitionOrder.every(id =>
@@ -8835,11 +9150,11 @@ function getPriceTier(price, direction) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
-  function create({ onEmptyFocus }) {
+  function create({ onEmptyFocus, floating = false }) {
     const document = root.document;
     const element = document.createElement("section");
-    element.className = "v3-notifications";
-    element.setAttribute("aria-label", t("操作提示"));
+    element.className = floating ? "v3-notifications v3-market-notifications" : "v3-notifications";
+    element.setAttribute("aria-label", floating ? t("市场跳转提示") : t("操作提示"));
     element.hidden = true;
     const observers = [];
     function createStatus({ onDismiss } = {}) {
@@ -9134,30 +9449,39 @@ function getPriceTier(price, direction) {
     field(basic, "features.manufacturingArtisanTea", t("制造时使用工匠茶"), { type: "checkbox" });
     field(basic, "preferences.enhancementRouteObjective", t("强化路线选择"), { choices: { hourly: t("最高工时费"), profit: t("最低成本"), standard: t("标准时薪") } });
     field(basic, "preferences.enhancementStandardHourlyM", t("标准时薪（M／小时）"), { max: 1e6, step: 0.001 });
-    const preparation = document.createElement("div");
-    preparation.className = "mwi-layu-preparation-inputs";
-    basic.append(preparation);
-    const multiplier = field(preparation, "preferences.enhancementMaterialMultiplier", t("强化备料倍率"), { min: 0, max: 100, step: 0.01 });
-    const probability = field(preparation, "preparationSuccessPercent", t("期望成功率（%）"), { min: 0, max: 99.99, step: "any" });
-    // Derived UI only: keep the existing multiplier as the sole persisted value.
-    controls.delete("preparationSuccessPercent");
-    probability.title = t("按 1 − e^(−备料倍率) 估算，保留两位小数；接近 100% 时显示 99.99%。");
-    function formatPreparationInput(input) {
-      if (input.checkValidity()) input.value = Number(input.value).toFixed(2);
+    const preparationSync = [];
+    function preparationPair(path, label, probabilityPath, probabilityLabel) {
+      const preparation = document.createElement("div");
+      preparation.className = "mwi-layu-preparation-inputs";
+      basic.append(preparation);
+      const multiplier = field(preparation, path, label, { min: 0, max: 100, step: 0.01 });
+      const probability = field(preparation, probabilityPath, probabilityLabel, { min: 0, max: 99.99, step: "any" });
+      // Derived UI only: keep the existing multiplier as the sole persisted value.
+      controls.delete(probabilityPath);
+      probability.title = t("按 1 − e^(−备料倍率) 估算，保留两位小数；接近 100% 时显示 99.99%。");
+      function formatPreparationInput(input) {
+        if (input.checkValidity()) input.value = Number(input.value).toFixed(2);
+      }
+      for (const input of [multiplier, probability]) input.addEventListener("blur", () => formatPreparationInput(input));
+      function syncProbability() {
+        if (!multiplier.checkValidity()) return;
+        probability.setCustomValidity("");
+        probability.value = Math.min(99.99, -Math.expm1(-Number(multiplier.value)) * 100).toFixed(2);
+      }
+      multiplier.addEventListener("input", syncProbability);
+      probability.addEventListener("input", () => {
+        probability.setCustomValidity("");
+        if (Number(probability.value) >= 100) probability.setCustomValidity(t("100% 需要无限备料倍率，请输入小于 100% 的成功率。"));
+        if (!probability.checkValidity()) return;
+        multiplier.value = (-Math.log1p(-Number(probability.value) / 100)).toFixed(2);
+      });
+      preparationSync.push(() => { formatPreparationInput(multiplier); syncProbability(); });
     }
-    for (const input of [multiplier, probability]) input.addEventListener("blur", () => formatPreparationInput(input));
-    function syncProbability() {
-      if (!multiplier.checkValidity()) return;
-      probability.setCustomValidity("");
-      probability.value = Math.min(99.99, -Math.expm1(-Number(multiplier.value)) * 100).toFixed(2);
-    }
-    multiplier.addEventListener("input", syncProbability);
-    probability.addEventListener("input", () => {
-      probability.setCustomValidity("");
-      if (Number(probability.value) >= 100) probability.setCustomValidity(t("100% 需要无限备料倍率，请输入小于 100% 的成功率。"));
-      if (!probability.checkValidity()) return;
-      multiplier.value = (-Math.log1p(-Number(probability.value) / 100)).toFixed(2);
-    });
+    preparationPair("preferences.enhancementMaterialMultiplier", t("强化备料倍率"), "preparationSuccessPercent", t("期望成功率（%）"));
+    preparationPair("preferences.protectionMaterialMultiplier", t("保护材料备料倍率"), "protectionSuccessPercent", t("保护材料覆盖率（%）"));
+    const preparationNote = document.createElement("p");
+    preparationNote.textContent = t("两类备料独立调整；覆盖率按同一近似公式估算，不代表两类材料同时够用的概率。倍率不改变期望成本与收益。");
+    basic.append(preparationNote);
     const pricing = group(t("底子取得成本"));
     for (let index = 0; index < 4; index += 1) field(pricing, `material.${index}`, t`材料第 ${index + 1} 顺位`, { choices: sourceLabels });
     field(pricing, "preferences.baseItemCostPricePolicy.product", t("成品 +0 报价"), { choices: Object.fromEntries(Object.entries(sourceLabels).filter(([key]) => key)) });
@@ -9228,8 +9552,7 @@ function getPriceTier(price, direction) {
         else stored = path.split(".").reduce((object, key) => object?.[key], value);
         if (input.type === "checkbox") input.checked = Boolean(stored); else input.value = String(stored ?? "");
       }
-      formatPreparationInput(multiplier);
-      syncProbability();
+      for (const sync of preparationSync) sync();
       app.itemUI?.refreshChoices(container);
     }
     populate(wages.settings());
@@ -9282,10 +9605,19 @@ function getPriceTier(price, direction) {
     while (index < units.length - 1 && Number((value / units[index][0]).toFixed(2)) >= 1000) index += 1;
     return (value / units[index][0]).toFixed(2).replace(/\.?0+$/, "") + units[index][1];
   }
-  function parsePrice(value) {
+  function parsePrice(value, { integer = false } = {}) {
     const match = /^((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)\s*([kmb])?$/i.exec(String(value).trim());
     if (!match) return NaN;
-    return Number(match[1].replaceAll(",", "")) * ({ k: 1e3, m: 1e6, b: 1e9 }[match[2]?.toLowerCase()] || 1);
+    const amount = match[1].replaceAll(",", ""), power = { k: 3, m: 6, b: 9 }[match[2]?.toLowerCase()] || 0;
+    if (integer) {
+      // Reference prices are exact whole coins: avoid binary rounding of e.g. 1.001k.
+      const [whole, fraction = ""] = amount.split(".");
+      const scaled = BigInt(whole + fraction) * 10n ** BigInt(power);
+      const divisor = 10n ** BigInt(fraction.length);
+      if (scaled % divisor !== 0n || scaled / divisor > BigInt(Number.MAX_SAFE_INTEGER)) return NaN;
+      return Number(scaled / divisor);
+    }
+    return Number(amount) * 10 ** power;
   }
   function create({ item, capture, readQuote, names = {}, onStatus }) {
     const document = root.document;
@@ -9823,9 +10155,10 @@ function getPriceTier(price, direction) {
     const actions = node("div", null, "v3-favorite-actions"), summary = node("p"), list = node("div", null, "mwi-layu-favorite-delete-list mwi-layu-group-scroll");
     list.tabIndex = 0; list.setAttribute("role", "region"); list.setAttribute("aria-label", t("收藏管理表格"));
     const status = createStatus ? createStatus() : node("p"); status.setAttribute("role", "status");
+    function visibleItems() { return store.list().filter(snapshot.wages.isListItemVisible); }
     function matching() {
       const query = filters.search.trim().toLocaleLowerCase();
-      return store.list().filter(item => (!query || `${snapshot.names[item.itemHrid] || item.name} ${item.itemHrid}`.toLocaleLowerCase().includes(query)) &&
+      return visibleItems().filter(item => (!query || `${snapshot.names[item.itemHrid] || item.name} ${item.itemHrid}`.toLocaleLowerCase().includes(query)) &&
         (!filters.category || snapshot.wages.materialInfo(item).category === filters.category) &&
         (!filters.group || partitions.groupsOf(item.itemHrid).includes(filters.group)) &&
         (filters.min === "" || item.enhancementLevel >= Number(filters.min)) &&
@@ -9846,7 +10179,7 @@ function getPriceTier(price, direction) {
     const deleteSelected = button(t("删除勾选收藏"), () => mutate(() => removeRows(matching().filter(item => selected.has(key(item))))));
     const deleteFiltered = button(t("删除筛选结果"), () => mutate(() => removeRows(matching())));
     const deleteFilteredPresets = button(t("仅删除筛选结果中的预设新增收藏"), () => mutate(() => removeRows(matching().filter(item => item.presetAdded === true))));
-    const deletePresets = button(t("一键删除所有预设新增收藏"), () => mutate(() => removeRows(store.list().filter(item => item.presetAdded === true))));
+    const deletePresets = button(t("一键删除所有预设新增收藏"), () => mutate(() => removeRows(visibleItems().filter(item => item.presetAdded === true))));
     const undo = button(t("撤销最近一次批量删除"), () => mutate(() => {
       const result = store.restoreMany(removed); removed = [];
       status.textContent = t`已恢复 ${result.restored} 条收藏及原参考价，保留 ${result.conflicts} 条后续新增或修改的记录。`;
@@ -9867,7 +10200,7 @@ function getPriceTier(price, direction) {
     function draw() {
       const rows = matching(), valid = new Set(rows.map(key));
       for (const id of selected) if (!valid.has(id)) selected.delete(id);
-      summary.textContent = t`共 ${store.list().length} 条收藏 · 筛选命中 ${rows.length} 条 · 已勾选 ${selected.size} 条`;
+      summary.textContent = t`共 ${visibleItems().length} 条收藏 · 筛选命中 ${rows.length} 条 · 已勾选 ${selected.size} 条`;
       if (filters.min !== "" && filters.max !== "" && Number(filters.min) > Number(filters.max)) summary.textContent += t(" · 最低等级高于最高等级，请调整条件");
       list.replaceChildren();
       const grid = node("table", null, "mwi-layu-group-table v3-favorite-table"), head = node("thead"), header = node("tr"), body = node("tbody");
@@ -9879,7 +10212,7 @@ function getPriceTier(price, direction) {
         input.dataset.focusKey = `favorite-select:${key(item)}`;
         input.onchange = () => {
           input.checked ? selected.add(key(item)) : selected.delete(key(item));
-          summary.textContent = t`共 ${store.list().length} 条收藏 · 筛选命中 ${rows.length} 条 · 已勾选 ${selected.size} 条`;
+          summary.textContent = t`共 ${visibleItems().length} 条收藏 · 筛选命中 ${rows.length} 条 · 已勾选 ${selected.size} 条`;
           deleteSelected.disabled = !selected.size; clear.disabled = !selected.size;
         };
         const groups = partitions.groups().filter(group => partitions.groupsOf(item.itemHrid).includes(group.id));
@@ -9889,7 +10222,7 @@ function getPriceTier(price, direction) {
         body.append(label);
       }
       if (!rows.length) list.append(node("p", t("没有匹配收藏，请调整条件或从预设添加。"), "mwi-layu-group-note"));
-      const presets = store.list().filter(item => item.presetAdded === true);
+      const presets = visibleItems().filter(item => item.presetAdded === true);
       presetSummary.textContent = t`查看一键清理范围：${presets.length} 条预设新增收藏`;
       presetList.replaceChildren(...presets.map(identity));
       selectAll.disabled = deleteFiltered.disabled = !rows.length;
@@ -9924,11 +10257,13 @@ function getPriceTier(price, direction) {
   const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:workspace:v1";
   const drawerHeight = Object.freeze({ min:180, max:10000, initial:380 });
-  const defaults = Object.freeze({ workspaceTab:"projects", managementTab:"presets", drawerOpen:false, drawerHeight:drawerHeight.initial, salePriceSide:"ask" });
+  const defaults = Object.freeze({ workspaceTab:"projects", managementTab:"presets", drawerOpen:false, drawerHeight:drawerHeight.initial, salePriceSide:"ask", referenceFallbackSide:"ask" });
   function normalize(value) {
-    return { partitionOrder:Array.isArray(value?.partitionOrder) ? [...new Set(value.partitionOrder.filter(id => typeof id === "string" && id !== "all"))] : [], workspaceTab:["projects", "materials", "manage", "settings", "loot"].includes(value?.workspaceTab) ? value.workspaceTab : defaults.workspaceTab,
+    return { partitionOrder:Array.isArray(value?.partitionOrder) ? [...new Set(value.partitionOrder.filter(id => typeof id === "string" && id !== "all"))] : [], workspaceTab:["projects", "materials", "cart", "manage", "settings", "loot"].includes(value?.workspaceTab) ? value.workspaceTab : defaults.workspaceTab,
       managementTab:["presets", "partitions", "favorites"].includes(value?.managementTab) ? value.managementTab : defaults.managementTab,
-      salePriceSide:["bid", "ask-minus", "bid-plus"].includes(value?.salePriceSide) ? value.salePriceSide : "ask",
+      salePriceSide:["bid", "ask-minus", "bid-plus", "reference"].includes(value?.salePriceSide) ? value.salePriceSide : "ask",
+      referenceFallbackSide:["bid", "ask-minus", "bid-plus"].includes(value?.salePriceSide) ? value.salePriceSide
+        : value?.salePriceSide === "reference" && ["bid", "ask-minus", "bid-plus"].includes(value?.referenceFallbackSide) ? value.referenceFallbackSide : "ask",
       drawerOpen:value?.drawerOpen === true,
       drawerHeight:Number.isFinite(value?.drawerHeight) ? Math.max(drawerHeight.min, Math.min(drawerHeight.max, Math.round(value.drawerHeight))) : defaults.drawerHeight };
   }
@@ -9995,6 +10330,7 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel p:empty,.mwi-layu-panel div[role=status]:empty {display:none;}
 .mwi-layu-panel summary {cursor:pointer;}
 .mwi-layu-panel .v3-notifications {flex:0 1 auto;min-height:0;max-height:25%;overflow:auto;border-bottom:1px solid var(--v3-line);}
+.mwi-layu-panel .v3-market-notifications {position:absolute;top:52px;right:12px;width:360px;max-width:calc(100% - 24px);z-index:9;background:var(--v3-surface);border:1px solid var(--v3-line);border-radius:6px;}
 .mwi-layu-panel .v3-notification {display:flex;align-items:flex-start;gap:12px;padding:6px 14px;color:#fbbf24;}
 .mwi-layu-panel .v3-notification + .v3-notification {border-top:1px solid var(--v3-line);}
 .mwi-layu-panel .v3-notification > :first-child {flex:1;min-width:0;overflow-wrap:anywhere;align-self:center;}
@@ -10006,7 +10342,7 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-header .mwi-layu-group-toolbar {padding:0;border:0;}
 .mwi-layu-panel .v3-health {padding:4px 14px;background:#111722;border-bottom:1px solid var(--v3-line);font-size:11px;color:var(--v3-muted);flex-shrink:0;}
 .mwi-layu-panel .v3-health[open] {max-height:140px;overflow:auto;}
-.mwi-layu-panel .mwi-layu-partitions {flex:1;min-height:0;position:relative;display:flex;flex-direction:column;padding-bottom:var(--v3-dock-height,44px);}
+.mwi-layu-panel .mwi-layu-partitions {flex:1;min-height:0;position:relative;display:flex;flex-direction:column;}
 .mwi-layu-panel .v3-tabs {display:flex;gap:6px;background:#141a24;padding:7px 12px;border-bottom:1px solid var(--v3-line);flex-shrink:0;}
 .mwi-layu-panel .mwi-layu-group-nav [data-partition-id] {touch-action:none;user-select:none;}
 .mwi-layu-panel .mwi-layu-group-nav .v3-partition-dragging {cursor:grabbing;outline:2px solid #38bdf8;opacity:.75;}
@@ -10055,15 +10391,45 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-compact-price {width:100%;font-variant-numeric:tabular-nums;text-align:right;}
 .mwi-layu-panel .mwi-layu-quote-source,.mwi-layu-panel .mwi-layu-order-state {display:block;font-size:10px;color:var(--v3-muted);}
 .mwi-layu-panel .mwi-layu-listing-comparison {display:block;font-size:11px;}
+.mwi-layu-panel .v3-own-market-cell {position:relative;}
+.mwi-layu-panel .v3-own-market-link {display:block;width:100%;padding:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;text-align:left;}
+.mwi-layu-panel .v3-own-market-link::after {content:"";position:absolute;inset:0;}
+.mwi-layu-panel .v3-own-market-link:hover::after {background:rgba(56,189,248,.06);}
+.mwi-layu-panel .v3-own-market-link:focus-visible {outline:none;}
+.mwi-layu-panel .v3-own-market-link:focus-visible::after {outline:2px solid #38bdf8;outline-offset:-2px;}
 .mwi-layu-panel .mwi-layu-order-behind,.mwi-layu-panel .mwi-layu-shortage {color:#f87171;}
 .mwi-layu-panel .mwi-layu-profit,.mwi-layu-panel .mwi-layu-order-leading {color:#34d399;}
 .mwi-layu-panel .mwi-layu-project-detail-row > td {padding:10px 12px 14px;background:#121824;}
 .mwi-layu-panel .mwi-layu-group-level {width:calc(100cqw - 24px);max-width:100%;display:grid;position:relative;grid-template-columns:minmax(0,var(--workbench-left,60fr)) minmax(0,var(--workbench-right,40fr));gap:12px;background:#131a26;border:1px solid #26334a;border-radius:6px;padding:12px;}
 .mwi-layu-panel .v3-workbench-materials,.mwi-layu-panel .v3-workbench-market {min-width:0;background:#182130;padding:10px;border:1px solid #26334a;border-radius:5px;}
-.mwi-layu-panel .v3-workbench-splitter {position:absolute;left:calc(12px + (100% - 36px) * var(--workbench-ratio,.6));top:12px;bottom:12px;width:12px;min-height:0;padding:0;border:0;border-radius:2px;background:transparent;cursor:col-resize;touch-action:none;z-index:1;}
-.mwi-layu-panel .v3-workbench-splitter::before {content:"";position:absolute;left:5px;top:0;bottom:0;width:2px;border-radius:2px;background:#3e536b;}
+.mwi-layu-panel .mwi-layu-group-level {column-gap:32px;}
+.mwi-layu-panel .v3-workbench-rail {position:absolute;left:calc(12px + var(--workbench-offset,0px));top:12px;bottom:12px;width:32px;z-index:2;}
+.mwi-layu-panel .v3-workbench-splitter {position:absolute;inset:0;width:32px;height:100%;min-height:0;padding:0;border:0;background:transparent;cursor:col-resize;touch-action:none;}
+.mwi-layu-panel .v3-workbench-splitter::before {content:"";position:absolute;left:15px;top:0;bottom:0;width:1px;background:#304156;}
+.mwi-layu-panel .v3-workbench-splitter::after {content:"";position:absolute;left:14px;top:50%;width:4px;height:24px;border-radius:2px;background:#526277;transform:translateY(-50%);}
+.mwi-layu-panel .v3-workbench-locks {position:absolute;top:50%;left:0;width:32px;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;}
+.mwi-layu-panel .v3-workbench-locks button {pointer-events:auto;width:28px;height:30px;padding:6px;display:grid;place-items:center;background:#131a26;border:0;color:#9aabbd;opacity:0;transform:translateY(4px);transition:opacity 120ms ease,transform 120ms ease;}
+.mwi-layu-panel .v3-workbench-locks button[aria-pressed="true"] {background:#131a26;color:#c5d3e1;box-shadow:none;}
+.mwi-layu-panel .v3-workbench-locks button[aria-pressed="true"]::after {content:"";position:absolute;left:1px;top:14px;width:3px;height:3px;border-radius:50%;background:#9aafc2;}
+.mwi-layu-panel .v3-workbench-locks button:hover {background:#1c2b3e;color:#d9e6f3;}
+.mwi-layu-panel .v3-workbench-locks svg {width:16px;height:16px;}
+.mwi-layu-panel .v3-workbench-rail:hover .v3-workbench-locks button,.mwi-layu-panel .v3-workbench-rail:focus-within .v3-workbench-locks button {opacity:1;transform:none;}
+.mwi-layu-panel .v3-workbench-rail:hover .v3-workbench-splitter::after,.mwi-layu-panel .v3-workbench-rail:focus-within .v3-workbench-splitter::after {opacity:0;}
+.mwi-layu-panel .v3-workbench-help {position:absolute;top:calc(50% + 42px);left:50%;transform:translateX(-50%);width:220px;max-width:60cqw;padding:7px 9px;border:1px solid #43556d;border-radius:4px;background:#202c3d;color:#dbe6f2;font-size:11px;line-height:1.5;pointer-events:none;z-index:3;}
+.mwi-layu-panel [data-workbench-collapsed="left"] .v3-workbench-help {left:0;transform:none;}
+.mwi-layu-panel [data-workbench-collapsed="right"] .v3-workbench-help {left:auto;right:0;transform:none;}
+.mwi-layu-panel .v3-workbench-rail:has([data-dragging]) .v3-workbench-help {display:none;}
+@media (prefers-reduced-motion:reduce) {.mwi-layu-panel .v3-workbench-locks button {transition:none;}}
+@media (hover:none) {.mwi-layu-panel .v3-workbench-locks button {opacity:1;transform:none;min-height:44px;} .mwi-layu-panel .v3-workbench-splitter::after {display:none;}}
+.mwi-layu-panel .v3-workbench-detent {position:absolute;top:45%;left:50%;transform:translateX(-50%);padding:4px 8px;white-space:nowrap;background:#544322;color:#ffe3a1;border-radius:4px;pointer-events:none;}
+.mwi-layu-panel .v3-workbench-rail[data-detent] .v3-workbench-splitter::before {background:#e5b961;width:4px;left:14px;}
 .mwi-layu-panel .v3-workbench-splitter:hover::before,.mwi-layu-panel .v3-workbench-splitter:focus-visible::before,.mwi-layu-panel .v3-workbench-splitter[data-dragging]::before {background:#38bdf8;}
 .mwi-layu-panel .mwi-layu-group-level:has(.v3-workbench-splitter[data-dragging]) {user-select:none;}
+.mwi-layu-panel .mwi-layu-group-level[data-workbench-collapsed="left"] {grid-template-columns:minmax(0,1fr);padding-left:44px;}
+.mwi-layu-panel .mwi-layu-group-level[data-workbench-collapsed="right"] {grid-template-columns:minmax(0,1fr);padding-right:44px;}
+.mwi-layu-panel [data-workbench-collapsed="left"] .v3-workbench-rail {left:12px;}
+.mwi-layu-panel [data-workbench-collapsed="right"] .v3-workbench-rail {left:auto;right:12px;}
+.mwi-layu-panel .v3-workbench-materials[hidden],.mwi-layu-panel .v3-workbench-market[hidden] {display:none;}
 .mwi-layu-panel .v3-workbench-market {width:100%;max-width:100%;justify-self:stretch;align-self:start;box-sizing:border-box;}
 .mwi-layu-panel .v3-workbench-market > .mwi-layu-level-heading,
 .mwi-layu-panel .v3-workbench-market .v3-order-depth,
@@ -10102,20 +10468,66 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-material-link {display:inline-flex;align-items:center;gap:4px;text-align:left;}
 .mwi-layu-panel .mwi-layu-material-link svg {width:20px;height:20px;flex-shrink:0;}
 .mwi-layu-panel .mwi-layu-material-scroll {overflow:auto;}
-.mwi-layu-panel .v3-cart-dock {min-height:44px;position:absolute;bottom:0;left:0;right:0;background:#141c29;border-top:1px solid #344662;display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:4;}
-.mwi-layu-panel .v3-cart-drawer {position:absolute;bottom:var(--v3-dock-height,44px);left:0;right:0;height:380px;max-height:calc(100% - 90px);overflow:auto;background:#151d2b;border-top:1px solid #38bdf8;box-shadow:0 -8px 24px #0006;z-index:5;}
-.mwi-layu-panel .v3-cart-resizer {position:sticky;top:0;z-index:1;height:14px;display:flex;align-items:center;justify-content:center;background:#151d2b;cursor:ns-resize;touch-action:none;user-select:none;}
-.mwi-layu-panel .v3-cart-resizer::after {content:"";width:48px;height:3px;border-radius:2px;background:#57718f;}
-.mwi-layu-panel .v3-cart-resizer-hint {position:absolute;right:calc(50% + 32px);font-size:10px;line-height:14px;white-space:nowrap;color:#7dd3fc;pointer-events:none;}
-.mwi-layu-panel .v3-cart-resizer:is(:hover,:focus-visible,.v3-cart-resizing)::after {background:#38bdf8;}
-.mwi-layu-panel .mwi-layu-cart {padding:12px 16px;}
-.mwi-layu-panel .mwi-layu-cart-heading {display:flex;flex-wrap:wrap;align-items:center;gap:12px;}
-.mwi-layu-panel .mwi-layu-cart-heading h2 {margin:0;}
-.mwi-layu-panel .mwi-layu-cart-items {max-height:130px;overflow:auto;margin:10px 0;}
-.mwi-layu-panel .mwi-layu-cart-line {display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #263348;}
-.mwi-layu-panel .mwi-layu-cart-line > .mwi-layu-item-label {flex:1;}
-.mwi-layu-panel .mwi-layu-cart-line input {width:90px;}
-.mwi-layu-panel .mwi-layu-quantity-stepper {display:flex;align-items:center;gap:4px;}
+/* Standalone preparation page: compact plans above a full-width ledger. */
+.mwi-layu-panel .v3-tabs {padding:4px 12px;gap:4px;}
+.mwi-layu-panel .v3-tabs button {display:inline-flex;align-items:center;gap:6px;background:transparent;border-color:transparent;}
+.mwi-layu-panel .v3-tabs button[aria-current=page] {color:#7dd3fc;background:#1c3447;border-color:#355c74;}
+.mwi-layu-panel .v3-cart-badge {font-size:11px;padding:0 4px;background:#263348;border-radius:3px;font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-cart-page {flex:1;min-height:0;overflow:auto;background:#151d2b;}
+.mwi-layu-panel .mwi-layu-cart {padding:8px 12px 12px;min-width:0;}
+.mwi-layu-panel .mwi-layu-cart-heading {display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;}
+.mwi-layu-panel .mwi-layu-cart-heading h2 {margin:0;font-size:14px;}
+.mwi-layu-panel .mwi-layu-cart-heading > span {color:var(--v3-muted);}
+.mwi-layu-panel .mwi-layu-cart-heading .mwi-layu-budget {margin:0 0 0 auto;font-size:12px;text-align:left;}
+.mwi-layu-panel .mwi-layu-cart-items {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 10px;margin:8px 0;max-height:none;overflow:visible;}
+.mwi-layu-panel .mwi-layu-cart-line {display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid #263348;min-width:0;}
+.mwi-layu-panel .mwi-layu-cart-line .mwi-layu-item-label {flex:1;min-width:0;flex-basis:auto;font-size:12px;}
+.mwi-layu-panel .mwi-layu-cart-line .mwi-layu-item-label span {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mwi-layu-panel .v3-cart-project-info {flex:1;min-width:0;}
+.mwi-layu-panel .v3-cart-project-progress {font-size:11px;line-height:1.5;margin-top:3px;overflow-wrap:anywhere;}
+.mwi-layu-panel .v3-cart-project-counts {display:block;color:var(--v3-muted);font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .mwi-layu-cart-line input {width:50px;min-width:0;min-height:26px;text-align:center;padding:2px;}
+.mwi-layu-panel .mwi-layu-cart-line button {min-height:26px;padding:2px 4px;flex-shrink:0;}
+.mwi-layu-panel .mwi-layu-cart-line > button:last-of-type {color:var(--v3-muted);}
+.mwi-layu-panel .v3-cart-project-actions {flex-basis:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:2px 0 4px;}
+.mwi-layu-panel .v3-cart-project-actions button {display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;white-space:normal;}
+.mwi-layu-panel .mwi-layu-quantity-stepper {display:flex;align-items:center;gap:2px;flex-shrink:0;}
+.mwi-layu-panel .v3-cart-tools {display:flex;align-items:center;gap:5px 12px;flex-wrap:wrap;padding:5px 0;}
+.mwi-layu-panel .v3-cart-tools label {display:inline-flex;align-items:center;gap:5px;}
+.mwi-layu-panel .v3-cart-tools select {padding:2px 4px;min-height:26px;}
+.mwi-layu-panel .v3-cart-counts {display:flex;gap:10px;flex:1;}
+.mwi-layu-panel .v3-cart-state {font-size:11px;white-space:nowrap;}
+.mwi-layu-panel .v3-cart-shortage {color:#fca5a5;}
+.mwi-layu-panel .v3-cart-pending,.mwi-layu-panel .v3-cart-unknown {color:#fcd34d;}
+.mwi-layu-panel .v3-cart-ready {color:#6ee7b7;}
+.mwi-layu-panel .v3-cart-allocation {max-height:190px;overflow:auto;border:1px solid var(--v3-line);}
+.mwi-layu-panel .v3-cart-allocation :is(th,td) {padding:3px 7px;height:34px;}
+.mwi-layu-panel .v3-cart-allocation thead {position:sticky;top:0;z-index:1;background:#111a27;}
+.mwi-layu-panel[lang=en-US] .v3-cart-materials th {white-space:nowrap;overflow-wrap:normal;}
+.mwi-layu-panel .v3-cart-materials {overflow:auto;max-width:100%;border:1px solid var(--v3-line);}
+.mwi-layu-panel .v3-cart-materials table {width:100%;min-width:1000px;font-variant-numeric:tabular-nums;border-collapse:separate;border-spacing:0;}
+.mwi-layu-panel .v3-cart-materials :is(th,td) {padding:3px 7px;height:34px;text-align:right;white-space:nowrap;font-size:12px;border-bottom:1px solid var(--v3-line);}
+.mwi-layu-panel .v3-cart-materials th {background:#111a27;font-weight:500;}
+.mwi-layu-panel .v3-cart-materials thead tr:last-child th:first-child,
+.mwi-layu-panel .v3-cart-material-row > td:first-child {position:sticky;left:0;z-index:1;text-align:left;background:#182130;box-shadow:1px 0 #34445c;min-width:174px;max-width:220px;}
+.mwi-layu-panel .v3-cart-material-row:hover > td {background:#202d3f;}
+.mwi-layu-panel .v3-cart-materials .v3-cart-column-groups th {height:22px;font-size:10px;color:var(--v3-muted);text-align:center;border-right:1px solid var(--v3-line);}
+.mwi-layu-panel .v3-cart-materials :is(th,td):nth-last-child(-n+2) {text-align:center;}
+.mwi-layu-panel .v3-cart-materials button {min-height:26px;padding:1px 4px;display:inline-flex;align-items:center;gap:3px;}
+.mwi-layu-panel .v3-cart-materials .mwi-layu-item-icon {width:18px;height:18px;}
+.mwi-layu-panel .v3-cart-materials .v3-cart-detail-row > td {padding:0;text-align:left;background:#1a283a;white-space:normal;}
+.mwi-layu-panel .v3-cart-material-detail {position:sticky;left:0;width:calc(100cqw - 28px);max-width:100%;padding:10px 12px;display:flex;flex-wrap:wrap;gap:5px 16px;white-space:normal;}
+.mwi-layu-panel .v3-cart-material-detail > span {color:var(--v3-muted);}
+.mwi-layu-panel .v3-cart-material-detail > span:nth-last-child(-n+3) {width:100%;}
+.mwi-layu-panel .v3-cart-sources {display:flex;gap:4px 12px;flex-wrap:wrap;width:100%;}
+@container v3-workspace (max-width:1000px) {
+ .mwi-layu-panel .mwi-layu-cart-items {grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@container v3-workspace (max-width:580px) {
+ .mwi-layu-panel .mwi-layu-cart-items {grid-template-columns:minmax(0,1fr);}
+ .mwi-layu-panel .mwi-layu-cart-heading .mwi-layu-budget {margin-left:0;width:100%;}
+ .mwi-layu-panel .v3-cart-counts {flex-basis:60%;}
+}
 .mwi-layu-panel .v3-project-quantity {display:inline-flex;align-items:center;max-width:100%;background:#1b2638;border:1px solid #30415b;border-radius:4px;}
 .mwi-layu-panel .v3-project-quantity button {background:transparent;border:0;min-height:24px;padding:0 5px;font-size:14px;}
 .mwi-layu-panel .v3-project-quantity input {width:40px;min-width:0;min-height:24px;padding:0 2px;text-align:center;background:transparent;border:0;font-variant-numeric:tabular-nums;}
@@ -10202,7 +10614,8 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-source-protection strong {font-weight:500;color:#7dd3fc;}
 .mwi-layu-panel .v3-source-protection .mwi-layu-item-label {min-width:0;overflow:hidden;text-overflow:ellipsis;}
 .mwi-layu-panel .v3-source-protection svg {width:16px;height:16px;}
-.mwi-layu-panel .v3-source-route,.mwi-layu-panel .v3-source-difference {flex-shrink:0;}
+.mwi-layu-panel .v3-source-route {min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.mwi-layu-panel .v3-source-difference {flex-shrink:0;}
 .mwi-layu-panel .v3-source-difference {color:#66dfb6;}
 .mwi-layu-panel .v3-source-extra {color:#fbbf24;}
 .mwi-layu-panel .v3-workbench-materials > .mwi-layu-level-heading {margin-bottom:4px;}
@@ -10275,17 +10688,30 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-material-enhance-label {color:#38bdf8;}
 .mwi-layu-panel .v3-material-remaining-label {color:#a0aec2;}
 .mwi-layu-panel .v3-material-stock-labels > span {white-space:nowrap;}
-.mwi-layu-panel .v3-material-stock-track {display:flex;height:6px;overflow:hidden;border-radius:3px;background:#28364b;}
-.mwi-layu-panel .v3-material-stock-segment {display:block;flex-shrink:0;min-width:0;position:relative;background:currentColor;}
+.mwi-layu-panel .v3-material-stock-track {position:relative;display:flex;height:6px;overflow:hidden;border-radius:3px;background:#28364b;}
+.mwi-layu-panel .v3-material-stock-segment {display:block;flex-shrink:0;min-width:0;position:relative;overflow:hidden;background:currentColor;}
 .mwi-layu-panel .v3-material-stock-craft {color:#a78bfa;}
 .mwi-layu-panel .v3-material-stock-enhance {color:#38bdf8;}
 .mwi-layu-panel .v3-material-stock-remaining {color:#65738b;}
 .mwi-layu-panel .v3-material-stock-missing,.mwi-layu-panel .v3-material-missing-label {color:#f87171;}
-.mwi-layu-panel .v3-material-stock-segment + .v3-material-stock-segment::before {content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:#f1f5f9;}
+.mwi-layu-panel [data-plan-motion] {position:absolute;top:0;left:0!important;width:100%!important;height:100%;}
 .mwi-layu-panel .v3-material-stock[data-unknown] .v3-material-stock-track {opacity:.45;}
 .mwi-layu-panel .v3-material-card progress.v3-material-stock-native {position:absolute;width:1px;height:1px;margin:0;clip-path:inset(50%);}
 .mwi-layu-panel .v3-material-counts {display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:1px 6px;color:#a0aec2;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums;}
 .mwi-layu-panel .v3-material-counts > * {white-space:nowrap;}
+.mwi-layu-panel .v3-stock-strip {margin:5px 0 7px;padding:5px 0;border-top:1px solid #30415b;border-bottom:1px solid #30415b;white-space:normal;}
+.mwi-layu-panel .v3-stock-heading {display:flex;justify-content:space-between;flex-wrap:wrap;gap:2px 10px;margin-bottom:4px;color:#a0aec2;font-size:10px;line-height:15px;}
+.mwi-layu-panel .v3-stock-grades {display:flex;flex-wrap:wrap;gap:4px;}
+.mwi-layu-panel button.v3-stock-grade {display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:3px 6px;border:1px solid #30415b;border-radius:4px;background:#1e293b;color:#dbe4f0;font-size:11px;line-height:18px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-stock-grade strong {padding-right:5px;border-right:1px solid #40516a;font-size:12px;font-weight:600;}
+.mwi-layu-panel .v3-stock-count {color:#b8c6d9;}
+.mwi-layu-panel .v3-stock-listed {color:#c4b5fd;}
+.mwi-layu-panel button.v3-stock-grade:disabled {opacity:1;cursor:default;background:#182231;color:#a0aec2;}
+.mwi-layu-panel button.v3-stock-grade[aria-pressed=true] {background:#193e50;border-color:#38bdf8;color:#7dd3fc;}
+.mwi-layu-panel button.v3-stock-grade:hover:not(:disabled) {border-color:#7dd3fc;}
+.mwi-layu-panel button.v3-stock-grade:focus-visible {outline:2px solid #7dd3fc;outline-offset:2px;}
+.mwi-layu-panel .v3-stock-note {margin-top:4px;color:#7dd3fc;font-size:10px;line-height:15px;overflow-wrap:anywhere;}
+@media(pointer:coarse) {.mwi-layu-panel button.v3-stock-grade {min-height:44px;}}
 .mwi-layu-panel .v3-enhancement-plan {margin-top:8px;padding:12px 12px 7px;background:#1b2638;border:1px solid #30415b;border-radius:5px;white-space:normal;}
 .mwi-layu-panel .v3-workbench-materials > .v3-enhancement-plan:first-child {margin-top:0;margin-bottom:0;}
 .mwi-layu-panel .v3-enhancement-plan + .mwi-layu-level-actions {margin-bottom:12px;}
@@ -10310,13 +10736,17 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel button.v3-plan-item-icon:focus-visible {outline:2px solid #38bdf8;}
 .mwi-layu-panel .v3-plan-arrow {color:#38bdf8;font-size:16px;line-height:20px;}
 .mwi-layu-panel .v3-enhancement-plan small {display:block;color:#fbbf24;}
+@container v3-material-panel (max-width:330px) {
+ .mwi-layu-panel .v3-plan-routes {grid-column:1/-1;grid-row:3;}
+}
 .mwi-layu-panel .v3-xp-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:12px;padding-top:10px;border-top:1px solid #30415b;}
 .mwi-layu-panel .v3-xp {min-width:0;--xp-color:#38bdf8;--xp-tint:#7dd3fc;font-variant-numeric:tabular-nums;}
 .mwi-layu-panel .v3-xp-manufacturing {--xp-color:#a78bfa;--xp-tint:#c4b5fd;}
 .mwi-layu-panel .v3-xp-manufacturing-list {display:grid;gap:12px;min-width:0;}
 .mwi-layu-panel .v3-xp-heading {display:flex;justify-content:space-between;gap:4px 8px;align-items:baseline;font-size:11px;}
 .mwi-layu-panel .v3-xp-heading > strong {white-space:nowrap;}
-.mwi-layu-panel .v3-xp-label {display:inline-flex;align-items:center;gap:4px;}
+.mwi-layu-panel .v3-xp-label {display:inline-flex;align-items:center;gap:4px;min-width:0;}
+.mwi-layu-panel .v3-xp-label > span {min-width:0;overflow:hidden;text-overflow:ellipsis;}
 .mwi-layu-panel .v3-xp-label svg {width:16px;height:16px;flex-shrink:0;}
 .mwi-layu-panel .v3-xp-comparison {display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 5px;font-size:12px;}
 .mwi-layu-panel .v3-xp-comparison > span,.mwi-layu-panel .v3-xp-comparison > strong {white-space:nowrap;}
@@ -10367,21 +10797,11 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-material-catalog {padding:16px;}
 .mwi-layu-panel .mwi-layu-material-table {min-width:820px;}
 .mwi-layu-panel .mwi-layu-material-catalog > .v3-section-heading {border:1px solid #2b3a52;padding:12px;background:#151e2b;border-radius:6px;}
-.mwi-layu-panel .v3-dock-actions {display:flex;gap:6px;flex-shrink:0;}
-.mwi-layu-panel .v3-dock-plan {display:flex;gap:10px;min-width:0;max-width:35%;overflow:hidden;color:#a0aec2;font-size:10px;}
-.mwi-layu-panel .v3-dock-plan .mwi-layu-item-label {white-space:nowrap;}
-.mwi-layu-panel .v3-dock-shortage {color:#fbbf24;font-size:10px;}
 .mwi-layu-panel .mwi-layu-wage-settings form {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
 .mwi-layu-panel .mwi-layu-wage-group > h3 {color:#7dd3fc;margin:0;}
 .mwi-layu-panel .mwi-layu-wage-actions,.mwi-layu-panel .mwi-layu-wage-settings form > p {grid-column:1/-1;}
-@container v3-workspace (max-width:1050px) {
- .mwi-layu-panel .v3-dock-plan {display:none;}
-}
 @container v3-workspace (max-width:760px) {
  .mwi-layu-panel .mwi-layu-wage-settings form {grid-template-columns:minmax(0,1fr);}
- .mwi-layu-panel .mwi-layu-partitions {--v3-dock-height:76px;}
- .mwi-layu-panel .v3-cart-dock {height:76px;flex-wrap:wrap;gap:4px;padding:6px 10px;}
- .mwi-layu-panel .v3-dock-actions {width:100%;justify-content:flex-end;}
 }
 
 /* Wide browser windows can still host narrow game panels. Never hide data columns. */
@@ -10390,8 +10810,6 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-controls .mwi-layu-group-nav {min-width:0;flex-basis:350px;}
 .mwi-layu-panel .v3-controls > .mwi-layu-group-toolbar {flex-wrap:wrap;}
 @container v3-workspace (max-width: 760px) {
- .mwi-layu-panel .v3-workbench-splitter {display:none;}
- .mwi-layu-panel .mwi-layu-group-level,
  .mwi-layu-panel .v3-preset-layout,
  .mwi-layu-panel .v3-partition-matrix-layout {grid-template-columns:minmax(0,1fr);}
  .mwi-layu-panel .v3-controls > .mwi-layu-group-toolbar {width:100%;}
@@ -10407,9 +10825,6 @@ function getPriceTier(price, direction) {
  .mwi-layu-panel .v3-header > .mwi-layu-group-toolbar {width:100%;}
  .mwi-layu-panel .mwi-layu-wage-settings fieldset,
  .mwi-layu-panel .mwi-layu-favorite-filters {grid-template-columns:minmax(0,1fr);}
- .mwi-layu-panel .v3-cart-dock {padding:4px 8px;gap:4px;flex-wrap:wrap;}
- .mwi-layu-panel .v3-cart-dock > :nth-child(2) {font-size:10px;}
- .mwi-layu-panel .mwi-layu-cart-line > .mwi-layu-item-label {flex-basis:100%;}
 }
 `;
   function installStyles() {
@@ -10433,6 +10848,49 @@ function getPriceTier(price, direction) {
     return (value / unit[0]).toFixed(2).replace(/\.?0+$/, "") + unit[1];
   };
   const time = (value) => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(app.i18n?.locale) : t("未知");
+  // Fixed-size layers animate only clipping, never width/left or surrounding layout.
+  const planMotion = new WeakMap();
+  const motionClip = (left, width) => `inset(0% ${Math.max(0, 100 - left - width)}% 0% ${left}%)`;
+  function planMotionKey(el) {
+    return `${el.closest('[data-favorite-key]')?.dataset.favoriteKey}|${el.dataset.planMotion}`;
+  }
+  function capturePlanMotion(container) {
+    const values = new Map();
+    for (const el of container.querySelectorAll('[data-plan-motion]')) {
+      if (el.dataset.motionUnknown === 'true') continue;
+      const state = planMotion.get(el);
+      // Effect progress already includes easing. Read the animation clock, not geometry.
+      const progress = state?.animation.effect.getComputedTiming().progress;
+      const clip = state && progress != null
+        ? state.from.map((value, i) => value + (state.to[i] - value) * progress)
+        : [parseFloat(el.style.left) || 0, parseFloat(el.style.width) || 0];
+      values.set(planMotionKey(el), { el, clip });
+    }
+    return values;
+  }
+  function resumePlanMotion(container, previous) {
+    if (!container.isConnected || !previous.size) return;
+    const reduced = root.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    for (const fresh of container.querySelectorAll('[data-plan-motion]')) {
+      const saved = previous.get(planMotionKey(fresh));
+      if (!saved) continue;
+      const el = saved.el, to = [parseFloat(fresh.style.left) || 0, parseFloat(fresh.style.width) || 0];
+      const state = planMotion.get(el);
+      const unchanged = state && state.to.every((value, i) => Math.abs(value - to[i]) < 0.0001);
+      if (el !== fresh) {
+        for (const attr of [...el.attributes]) el.removeAttribute(attr.name);
+        for (const attr of fresh.attributes) el.setAttribute(attr.name, attr.value);
+        fresh.replaceWith(el);
+      }
+      if (!reduced && el.dataset.motionUnknown !== 'true' && unchanged) continue;
+      state?.animation.cancel(); planMotion.delete(el);
+      if (reduced || el.dataset.motionUnknown === 'true' || !el.animate ||
+          saved.clip.every((value, i) => Math.abs(value - to[i]) < 0.0001)) continue;
+      const animation = el.animate([{clipPath:motionClip(...saved.clip)}, {clipPath:motionClip(...to)}],
+        {duration:650, easing:'cubic-bezier(0.333333, 0, 0.666667, 1)'});
+      planMotion.set(el, {animation, from:saved.clip, to});
+    }
+  }
   function enhancementPlanMetrics(route) {
     const valid = value => Number.isFinite(value) && value >= 0 ? value : null;
     const hours = valid(route?.totalTimeHours), actions = valid(route?.expectedActions);
@@ -10449,6 +10907,18 @@ function getPriceTier(price, direction) {
   }
   const partialNumber = (value, known) => Number.isFinite(value) ? number(value)
     : Number.isFinite(known) && known > 0 ? t`${number(known)} + 未知` : t("未知");
+  function listedQuantity(listings, item) {
+    if (!Array.isArray(listings)) return null;
+    let total = 0;
+    for (const row of listings) {
+      if (row.itemHrid !== item.itemHrid || row.enhancementLevel !== item.enhancementLevel || row.isSell !== true ||
+          row.status !== "/market_listing_status/active") continue;
+      if (!Number.isSafeInteger(row.orderQuantity) || !Number.isSafeInteger(row.filledQuantity) ||
+          row.filledQuantity < 0 || row.orderQuantity < row.filledQuantity) return null;
+      total += row.orderQuantity - row.filledQuantity;
+    }
+    return Number.isSafeInteger(total) ? total : null;
+  }
   function preparationAction(item, materials, inventoryAt) {
     // Finished/higher-level items cannot be enhanced to this target again.
     for (let level = 0; level < item.enhancementLevel; level += 1) {
@@ -10526,22 +10996,34 @@ function getPriceTier(price, direction) {
     }
     const marketAgeTimer = root.setInterval(updateMarketAges, 1000);
     const pageState = app.v3ViewState.create(root.localStorage, onStatus);
-    let { workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide } = pageState.read();
+    let { workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide, referenceFallbackSide } = pageState.read();
+    // Old open drawers resume in the new peer page; keep archived height for backups.
+    if (drawerOpen && ["projects", "materials"].includes(workspaceTab)) workspaceTab = "cart";
+    drawerOpen = false;
+    let renderedPage = null;
+    const pageViews = new Map();
     let lootPage = null;
     let settingsPage = null, matrixQuery = "";
-    const savePage = () => pageState.save({ workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide });
+    const savePage = () => pageState.save({ workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide, referenceFallbackSide });
+    // Persistent simulation callbacks must read the latest per-level reference price.
+    let referencePrices = new Map();
     let salePriceWages = null;
+    const calculationSide = item => salePriceSide === "reference" && referencePrices.get(app.materialCart.key(item)) == null ? referenceFallbackSide : salePriceSide;
     const calculationQuote = (quote, item) => {
-      let price = salePriceSide.startsWith("bid") ? quote?.bid ?? null : quote?.price ?? null;
-      if (salePriceSide === "ask-minus" || salePriceSide === "bid-plus") {
+      const side = calculationSide(item);
+      let price = side === "reference" ? referencePrices.get(app.materialCart.key(item)) ?? null
+        : side.startsWith("bid") ? quote?.bid ?? null : quote?.price ?? null;
+      if (side === "ask-minus" || side === "bid-plus") {
         const vendorPrice = salePriceWages?.materialInfo(item)?.vendorPrice ?? 0;
-        price = salePriceSide === "ask-minus" ? app.marketPrices.previousPrice(price, item.enhancementLevel, vendorPrice)
+        price = side === "ask-minus" ? app.marketPrices.previousPrice(price, item.enhancementLevel, vendorPrice)
           : app.marketPrices.nextPrice(price, item.enhancementLevel, vendorPrice);
       }
       return { ...quote, price };
     };
-    const saleBasisLabel = () => ({ ask:t("按市场左一计算收益"), bid:t("按市场右一计算收益"),
-      "ask-minus":t("按市场左一降一档计算收益"), "bid-plus":t("按市场右一升一档计算收益") })[salePriceSide];
+    const saleBasisLabel = item => ({ reference:t("按参考售价计算收益"), ask:t("按市场左一计算收益"), bid:t("按市场右一计算收益"),
+      "ask-minus":t("按市场左一降一档计算收益"), "bid-plus":t("按市场右一升一档计算收益") })[calculationSide(item)];
+    const fallbackLabel = () => ({ ask:t("未设 · 用左一"), bid:t("未设 · 用右一"),
+      "ask-minus":t("未设 · 用左−"), "bid-plus":t("未设 · 用右+") })[referenceFallbackSide];
     const favoriteManager = app.v3FavoriteManagement.create({ store: app.marketFavoritesStore.createStore(root.localStorage), partitions, onChange, createStatus });
     const presetView = presets ? app.partitionPresetUI.create({ presets, onChange, preferences, onOpen, createStatus }) : null;
     let partitionGesture = null;
@@ -10620,7 +11102,8 @@ function getPriceTier(price, direction) {
 
     let { sort, direction, materialSort, materialDirection, search, listingFilter, shortagesOnly } = savedPreferences;
     let composingSearch = false;
-    let allocationOwner = null;
+    let allocationOwner = null, cartSort = "shortage";
+    const cartDetails = new Set();
     const historyExpanded = new Set(savedPreferences.historyExpanded);
     function saveView() {
       preferences.update({ sort, direction, materialSort, materialDirection, search, listingFilter, shortagesOnly,
@@ -10648,14 +11131,28 @@ function getPriceTier(price, direction) {
     // These regions are rebuilt on market/character refresh. Keep offsets in memory
     // for the current render only; do not persist them into another page/session.
     const scrollRegionSelector = [
-      ".mwi-layu-shopping-layout", ".v3-management", ".v3-cart-drawer", ".v3-settings-page",
+      ".mwi-layu-shopping-layout", ".v3-management", ".v3-cart-page", ".v3-settings-page",
       ".mwi-layu-preset-grid", ".mwi-layu-preset-tiers", ".mwi-layu-preset-selection",
       ".mwi-layu-favorite-delete-list", ".v3-order-depth", ".mwi-layu-material-scroll",
       ".mwi-layu-group-scroll", ".mwi-layu-cart-items", ".mwi-layu-partition-checkboxes"
     ].join(",");
     const scrollRegions = () => [element, ...element.querySelectorAll(scrollRegionSelector)];
     const scrollKey = el => `${el.closest("[data-favorite-key]")?.dataset.favoriteKey || ""}|${el.id || el.getAttribute("aria-label") || el.className}`;
+    // A shorter source/stock view must not clamp the scroll position at the end
+    // of the list. Retain its occupied height only while this detail stays open
+    // at the same width; keep this transient geometry out of saved preferences.
+    const detailSizes = new WeakMap();
+    function retainDetailSizes(sizes) {
+      for (const section of element.querySelectorAll('.mwi-layu-group-level')) {
+        const saved = sizes.get(section.dataset.favoriteKey);
+        if (!saved || Math.abs(section.offsetWidth - saved.width) > 1) continue;
+        section.style.minHeight = `${saved.height}px`;
+        detailSizes.set(section, saved);
+      }
+    }
     function rememberView() {
+      const details = new Map([...element.querySelectorAll('.mwi-layu-group-level')]
+        .map(section => [section.dataset.favoriteKey, {width:section.offsetWidth, height:section.offsetHeight}]));
       const active = document.activeElement;
       const focus = element.contains(active) ? active.dataset.focusKey || active.getAttribute("aria-label") : null;
       const parents = [];
@@ -10670,9 +11167,10 @@ function getPriceTier(price, direction) {
       const controlAnchor = shell && controlRect.bottom > shellRect.top && controlRect.top < shellRect.bottom
         ? [scrollKey(shell), controlRect.top - shellRect.top] : null;
       return { focus, selection: active?.type === "search" ? [active.selectionStart, active.selectionEnd] : null,
-        parents, scrolls, controlAnchor, anchor: anchor ? [anchor.dataset.favoriteKey, anchor.getBoundingClientRect().top] : null };
+        parents, scrolls, details, controlAnchor, anchor: anchor ? [anchor.dataset.favoriteKey, anchor.getBoundingClientRect().top] : null };
     }
     function restoreView(saved) {
+      retainDetailSizes(saved.details);
       const regions = new Map(scrollRegions().map(el => [scrollKey(el), el]));
       for (const [key, top, left] of saved.scrolls) {
         const el = regions.get(key);
@@ -10680,15 +11178,26 @@ function getPriceTier(price, direction) {
       }
       if (saved.focus) {
         const target = [...element.querySelectorAll('[data-focus-key],[aria-label]')]
-          .find(el => (el.dataset.focusKey || el.getAttribute("aria-label")) === saved.focus)
-          || (saved.focus === "cart-drawer-height" && !drawerOpen ? element.querySelector('[aria-controls="mwi-layu-cart-drawer"][aria-expanded="false"]') : null);
+          .find(el => (el.dataset.focusKey || el.getAttribute("aria-label")) === saved.focus);
         target?.focus({ preventScroll: true });
         if (saved.selection && target?.type === "search") target.setSelectionRange(...saved.selection);
         const shell = saved.controlAnchor && regions.get(saved.controlAnchor[0]);
         if (target && shell?.contains(target)) {
           const rect = shell.getBoundingClientRect();
           const scale = shell.offsetHeight ? rect.height / shell.offsetHeight : 1;
-          if (scale > 0) shell.scrollTop += (target.getBoundingClientRect().top - rect.top - saved.controlAnchor[1]) / scale;
+          if (scale > 0) {
+            const top = shell.scrollTop + (target.getBoundingClientRect().top - rect.top - saved.controlAnchor[1]) / scale;
+            const shortage = top - (shell.scrollHeight - shell.clientHeight);
+            const detail = target.closest('.mwi-layu-group-level');
+            // A taller stock/route summary can move the control down even when
+            // the whole detail retains its height. Leave enough room to anchor it.
+            if (detail && shortage > 0) {
+              const size = {width:detail.offsetWidth, height:detail.offsetHeight + Math.ceil(shortage)};
+              detail.style.minHeight = `${size.height}px`;
+              detailSizes.set(detail, size);
+            }
+            shell.scrollTop = top;
+          }
         }
       }
       for (const [el, top, left] of saved.parents) { el.scrollTop = top; el.scrollLeft = left; }
@@ -10700,137 +11209,168 @@ function getPriceTier(price, direction) {
     }
     let resizeSession = null, resizePending = false;
     let workbenchSplit = savedPreferences.workbenchSplit;
+    let workbenchLock = savedPreferences.workbenchLock;
+    let workbenchRightWidth = savedPreferences.workbenchRightWidth;
+    let workbenchCollapsed = savedPreferences.workbenchCollapsed;
+    const splitSnapshot = () => ({ workbenchSplit, workbenchLock, workbenchRightWidth, workbenchCollapsed });
+    const splitSave = () => preferences.update(splitSnapshot());
+    const splitBounds = section => {
+      const total = Math.max(1, section.clientWidth - 56);
+      return { total, min: Math.min(180, total * .35) };
+    };
+    function splitLeft(section) {
+      const { total, min } = splitBounds(section);
+      return workbenchCollapsed === "left" ? 0 : workbenchCollapsed === "right" ? total
+        : Math.max(min, Math.min(total - min, workbenchLock === "right" ? total - workbenchRightWidth : total * workbenchSplit / 100));
+    }
+    function applyWorkbench(extra) {
+      for (const target of new Set([extra, ...element.querySelectorAll(".mwi-layu-group-level")])) {
+        if (!target?.querySelector(".v3-workbench-rail")) continue;
+        const retained = detailSizes.get(target);
+        if (retained && (Math.abs(target.offsetWidth - retained.width) > 1 || resizeSession)) {
+          target.style.minHeight = "";
+          detailSizes.delete(target);
+        }
+        const { total } = splitBounds(target), left = splitLeft(target);
+        target.dataset.workbenchCollapsed = workbenchCollapsed;
+        target.style.setProperty("--workbench-left", `${left}fr`);
+        target.style.setProperty("--workbench-right", `${total - left}fr`);
+        target.style.setProperty("--workbench-offset", `${left}px`);
+        target.querySelector(".v3-workbench-materials").hidden = workbenchCollapsed === "left";
+        target.querySelector(".v3-workbench-market").hidden = workbenchCollapsed === "right";
+        const handle = target.querySelector(".v3-workbench-splitter");
+        handle.setAttribute("aria-valuenow", Math.round(left / total * 100));
+        handle.setAttribute("aria-valuetext", workbenchCollapsed ? (workbenchCollapsed === "left" ? t("左侧已收起，向右拖动恢复") : t("右侧已收起，向左拖动恢复"))
+          : t`左侧 ${Math.round(left)} 像素，右侧 ${Math.round(total-left)} 像素`);
+        for (const button of target.querySelectorAll("[data-workbench-lock]")) button.setAttribute("aria-pressed", String(button.dataset.workbenchLock === workbenchLock));
+      }
+    }
+    const splitObserver = new root.ResizeObserver(() => applyWorkbench());
+    splitObserver.observe(element);
     function resizableWorkbench(section, key) {
+      const rail = node("div", null, "v3-workbench-rail");
       const grip = node("button", null, "v3-workbench-splitter"); grip.type = "button";
       grip.setAttribute("role", "separator"); grip.setAttribute("aria-orientation", "vertical");
       grip.setAttribute("aria-label", t("调整左右区块比例"));
-      grip.title = t("拖动调整比例；双击恢复 60:40；方向键微调，Esc 取消。");
-      grip.setAttribute("aria-valuemin", "40"); grip.setAttribute("aria-valuemax", "70");
-      grip.dataset.focusKey = `workbench-split:${key}`;
-      section.append(grip);
-      function apply(value) {
-        workbenchSplit = Math.max(40, Math.min(70, Math.round(value)));
-        for (const target of new Set([section, ...element.querySelectorAll(".mwi-layu-group-level")])) {
-          target.style.setProperty("--workbench-left", `${workbenchSplit}fr`);
-          target.style.setProperty("--workbench-right", `${100 - workbenchSplit}fr`);
-          target.style.setProperty("--workbench-ratio", workbenchSplit / 100);
-          const handle = target.querySelector(".v3-workbench-splitter");
-          handle?.setAttribute("aria-valuenow", workbenchSplit);
-          handle?.setAttribute("aria-valuetext", t`左侧 ${workbenchSplit}%，右侧 ${100 - workbenchSplit}%`);
-        }
+      const explanation = node("span", null, "v3-workbench-help");
+      explanation.id = `workbench-help:${key}`; explanation.setAttribute("role", "tooltip"); explanation.hidden = true;
+      function explain(control, text) {
+        control.setAttribute("aria-describedby", explanation.id);
+        const show = () => { explanation.textContent = text; explanation.hidden = false; };
+        const hide = () => { explanation.hidden = true; };
+        control.addEventListener("mouseenter", show); control.addEventListener("focus", show);
+        control.addEventListener("mouseleave", hide); control.addEventListener("blur", hide);
+        control.addEventListener("keydown", event => { if (event.key === "Escape") hide(); });
       }
-      const save = () => preferences.update({ workbenchSplit });
+      grip.setAttribute("aria-valuemin", "0"); grip.setAttribute("aria-valuemax", "100");
+      grip.dataset.focusKey = `workbench-split:${key}`;
+      const controls = node("div", null, "v3-workbench-locks");
+      const hint = node("span", null, "v3-workbench-detent"); hint.hidden = true;
+      for (const mode of ["ratio", "right"]) {
+        const button = node("button"); button.type = "button"; button.dataset.workbenchLock = mode;
+        button.dataset.focusKey = `workbench-lock:${mode}:${key}`;
+        const label = mode === "ratio" ? t("固定比例") : t("固定右宽");
+        button.setAttribute("aria-label", label);
+        explain(button, mode === "ratio" ? t("固定比例：整体宽度变化时，左右按当前比例一起伸缩。")
+          : t("固定右宽：保持右侧宽度，整体宽度变化由左侧吸收。"));
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+        svg.setAttribute("fill", "none"); svg.setAttribute("stroke", "currentColor"); svg.setAttribute("stroke-width", "1.7");
+        const path = document.createElementNS(svg.namespaceURI, "path");
+        path.setAttribute("d", mode === "ratio" ? "M4 5h16v14H4z M8 9h.01 M16 15h.01 M9 16l6-8"
+          : "M3 4h18v8 M3 4v16h9 M14 4v7 M14 16h8v6h-8z M16 16v-2a2 2 0 0 1 4 0v2");
+        svg.append(path); button.append(svg); controls.append(button);
+        button.onclick = event => {
+          event.stopPropagation(); if (resizeSession) return;
+          if (!workbenchCollapsed) {
+            const { total } = splitBounds(section), left = splitLeft(section);
+            workbenchSplit = Math.max(1, Math.min(99, Math.round(left / total * 100)));
+            workbenchRightWidth = total - left;
+          }
+          workbenchLock = mode; applyWorkbench(section); splitSave();
+        };
+      }
+      rail.append(grip, controls, hint, explanation); section.append(rail);
+      const reset = () => { workbenchCollapsed = ""; workbenchSplit = 60; workbenchRightWidth = splitBounds(section).total * .4; applyWorkbench(section); splitSave(); };
       function finish(cancel) {
         if (resizeSession?.grip !== grip) return;
         const session = resizeSession; resizeSession = null;
-        if (cancel) apply(session.previous); else save();
-        delete grip.dataset.dragging;
+        if (cancel) ({ workbenchSplit, workbenchLock, workbenchRightWidth, workbenchCollapsed } = session.previous);
+        else splitSave();
+        hint.hidden = true; delete rail.dataset.detent; delete grip.dataset.dragging;
+        applyWorkbench(section);
         if (grip.hasPointerCapture(session.pointerId)) grip.releasePointerCapture(session.pointerId);
         if (resizePending) { resizePending = false; onChange(); }
+      }
+      function move(raw, pointerX) {
+        const { total, min } = splitBounds(section);
+        const session = resizeSession;
+        hint.hidden = true; delete rail.dataset.detent;
+        if (session.collapsed) {
+          const distance = session.collapsed === "left" ? raw : total - raw;
+          if (distance <= 42) return;
+          raw = session.collapsed === "left" ? min : total - min;
+          session.left = raw; session.x = pointerX;
+          workbenchCollapsed = ""; session.collapsed = "";
+        }
+        if (raw < min - 42 || raw > total - min + 42) {
+          workbenchCollapsed = raw < min ? "left" : "right";
+        } else {
+          workbenchCollapsed = "";
+          const left = Math.max(min, Math.min(total - min, raw));
+          workbenchSplit = Math.max(1, Math.min(99, Math.round(left / total * 100)));
+          workbenchRightWidth = total - left;
+          if (raw < min || raw > total - min) {
+            rail.dataset.detent = "true"; hint.hidden = false;
+            hint.textContent = raw < min ? t("继续拖动收起左侧") : t("继续拖动收起右侧");
+          }
+        }
+        applyWorkbench(section);
       }
       grip.addEventListener("pointerdown", event => {
         if (event.button !== 0 || !event.isPrimary || resizeSession) return;
         event.preventDefault(); event.stopPropagation(); grip.focus({ preventScroll:true });
-        const left = section.querySelector(".v3-workbench-materials").getBoundingClientRect().width;
-        const right = section.querySelector(".v3-workbench-market").getBoundingClientRect().width;
-        resizeSession = { grip, pointerId:event.pointerId, x:event.clientX, previous:workbenchSplit,
-          available:left + right, cancel:() => finish(true) };
+        resizeSession = { grip, pointerId:event.pointerId, x:event.clientX, left:splitLeft(section),
+          scale:section.getBoundingClientRect().width / section.offsetWidth, previous:splitSnapshot(),
+          collapsed:workbenchCollapsed, cancel:() => finish(true) };
         grip.setPointerCapture(event.pointerId); grip.dataset.dragging = "true";
       });
       grip.addEventListener("pointermove", event => {
         const session = resizeSession;
         if (session?.grip !== grip || session.pointerId !== event.pointerId) return;
-        if (!grip.getClientRects().length) { finish(true); return; }
-        apply(session.previous + (event.clientX - session.x) / session.available * 100);
+        move(session.left + (event.clientX - session.x) / session.scale, event.clientX);
       });
       grip.addEventListener("pointerup", event => { if (resizeSession?.pointerId === event.pointerId) finish(false); });
       for (const type of ["pointercancel", "lostpointercapture"]) grip.addEventListener(type, event => {
         if (resizeSession?.pointerId === event.pointerId) finish(true);
       });
       grip.addEventListener("click", event => event.stopPropagation());
-      grip.addEventListener("dblclick", event => { event.preventDefault(); event.stopPropagation(); apply(60); save(); });
+      grip.addEventListener("dblclick", event => { event.preventDefault(); event.stopPropagation(); reset(); });
       grip.addEventListener("keydown", event => {
         if (event.key === "Escape" && resizeSession?.grip === grip) { event.preventDefault(); event.stopPropagation(); finish(true); return; }
-        if (resizeSession) return;
-        const step = event.shiftKey ? 5 : 1;
-        const value = { ArrowLeft:workbenchSplit - step, ArrowRight:workbenchSplit + step, Home:40, End:70, Enter:60 }[event.key];
-        if (value == null) return;
-        event.preventDefault(); event.stopPropagation(); apply(value); save();
+        if (resizeSession || !["Enter", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault(); event.stopPropagation();
+        if (event.key === "Enter") { reset(); return; }
+        if (event.key === "Home" || event.key === "End") workbenchCollapsed = event.key === "Home" ? "left" : "right";
+        else {
+          const { total, min } = splitBounds(section), old = splitLeft(section);
+          const leftward = event.key === "ArrowLeft";
+          if (workbenchCollapsed) {
+            if ((workbenchCollapsed === "left") === leftward) return;
+            workbenchCollapsed = "";
+          } else if ((leftward && old <= min + 1) || (!leftward && old >= total - min - 1)) {
+            workbenchCollapsed = leftward ? "left" : "right";
+          }
+          if (!workbenchCollapsed) {
+            const left = Math.max(min, Math.min(total - min, old + (leftward ? -1 : 1) * total * (event.shiftKey ? .05 : .01)));
+            workbenchSplit = Math.max(1, Math.min(99, Math.round(left / total * 100)));
+            workbenchRightWidth = total - left;
+          }
+        }
+        applyWorkbench(section); splitSave();
       });
-      apply(workbenchSplit);
-    }
-    let syncDrawerHeight = () => {};
-    const drawerObserver = new root.ResizeObserver(() => syncDrawerHeight());
-    drawerObserver.observe(element);
-    function resizableDrawer(drawer) {
-      const limits = app.v3ViewState.drawerHeight;
-      const collapsePull = 48;
-      const grip = node("div", null, "v3-cart-resizer"); grip.tabIndex = 0;
-      const hint = node("span", t("继续下拉收起"), "v3-cart-resizer-hint"); hint.hidden = true; grip.append(hint);
-      grip.setAttribute("role", "separator"); grip.setAttribute("aria-orientation", "horizontal");
-      grip.setAttribute("aria-label", t("调整备料抽屉高度")); grip.setAttribute("aria-controls", drawer.id);
-      grip.dataset.focusKey = "cart-drawer-height";
-      grip.title = t("上下拖动调整高度，最低处继续下拉可收起；方向键微调，双击或 Enter 恢复默认");
-      const bounds = () => {
-        const max = Math.max(1, Math.min(limits.max, element.clientHeight - 90));
-        return { min:Math.min(limits.min, max), max };
-      };
-      function apply(value) {
-        const { min, max } = bounds();
-        const height = Math.max(min, Math.min(max, Math.round(value)));
-        drawer.style.height = `${height}px`;
-        grip.setAttribute("aria-valuemin", min); grip.setAttribute("aria-valuemax", max);
-        grip.setAttribute("aria-valuenow", height); grip.setAttribute("aria-valuetext", t`${height} 像素`);
-        return height;
-      }
-      syncDrawerHeight = () => { if (drawer.isConnected && !drawer.hidden) apply(drawerHeight); };
-      function finish(cancel, collapse = false) {
-        if (resizeSession?.grip !== grip) return;
-        const session = resizeSession; resizeSession = null;
-        if (cancel || collapse) drawerHeight = session.previous;
-        if (collapse) drawerOpen = false;
-        if (!cancel) savePage();
-        hint.hidden = true;
-        apply(drawerHeight); grip.classList.remove("v3-cart-resizing");
-        if (grip.hasPointerCapture(session.pointerId)) grip.releasePointerCapture(session.pointerId);
-        if (collapse || resizePending) { resizePending = false; onChange(); }
-      }
-      grip.addEventListener("pointerdown", event => {
-        if (event.button !== 0 || !event.isPrimary || resizeSession) return;
-        event.preventDefault(); grip.focus({preventScroll:true});
-        resizeSession = { grip, pointerId:event.pointerId, y:event.clientY, height:drawer.offsetHeight, previous:drawerHeight,
-          scale:drawer.getBoundingClientRect().height / drawer.offsetHeight || 1, cancel:() => finish(true) };
-        grip.setPointerCapture(event.pointerId); grip.classList.add("v3-cart-resizing");
-      });
-      grip.addEventListener("pointermove", event => {
-        const session = resizeSession;
-        if (session?.grip !== grip || session.pointerId !== event.pointerId) return;
-        const requested = session.height + (session.y - event.clientY) / session.scale;
-        const atMinimum = requested <= bounds().min;
-        drawerHeight = apply(requested);
-        hint.hidden = !atMinimum;
-        if (!atMinimum) { session.detentY = null; return; }
-        grip.setAttribute("aria-valuetext", t`${drawerHeight} 像素，继续下拉收起`);
-        // Start the detent at the first boundary event, so a fast initial pull
-        // still stops once before a further deliberate movement can close it.
-        if (session.detentY == null) session.detentY = event.clientY;
-        else if ((event.clientY - session.detentY) / session.scale >= collapsePull) finish(false, true);
-      });
-      grip.addEventListener("pointerup", event => { if (resizeSession?.pointerId === event.pointerId) finish(false); });
-      for (const type of ["pointercancel", "lostpointercapture"]) grip.addEventListener(type, event => {
-        if (resizeSession?.pointerId === event.pointerId) finish(true);
-      });
-      const reset = () => { drawerHeight = limits.initial; apply(drawerHeight); savePage(); };
-      grip.addEventListener("dblclick", event => { event.preventDefault(); reset(); });
-      grip.addEventListener("keydown", event => {
-        if (event.key === "Escape" && resizeSession?.grip === grip) { event.preventDefault(); event.stopPropagation(); finish(true); return; }
-        if (resizeSession) return;
-        const step = event.shiftKey ? 50 : 10, { min, max } = bounds();
-        const next = { ArrowUp:drawer.offsetHeight + step, ArrowDown:drawer.offsetHeight - step, Home:min, End:max, Enter:limits.initial }[event.key];
-        if (next == null) return;
-        event.preventDefault(); event.stopPropagation(); drawerHeight = apply(next); savePage();
-      });
-      drawer.append(grip);
+      applyWorkbench(section);
+      root.requestAnimationFrame(() => { if (section.isConnected) applyWorkbench(section); });
     }
     function syncProjectWidth(widths) {
       const width = `${app.marketPartitions.projectColumns.reduce((sum, column) => sum + widths[column.key], 0)}px`;
@@ -10907,6 +11447,7 @@ function getPriceTier(price, direction) {
     // Keep loaded SVG instances when a changed detail/cart region needs new controls.
     // New controls retain their own closures; no generic DOM morphing of event handlers.
     function replaceRegion(previous, next) {
+      const motion = capturePlanMotion(previous);
       const icons = new Map();
       for (const svg of previous.querySelectorAll("svg")) {
         const href = svg.querySelector("use")?.getAttribute("href");
@@ -10919,6 +11460,7 @@ function getPriceTier(price, direction) {
         if (old) svg.replaceWith(old);
       }
       previous.replaceWith(next);
+      resumePlanMotion(next, motion);
     }
     function render(snapshot) {
       if (partitionGesture) return;
@@ -10928,6 +11470,7 @@ function getPriceTier(price, direction) {
       syncProjectWidth(partitions.columnWidths());
       let { items, wages, prices, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError } = snapshot;
       salePriceWages = wages;
+      referencePrices = new Map(items.map(item => [app.materialCart.key(item), item.customPrice]));
       if (cartError || !cartItems.some(item => item.quantity === 1 && `${cartScope}|${app.materialCart.key(item)}` === pendingRemoval)) clearPendingRemoval();
       // Calculation revisions include routinely refreshed role/buff metadata.
       // A frozen scenario belongs to a confirmed character, not a cache epoch.
@@ -10956,6 +11499,11 @@ function getPriceTier(price, direction) {
         !(showMaterials && materialRows.has(app.materialCart.key(item)))).map(item => {
         const quote = prices.quote(item);
         const simulation = simulationPanels.get(app.materialCart.key(item));
+        if (simulation && salePriceSide === "reference") {
+          const effectivePrice = calculationQuote(quote, item).price;
+          const price = effectivePrice > 0 ? effectivePrice : null;
+          if (simulation.sellPrice() !== price) simulation.setSellPrice(price);
+        }
         const result = simulation?.active() ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, calculationQuote(quote, item));
         const quantity = cartItems.find(row => app.materialCart.key(row) === app.materialCart.key(item))?.quantity || 1;
         const orders = app.marketPartitions.compareListings(own?.listings || [], item, quote);
@@ -10982,9 +11530,9 @@ function getPriceTier(price, direction) {
       projectOrderScope = nextOrderScope;
       projectOrder = chosen.map(plan => app.materialCart.key(plan.item));
       const nextStructure = JSON.stringify([items, cartItems, cartScope, cartError, partitions.read(), names, spriteBase, skillSpriteBase,
-        workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide, search, listingFilter, sort, direction,
+        workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide, referenceFallbackSide, search, listingFilter, sort, direction,
         materialSort, materialDirection, shortagesOnly, [...expanded], [...historyExpanded], [...simulationEnabled],
-        [...quantityDrafts], [...priceDrafts], pendingRemoval, allocationOwner,
+        [...quantityDrafts], [...priceDrafts], pendingRemoval, allocationOwner, cartSort, [...cartDetails],
         chosen.map(plan => app.materialCart.key(plan.item)).sort(), catalog.rows.map(app.materialCart.key).sort(), wages.settings()]);
       if (nextStructure === structureSignature && refreshLive) {
         refreshLive(snapshot, chosen, catalog);
@@ -10994,12 +11542,44 @@ function getPriceTier(price, direction) {
       structureSignature = nextStructure;
       refreshLive = null;
       element.dataset.renderRevision = String(++renderRevision);
-      const savedView = rememberView();
-      syncDrawerHeight = () => {};
+      const currentView = rememberView(), pageKey = `${cartScope}|${workspaceTab}`;
+      if (renderedPage) pageViews.set(renderedPage, currentView);
+      const savedView = renderedPage === pageKey ? currentView : {
+        ...(pageViews.get(pageKey) || {...currentView, scrolls:[], details:new Map(), anchor:null, controlAnchor:null}),
+        focus:currentView.focus, selection:null, parents:currentView.parents
+      };
+      renderedPage = pageKey;
+      if (pageViews.size > 20) pageViews.delete(pageViews.keys().next().value);
+      const previousPlanMotion = capturePlanMotion(element);
       element.replaceChildren();
-      if (!["projects", "manage"].includes(workspaceTab)) {
-        const back = button(t("返回强化项目"), () => { workspaceTab = "projects"; drawerOpen = false; savePage(); onChange(); });
-        back.dataset.view = "projects"; back.className = "v3-back"; element.append(back);
+      const pages = node("nav", null, "v3-tabs"); pages.setAttribute("aria-label", t("工作区页面"));
+      for (const [id, label] of [["projects", t("列表")], ["manage", t("分区")], ["cart", t("备料车")], ["settings", t("设置")]]) {
+        const tab = button(label, () => { workspaceTab = id; drawerOpen = false; savePage(); onChange(); });
+        tab.dataset.view = id;
+        tab.setAttribute("aria-current", workspaceTab === id || id === "projects" && showMaterials ? "page" : "false");
+        if (id === "cart") tab.append(node("span", String(cartItems.length), "v3-cart-badge"));
+        pages.append(tab);
+      }
+      element.append(pages);
+      if (workspaceTab === "loot") {
+        const back = button(t("返回强化项目"), () => { workspaceTab = "projects"; savePage(); onChange(); });
+        back.className = "v3-back"; element.append(back);
+      }
+      if (workspaceTab === "cart") {
+        const page = node("section", null, "v3-cart-page"); page.setAttribute("aria-label", t("备料与采购"));
+        page.append(cartPanel()); element.append(page);
+        app.itemUI.decorate(page, spriteBase, names); restoreView(savedView);
+        const fingerprint = () => JSON.stringify([app.materialCart.budget(app.materialCart.summarize(cartItems, wages, prices), prices), wages.state().inventoryRevision]);
+        let signature = fingerprint();
+        refreshLive = (next, _plans, nextCatalog) => {
+          ({ items, wages, prices, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError } = next);
+          catalog = nextCatalog;
+          const nextSignature = fingerprint(); if (signature === nextSignature) return;
+          const saved = rememberView(), panel = cartPanel();
+          app.itemUI.decorate(panel, spriteBase, names); page.replaceChildren(panel);
+          signature = nextSignature; restoreView(saved);
+        };
+        return;
       }
       if (workspaceTab === "loot") {
         if (!lootPage) lootPage = app.lootHistoryUI.create({ onError: onStatus });
@@ -11099,8 +11679,7 @@ function getPriceTier(price, direction) {
         expanded.has(app.materialCart.key(plan.item)) ? [
           wages.state().experienceRevision,
           wages.materials(plan.item, plan.result, plan.quantity), wages.materialInfo(plan.item),
-          Array.from({ length: plan.item.enhancementLevel + 1 }, (_, enhancementLevel) =>
-            wages.materialInfo({ ...plan.item, enhancementLevel }).inventoryCount),
+          wages.inventoryLevels(plan.item), own?.listings?.filter(row => row.itemHrid === plan.item.itemHrid),
           prices.orderBook(plan.item), historyError,
           history?.filter(sale => app.materialCart.key(sale) === app.materialCart.key(plan.item)),
           wages.materials(plan.item, plan.result, plan.quantity).inputs.map(input => prices.quote(input))
@@ -11113,21 +11692,23 @@ function getPriceTier(price, direction) {
           node("span", t`${chosen.length} 个项目`, "mwi-layu-group-note")); main.append(title);
         if (!chosen.length) main.append(node("p", search || listingFilter !== "all" ? t("没有符合搜索或挂单筛选的项目。") : t("所选分区暂无项目。"), "mwi-layu-group-empty"));
         else {
-          const listing = table([t("物品 / 等级"), t("市场左一"), t("市场右一"), t("利润"), t("工时费 / h"), t("利润率"), t("我的挂单"), t("参考售价"), t("备料")], t("收藏项目列表"));
+          const listing = table([t("物品 / 等级"), t("市场左一"), t("市场右一"), t("参考售价"), t("利润"), t("工时费 / h"), t("利润率"), t("我的挂单"), t("备料")], t("收藏项目列表"));
           listing.region.classList.add("mwi-layu-project-scroll"); listing.body.parentElement.classList.add("mwi-layu-project-table");
-          sortableHeaders(listing, ["name", null, null, "profit", "wage", "margin", "own", "reference", null], false);
+          sortableHeaders(listing, ["name", null, null, null, "profit", "wage", "margin", "own", null], false);
           for (const [index, label, options] of [
             [1, t("市场左价"), [["ask", t("左"), t("使用市场左一计算整表收益")], ["ask-minus", t("左−"), t("使用市场左一降一档计算整表收益")]]],
-            [2, t("市场右价"), [["bid", t("右"), t("使用市场右一计算整表收益")], ["bid-plus", t("右+"), t("使用市场右一升一档计算整表收益")]]]
+            [2, t("市场右价"), [["bid", t("右"), t("使用市场右一计算整表收益")], ["bid-plus", t("右+"), t("使用市场右一升一档计算整表收益")]]],
+            [3, t("参考售价"), [["reference", t("参考售价"), t("使用参考售价计算整表收益")]]]
           ]) {
             const th = listing.body.parentElement.tHead.rows[0].cells[index];
             const group = node("div", null, "v3-sale-price-group");
-            group.append(node("span", label));
+            if (index !== 3) group.append(node("span", label));
             const controls = node("div", null, "v3-sale-price-options");
             for (const [side, text, description] of options) {
               const choice = button(null, () => {
                 if (salePriceSide === side) return;
                 salePriceSide = side;
+                if (side !== "reference") referenceFallbackSide = side;
                 savePage();
                 for (const item of items) simulationPanels.get(app.materialCart.key(item))?.setSellPrice(calculationQuote(prices.quote(item), item).price);
                 onChange();
@@ -11136,6 +11717,7 @@ function getPriceTier(price, direction) {
               choice.dataset.focusKey = `sale-price-side:${side}`;
               choice.setAttribute("aria-pressed", String(salePriceSide === side));
               choice.append(node("span", (salePriceSide === side ? "✓ " : "") + text));
+              if (side === "reference" && salePriceSide === side) choice.append(node("small", fallbackLabel()));
               choice.title = description;
               controls.append(choice);
             }
@@ -11158,26 +11740,10 @@ function getPriceTier(price, direction) {
       }
       if (!selected.length) main.append(node("p", t("请勾选上方分区，可同时选择多个。"), "mwi-layu-group-empty"));
       shell.append(main); if (workspaceTab !== "manage") element.append(shell);
-      const drawer = node("section", null, "v3-cart-drawer"); drawer.id = "mwi-layu-cart-drawer";
-      drawer.hidden = !drawerOpen; drawer.setAttribute("aria-label", t("备料抽屉"));
-      if (drawerOpen) { resizableDrawer(drawer); drawer.append(cartPanel()); }
-      const dock = node("footer", null, "v3-cart-dock");
-      let totals = app.materialCart.summarize(cartItems, wages, prices);
-      let budget = app.materialCart.budget(totals, prices);
-      dock.append(node("span", t`备料车 · ${cartItems.length} 项 / ${cartItems.reduce((n, item) => n + item.quantity, 0)} 件`),
-        node("span", t`采购预算 ${cartError || !cartScope ? t("未知") : number(budget.amount)}${budget.complete ? "" : t(" · 数据待完整")}`));
-      const toggle = button(drawerOpen ? t("收起备料清单") : t("展开备料清单"), () => { drawerOpen = !drawerOpen; savePage(); onChange(); });
-      toggle.setAttribute("aria-expanded", String(drawerOpen)); toggle.setAttribute("aria-controls", drawer.id);
-      const dockActions = node("div", null, "v3-dock-actions"); dockActions.append(toggle);
-      const planNames = node("div", null, "v3-dock-plan");
-      for (const item of cartItems.slice(0,2)) planNames.append(app.itemUI.identity(item, spriteBase, `${names[item.itemHrid] || item.name} +${item.enhancementLevel} ×${item.quantity}`));
-      if (cartItems.length > 2) planNames.append(node("span", t`等 ${cartItems.length} 项`));
-      dock.insertBefore(planNames, dock.children[1]); dock.append(node("span", t`缺料 ${budget.total - budget.ready} 种`, "v3-dock-shortage"), dockActions); element.append(drawer, dock);
-      // Item labels can change wrapping and scroll limits. Restore only after final layout content exists.
+      // Restore only after icons and final layout content exist.
       app.itemUI.decorate(element, spriteBase, names);
-      syncDrawerHeight();
       restoreView(savedView);
-      let cartSignature = JSON.stringify([totals, budget, wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 })]);
+      resumePlanMotion(element, previousPlanMotion);
       let catalogSignature = JSON.stringify([catalog, catalog.rows.map(item => prices.quote(item))]);
       refreshLive = (next, plans, nextCatalog) => {
         ({ items, wages, prices, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError } = next);
@@ -11219,18 +11785,7 @@ function getPriceTier(price, direction) {
           replaceRegion(main.querySelector(".mwi-layu-material-catalog"), nextPanel); changed = true;
         }
         catalogSignature = nextCatalogSignature;
-        totals = app.materialCart.summarize(cartItems, wages, prices); budget = app.materialCart.budget(totals, prices);
-        const nextCartSignature = JSON.stringify([totals, budget, wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 })]);
-        if (nextCartSignature !== cartSignature) {
-          dock.children[2].textContent = t`采购预算 ${cartError || !cartScope ? t("未知") : number(budget.amount)}${budget.complete ? "" : t(" · 数据待完整")}`;
-          dock.querySelector(".v3-dock-shortage").textContent = t`缺料 ${budget.total - budget.ready} 种`;
-          if (drawerOpen) {
-            const nextPanel = cartPanel(); app.itemUI.decorate(nextPanel, spriteBase, names);
-            replaceRegion(drawer.querySelector(".mwi-layu-cart"), nextPanel);
-          }
-          cartSignature = nextCartSignature; changed = true;
-        }
-        if (changed) { syncDrawerHeight(); restoreView(saved); }
+        if (changed) restoreView(saved);
       };
       function sortableHeaders(listing, keys, isMaterial) {
         const current = isMaterial ? materialSort : sort;
@@ -11255,7 +11810,7 @@ function getPriceTier(price, direction) {
         const section = node("section", null, "mwi-layu-material-catalog");
         const header = node("header", null, "v3-section-heading"), copy = node("div");
         copy.append(node("h2", t("原材料统一核算看板")), node("p", t("需求仅按备料车累计，制造与强化共用材料统一扣减库存。"), "mwi-layu-group-note"));
-        header.append(copy, button(t("查看采购清单"), () => {drawerOpen = true; savePage(); onChange();})); section.append(header);
+        header.append(copy, button(t("查看采购清单"), () => {workspaceTab = "cart"; drawerOpen = false; savePage(); onChange();})); section.append(header);
         if (cartError || !cartScope) section.append(node("p", cartError || t("角色尚未就绪，备料需求未知。"), "mwi-layu-cart-warning"));
         if (!catalog.rows.length) { section.append(node("p", t("暂无可显示的材料，请添加收藏并读取角色与配方。"), "mwi-layu-group-empty")); return section; }
         const entries = catalog.rows.filter(matchesSearch).map(material => ({ ...material, name: names[material.itemHrid] || material.name,
@@ -11304,15 +11859,26 @@ function getPriceTier(price, direction) {
       }
       function priceInput(item) {
         const key = app.marketFavoritesStore.key(item); const label = `${item.name} +${item.enhancementLevel}`;
-        const input = node("input"); input.className = "mwi-layu-compact-price"; input.type = "text"; input.inputMode = "numeric"; input.placeholder = t("未设置");
-        input.setAttribute("aria-label", t`自定义价格：${label}`); input.value = priceDrafts.get(key) ?? (item.customPrice == null ? "" : String(item.customPrice));
+        const input = node("input"); input.className = "mwi-layu-compact-price"; input.type = "text"; input.inputMode = "text"; input.placeholder = t("未设置");
+        let savedPrice = item.customPrice ?? null;
+        const display = () => app.priceSimulationUI.formatPrice(savedPrice).toUpperCase();
+        input.setAttribute("aria-label", t`自定义价格：${label}`); input.value = priceDrafts.get(key) ?? display();
+        input.title = t("支持 K / M / B（大小写均可），例如 500K、170m、1.2B；清空表示未设置。");
+        input.onfocus = () => {
+          if (!priceDrafts.has(key)) input.value = savedPrice == null ? "" : String(savedPrice);
+          input.select();
+        };
         input.oninput = () => priceDrafts.set(key, input.value);
         input.onchange = () => {
+          // Focus/blur only changes presentation; never save a rounded display value.
+          if (!priceDrafts.has(key)) return;
           const value = input.value.trim();
-          if (value && (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))) { input.setAttribute("aria-invalid", "true"); onStatus(t("参考售价请输入非负整数金币，清空表示未设置。")); return; }
-          attempt(() => { onPrice(item, value ? Number(value) : null); priceDrafts.delete(key); });
+          const price = value ? app.priceSimulationUI.parsePrice(value, { integer: true }) : null;
+          if (value && (!Number.isSafeInteger(price) || price < 0)) { input.setAttribute("aria-invalid", "true"); onStatus(t("参考售价支持 K / M / B，换算后须为非负安全整数金币；清空表示未设置。")); return; }
+          attempt(() => { onPrice(item, price); savedPrice = price; priceDrafts.delete(key); input.removeAttribute("aria-invalid"); });
         };
-        input.onblur = onChange; input.onkeydown = event => { if (event.key === "Enter") { input.onchange(); input.blur(); } };
+        input.onblur = () => { if (!priceDrafts.has(key)) input.value = display(); onChange(); };
+        input.onkeydown = event => { if (event.key === "Enter") { input.onchange(); input.blur(); } };
         return input;
       }
       function projectQuantity(item, inPlanAction = false) {
@@ -11388,7 +11954,9 @@ function getPriceTier(price, direction) {
         }
         const price = quoteCell(quote?.price), bid = quoteCell(quote?.bid);
         const { orders } = plan;
-        const mine = node("span", !own ? t("未读取") : orders.length ? "" : "—");
+        const mine = button(!own ? t("未读取") : orders.length ? "" : "—", b => onOpen(item, b), t`打开市场：${label}`);
+        mine.className = "v3-own-market-link";
+        mine.dataset.focusKey = `own-market:${key}`;
         for (const isSell of [true, false]) {
           const sideOrders = orders.filter(order => order.isSell === isSell);
           if (!sideOrders.length) continue;
@@ -11404,30 +11972,36 @@ function getPriceTier(price, direction) {
           mine.append(line);
         }
         const saved = cartItems.find(row => app.materialCart.key(row) === key);
-        const tr = row(body, [identity, price, bid, profit(result), wage(result), profitMargin(result), mine, priceInput(item), projectQuantity(item)], "mwi-layu-project-row"); tr.dataset.favoriteKey = key;
-        const liveCells = { market:tr.cells[1], bid:tr.cells[2], own:tr.cells[6] };
-        tr.cells[salePriceSide.startsWith("bid") ? 2 : 1].dataset.salePriceSelected = "true";
+        const tr = row(body, [identity, price, bid, priceInput(item), profit(result), wage(result), profitMargin(result), mine, projectQuantity(item)], "mwi-layu-project-row"); tr.dataset.favoriteKey = key;
+        const liveCells = { market:tr.cells[1], bid:tr.cells[2], own:tr.cells[7] };
+        liveCells.own.classList.add("v3-own-market-cell");
+        tr.cells[salePriceSide === "reference" ? 3 : salePriceSide.startsWith("bid") ? 2 : 1].dataset.salePriceSelected = "true";
         const metricRow = retainedRow || tr;
         const updateMetrics = () => {
           const simulation = simulationPanels.get(key);
           const active = simulation?.active();
           const metric = active ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, calculationQuote(prices.quote(item), item));
-          metricRow.cells[3].replaceChildren(profit(metric)); metricRow.cells[4].replaceChildren(wage(metric)); metricRow.cells[5].replaceChildren(profitMargin(metric));
+          metricRow.cells[4].replaceChildren(profit(metric)); metricRow.cells[5].replaceChildren(wage(metric)); metricRow.cells[6].replaceChildren(profitMargin(metric));
+          metricRow.dataset.calculationSide = calculationSide(item);
+          metricRow.cells[3].querySelector(".v3-reference-fallback")?.remove();
+          if (salePriceSide === "reference" && calculationSide(item) !== "reference") {
+            metricRow.cells[3].append(node("small", fallbackLabel(), "mwi-layu-quote-source v3-reference-fallback"));
+          }
           metricRow.dataset.simulated = String(Boolean(active));
-          if (active) metricRow.cells[3].append(node("small", t("模拟"), "mwi-layu-quote-source"));
-          for (const [index, value] of [[3, metric?.evaluation?.profit], [4, metric?.hourlyWage], [5, metric?.evaluation?.profitMargin]]) {
-            metricRow.cells[index].dataset.metric = ({3:"profit", 4:"wage", 5:"margin"})[index];
+          if (active) metricRow.cells[4].append(node("small", t("模拟"), "mwi-layu-quote-source"));
+          for (const [index, value] of [[4, metric?.evaluation?.profit], [5, metric?.hourlyWage], [6, metric?.evaluation?.profitMargin]]) {
+            metricRow.cells[index].dataset.metric = ({4:"profit", 5:"wage", 6:"margin"})[index];
             metricRow.cells[index].dataset.value = value ?? "";
-            metricRow.cells[index].title = active ? t`材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : saleBasisLabel();
+            metricRow.cells[index].title = active ? t`材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : saleBasisLabel(item);
           }
         };
         updateMetrics();
         if (own && orders.length) {
           const standing = orders.some(order => order.standing === "leading") ? "leading" :
             orders.every(order => order.standing === "behind") ? "behind" : "unknown";
-          tr.cells[6].classList.add(`mwi-layu-order-${standing}`);
-          mine.setAttribute("aria-label", mine.textContent);
+          tr.cells[7].classList.add(`mwi-layu-order-${standing}`);
         }
+        mine.setAttribute("aria-label", `${t`打开市场：${label}`} · ${mine.textContent}`);
         if (saved) tr.classList.add("mwi-layu-project-selected");
         let detailRow = null;
         if (expanded.has(key)) {
@@ -11439,15 +12013,27 @@ function getPriceTier(price, direction) {
       function cartPanel() {
         const byUnitPrice = rows => rows.map(item => ({ item, price: item.itemHrid === "/items/coin" ? 1 : prices.quote(item)?.price }))
           .sort((a, b) => compare(a.price, b.price, -1)).map(entry => entry.item);
-        const panel = node("aside", null, "mwi-layu-cart"); panel.setAttribute("aria-label", t("备料车"));
-        const header = node("div", null, "mwi-layu-cart-heading"); header.append(node("h2", t("备料计划与采购清单核算")), node("span", t`${cartItems.length} 项 · ${cartItems.reduce((n, row) => n + row.quantity, 0)} 件`)); panel.append(header);
+        const panel = node("div", null, "mwi-layu-cart"); panel.setAttribute("aria-label", t("备料车"));
+        const header = node("div", null, "mwi-layu-cart-heading"); header.append(node("h2", t("备料与采购")), node("span", t`${cartItems.length} 项 · ${cartItems.reduce((n, row) => n + row.quantity, 0)} 件`)); panel.append(header);
         if (cartError || !cartScope) { panel.append(node("p", cartError || t("角色尚未就绪，读取后即可加入项目。"), "mwi-layu-group-note")); return panel; }
-        if (!cartItems.length) { panel.append(node("p", t("在强化项目中加入备料后，统一计算材料需求。"), "mwi-layu-group-note")); return panel; }
+        if (!cartItems.length) { panel.append(node("p", t("在强化项目中加入备料后，统一计算材料需求。"), "mwi-layu-group-note"), button(t("前往列表添加计划"), () => {workspaceTab = "projects"; savePage(); onChange();})); return panel; }
         const list = node("div", null, "mwi-layu-cart-items");
-        for (const item of byUnitPrice(cartItems)) {
+        const progress = app.materialCart.progress(cartItems, wages);
+        for (const item of cartItems) {
           const label = `${names[item.itemHrid] || item.name} +${item.enhancementLevel}`;
           const line = node("div", null, "mwi-layu-cart-line"); line.dataset.cartKey = app.materialCart.key(item);
-          line.append(app.itemUI.identity(item, spriteBase, label));
+          const info = node("div", null, "v3-cart-project-info");
+          info.append(app.itemUI.identity(item, spriteBase, label));
+          const stage = progress.find(row => app.materialCart.key(row.item) === app.materialCart.key(item));
+          const labels = {unknown:t("制作进度待确认"), buy:t("待购买材料"), pending:t("材料待到账"),
+            craft:stage.tailoring ? t("材料齐全，待缝纫") : t("材料齐全，待制造"), enhance:t("底子已就绪，待强化"),
+            enhancing:t("已有强化底子，待继续强化"), complete:t("目标等级已备齐"), buyBase:t("待购买底子"), basePending:t("底子待到账")};
+          const tone = ["complete", "enhance", "enhancing", "craft"].includes(stage.state) ? "ready" : ["buy", "buyBase"].includes(stage.state) ? "shortage" : "pending";
+          const status = node("div", labels[stage.state], `v3-cart-project-progress v3-cart-${tone}`);
+          status.dataset.progress = stage.state;
+          if (stage.completed != null && stage.bases != null) status.append(node("span",
+            t`装备就绪 ${stage.completed + stage.bases}/${item.quantity} 件`, "v3-cart-project-counts"));
+          info.append(status); line.append(info);
           const maximum = 1000000 - cartItems.filter(row => row.itemHrid === item.itemHrid && app.materialCart.key(row) !== app.materialCart.key(item)).reduce((sum, row) => sum + row.quantity, 0);
           const input = node("input"); input.type = "number"; input.min = "1"; input.max = String(maximum); input.step = "1"; input.required = true;
           const draftKey = `${cartScope}|${app.materialCart.key(item)}`;
@@ -11476,7 +12062,11 @@ function getPriceTier(price, direction) {
                 }
                 return;
               }
-              cart.setQuantity(cartScope, item, Math.max(1, quantity + delta));
+              const nextQuantity = Math.max(1, quantity + delta);
+              cart.setQuantity(cartScope, item, nextQuantity);
+              // A draft can return to the last rendered quantity before a repaint.
+              // Keep the control correct even when the refresh fingerprint is unchanged.
+              input.value = String(nextQuantity);
               clearPendingRemoval();
               quantityDrafts.delete(draftKey);
             }), t`${delta < 0 ? t("减少") : t("增加")}备料数量：${label}`);
@@ -11498,26 +12088,48 @@ function getPriceTier(price, direction) {
             return b;
           }
           stepper.append(stepButton(-1), input, stepButton(1));
-          line.append(stepper, button(t("移除"), () => attempt(() => { cart.remove(cartScope, item); clearPendingRemoval(); quantityDrafts.delete(draftKey); }), t`移出备料车：${label}`)); list.append(line);
+          line.append(stepper, button(t("移除"), () => attempt(() => { cart.remove(cartScope, item); clearPendingRemoval(); quantityDrafts.delete(draftKey); }), t`移出备料车：${label}`));
+          const actions = node("div", null, "v3-cart-project-actions");
+          const recipe = wages.craftingRecipe(item.itemHrid);
+          const craftLabel = ({ tailoring:t("缝纫"), crafting:t("制作"), cheesesmithing:t("锻造"), cooking:t("烹饪"), brewing:t("冲泡") })[recipe?.actionHrid?.split("/")[2]] || t("制作");
+          const marketAction = button(t("市场"), b => onOpen(item, b), t`市场：${label}`);
+          const craftAction = button(craftLabel, b => onCraft(item, b), `${craftLabel}：${label}`);
+          const enhanceAction = button(t("强化"), b => onEnhance(item, b), t`强化：${label}`);
+          enhanceAction.title = t("前往强化并预填，请在游戏中确认后开始");
+          craftAction.disabled = !recipe;
+          for (const action of [marketAction, craftAction, enhanceAction]) action.prepend(app.itemUI.icon(item.itemHrid, spriteBase));
+          if (stage.state === "craft") craftAction.classList.add("v3-primary");
+          else if (["enhance", "enhancing"].includes(stage.state)) enhanceAction.classList.add("v3-primary");
+          else if (stage.state === "buyBase") marketAction.classList.add("v3-primary");
+          actions.append(marketAction, craftAction, enhanceAction); line.append(actions); list.append(line);
         }
-        panel.append(list);
+        panel.append(list, node("p", t("按备料车顺序分配共享库存；待到账不算备齐。底子就绪不代表强化耗材齐全，详见下方材料表。"), "mwi-layu-group-note"));
         const totals = app.materialCart.summarize(cartItems, wages, prices);
         const budget = app.materialCart.budget(totals, prices);
-        const budgetLine = node("p", t`${budget.complete ? t("缺口预算") : t("缺口预算未计全")} ${budget.missing.length && budget.amount === 0 ? t("未知") : number(budget.amount)} 金币 · 无需再购 ${budget.ready}/${budget.total} 种`, "mwi-layu-budget");
-        budgetLine.setAttribute("role", "status"); panel.append(budgetLine);
+        const budgetLine = node("p", null, "mwi-layu-budget");
+        budgetLine.append(`${budget.complete ? t("缺口预算") : t("缺口预算未计全")} `,
+          node("strong", budget.missing.length && budget.amount === 0 ? t("未知") : number(budget.amount)), " ",
+          app.itemUI.identity({itemHrid:"/items/coin"}, spriteBase, t("金币")), t` · 无需再购 ${budget.ready}/${budget.total} 种`);
+        budgetLine.setAttribute("role", "status"); header.append(budgetLine);
         const coins = wages.materialInfo({ itemHrid: "/items/coin", enhancementLevel: 0 }).inventoryCount;
         const allocation = app.materialCart.allocate(totals, prices, coins);
         if (!allocation.available) panel.append(node("p", allocation.reason, "mwi-layu-group-note"));
         else if (allocation.insufficient) {
-          const allocateButton = button(allocationOwner === cartScope ? t("收起预算采购清单") : t("按当前金币分配采购"), () => {
+          const allocateButton = button(null, () => {
             allocationOwner = allocationOwner === cartScope ? null : cartScope; onChange();
           }, t("按当前金币分配采购"));
+          if (allocationOwner === cartScope) allocateButton.append(t("收起预算采购清单"));
+          else {
+            const [before, after] = t("按当前{0}分配采购").split("{0}");
+            allocateButton.append(before, app.itemUI.identity({itemHrid:"/items/coin"}, spriteBase, t("金币")), after);
+          }
           allocateButton.setAttribute("aria-expanded", String(allocationOwner === cartScope)); panel.append(allocateButton);
           if (allocationOwner === cartScope) {
             const status = node("p", t`可用 ${number(coins)} · 采购 ${number(allocation.purchaseCost)} · 预留消耗 ${number(allocation.reservedCoins)} · 余额 ${number(allocation.remaining)}`, "mwi-layu-group-note");
             status.setAttribute("role", "status"); panel.append(status);
             if (!allocation.manufacturingComplete) panel.append(node("p", t("金币不足以备齐制造材料；本次仅分配制造材料，暂不分配强化材料。"), "mwi-layu-cart-warning"));
             const purchases = table([t("材料"), t("建议购买"), t("金额")], t("预算采购清单"));
+            purchases.region.classList.add("v3-cart-allocation");
             for (const material of byUnitPrice(allocation.rows.filter(material => material.purchaseQuantity > 0))) {
               const tr = row(purchases.body, [materialLink(material, "budget"), material.purchaseQuantity.toLocaleString(app.i18n?.locale), number(material.purchaseCost)]);
               tr.dataset.purchaseQuantity = material.purchaseQuantity; tr.dataset.purchaseCost = material.purchaseCost;
@@ -11532,32 +12144,84 @@ function getPriceTier(price, direction) {
           for (const material of budget.missing) missing.append(materialLink(material), " ");
           panel.append(missing);
         }
+        const tools = node("div", null, "v3-cart-tools");
         const shortageLabel = node("label", null, "mwi-layu-partition-choice"); const shortageToggle = node("input"); shortageToggle.type = "checkbox";
         shortageToggle.checked = shortagesOnly; shortageToggle.setAttribute("aria-label", t("备料车只看缺料"));
         shortageToggle.onchange = () => { shortagesOnly = shortageToggle.checked; saveView(); onChange(); };
-        shortageLabel.append(shortageToggle, node("span", t("只看缺料（含未知）"))); panel.append(shortageLabel);
-        const sortedMaterials = byUnitPrice(budget.rows.filter(row => !shortagesOnly || row.shortage == null || row.shortage > 0));
-        const materialHeading = node("h3", t("合计材料 · 单价降序"));
-        panel.append(materialHeading);
+        shortageLabel.append(shortageToggle, node("span", t("只看缺料（含未知）")));
+        const sortLabel = node("label", t("排序")), sortSelect = node("select"); sortSelect.setAttribute("aria-label", t("备料材料排序"));
+        for (const [value, label] of [["shortage", t("缺料优先")], ["budget", t("预算降序")], ["price", t("单价降序")]]) {
+          const option = node("option", label); option.value = value; sortSelect.append(option);
+        }
+        sortSelect.value = cartSort; sortSelect.onchange = () => {cartSort = sortSelect.value; onChange();}; sortLabel.append(sortSelect);
+        function stateOf(material) {
+          if (material.shortage == null) return "unknown";
+          if (material.shortage > 0) return "shortage";
+          // Stock already reserved as a base cannot also satisfy material demand.
+          return Math.max(0, material.availableCount - material.pendingPurchaseCount) >= material.required ? "ready" : "pending";
+        }
+        const labels = {unknown:t("待核算"), shortage:t("缺料"), ready:t("已备齐"), pending:t("待到账")};
+        const counts = node("span", null, "v3-cart-counts");
+        for (const state of ["shortage", "pending", "ready", "unknown"]) {
+          const count = budget.rows.filter(row => stateOf(row) === state).length;
+          if (count) counts.append(node("span", `${labels[state]} ${count}`, `v3-cart-state v3-cart-${state}`));
+        }
+        tools.append(node("strong", t`材料 ${budget.total} 种`), counts, shortageLabel, sortLabel); panel.append(tools);
+        const sortedMaterials = budget.rows.filter(row => !shortagesOnly || row.shortage == null || row.shortage > 0).sort((a, b) => {
+          const priority = row => row.shortage == null ? 0 : row.shortage > 0 ? 1 : 2;
+          return (cartSort === "shortage" ? priority(a) - priority(b) : 0) ||
+            compare(cartSort === "price" ? a.quote?.price : a.purchaseCost, cartSort === "price" ? b.quote?.price : b.purchaseCost, -1);
+        });
         if (!totals.complete) panel.append(node("p", t("数量中的「+ 未知」表示尚有项目未算入；已算部分保留，完整缺口和预算待方案就绪后计算。"), "mwi-layu-group-note"));
-        const materials = table([t("材料"), t("库存"), t("总需"), t("缺口"), t("左一单价"), t("预算小计")], t("备料车材料合计"));
+        const materials = table([t("材料"), t("制造"), t("强化备料"), t("总需"), t("库存"), t("买单未成"), t("成交待领"), t("净缺口"), t("左一单价"), t("预算小计"), t("状态"), t("操作")], t("备料车材料合计"));
+        materials.region.classList.add("v3-cart-materials");
+        const group = node("tr", null, "v3-cart-column-groups");
+        for (const [label, span] of [[t("物品"),1], [t("计划需求"),3], [t("库存与买单"),3], [t("采购核算"),5]]) {
+          const th = node("th", label); th.colSpan = span; th.scope = "colgroup"; group.append(th);
+        }
+        materials.body.parentElement.tHead.prepend(group);
         for (const material of sortedMaterials) {
+          const key = `${cartScope}|${app.materialCart.key(material)}`;
+          const label = `${names[material.itemHrid] || material.name}${material.enhancementLevel ? ` +${material.enhancementLevel}` : ""}`;
+          const info = wages.materialInfo(material), status = stateOf(material);
+          const identity = button(null, () => {cartDetails.has(key) ? cartDetails.delete(key) : cartDetails.add(key); onChange();}, t`材料明细：${label}`);
+          identity.className = "mwi-layu-group-link v3-cart-detail-toggle";
+          identity.append(node("span", cartDetails.has(key) ? "▾" : "▸"), app.itemUI.identity(material, spriteBase, label));
+          identity.setAttribute("aria-expanded", String(cartDetails.has(key)));
           const cost = node("span", number(material.purchaseCost));
           cost.title = material.quote?.at ? t`${material.quote.source} · ${time(new Date(material.quote.at).toISOString())}；采购 ${material.purchaseQuantity ?? t("未知")} 份` : t("金币直接消耗或报价未知");
-          const stock = material.pendingPurchaseCount > 0 ? t`${number(material.inventoryCount)}（待收 ${number(material.pendingPurchaseCount)}）` : number(material.inventoryCount);
-          const tr = row(materials.body, [materialLink(material, "shortage"), stock, partialNumber(material.required, material.knownRequired), partialNumber(material.shortage, material.knownShortage), number(material.quote?.price), cost]);
-          tr.dataset.materialHrid = material.itemHrid; tr.dataset.materialLevel = material.enhancementLevel;
-          tr.dataset.manufacturing = material.manufacturing ?? ""; tr.dataset.required = material.required ?? ""; tr.dataset.shortage = material.shortage ?? "";
-          tr.title = t`制造 ${partialNumber(material.manufacturing, material.knownManufacturing)}；强化备料 ${partialNumber(material.enhancement, material.knownEnhancement)}`;
-          if (material.shortage > 0 || material.knownShortage > 0) tr.cells[3].className = "mwi-layu-shortage";
+          const market = material.itemHrid === "/items/coin" ? node("span", "—")
+            : button(t("市场"), el => onOpen(material, el, "shortage"), t`采购：${label}`);
+          if (material.itemHrid !== "/items/coin") {
+            market.prepend(app.itemUI.icon(material.itemHrid, spriteBase));
+            market.title = t("前往市场并预填缺口，请在游戏中确认购买");
+          }
+          const tr = row(materials.body, [identity, partialNumber(material.manufacturing, material.knownManufacturing),
+            partialNumber(material.enhancement, material.knownEnhancement), partialNumber(material.required, material.knownRequired),
+            number(material.inventoryCount), number(info.pendingPurchases.unfilledCount), number(info.pendingPurchases.unclaimedCount),
+            partialNumber(material.shortage, material.knownShortage), number(material.quote?.price), cost,
+            node("span", labels[status], `v3-cart-state v3-cart-${status}`), market], "v3-cart-material-row");
+          Object.assign(tr.dataset, {materialHrid:material.itemHrid, materialLevel:material.enhancementLevel, manufacturing:material.manufacturing ?? "",
+            required:material.required ?? "", shortage:material.shortage ?? "", state:status});
+          if (material.shortage > 0 || material.knownShortage > 0) tr.cells[7].className = "mwi-layu-shortage";
+          if (cartDetails.has(key)) {
+            const detailRow = node("tr", null, "v3-cart-detail-row"), cell = node("td"); cell.colSpan = 12;
+            const detail = node("div", null, "v3-cart-material-detail");
+            detail.append(node("strong", t("需求核对")), node("span", t`制造 ${partialNumber(material.manufacturing, material.knownManufacturing)}；强化备料 ${partialNumber(material.enhancement, material.knownEnhancement)}`));
+            const sources = catalog.rows.find(row => app.materialCart.key(row) === app.materialCart.key(material))?.sources || [];
+            const activeKeys = new Set(cartItems.map(app.materialCart.key));
+            const sourceList = node("div", null, "v3-cart-sources");
+            for (const item of sources.filter(item => activeKeys.has(app.materialCart.key(item)))) sourceList.append(app.itemUI.identity(item, spriteBase, `${names[item.itemHrid] || item.name} +${item.enhancementLevel}`));
+            if (sourceList.childNodes.length) detail.append(sourceList);
+            detail.append(node("span", t`参与抵扣 ${number(material.availableCount)} · 建议购买 ${number(material.purchaseQuantity)}`),
+              node("span", t("净缺口已扣库存和买单待收；已占用作底子的装备不会重复抵扣。")),
+              node("span", t("买单未成仍需等待成交；成交待领需在游戏中领取。")),
+              node("span", t("数量按备料方案计算，采购数量向上取整。")));
+            cell.append(detail); detailRow.append(cell); materials.body.append(detailRow);
+          }
         }
+        if (!sortedMaterials.length) { const empty = row(materials.body, [t("当前筛选下没有缺料。")]); empty.cells[0].colSpan = 12; }
         panel.append(materials.region);
-        if (totals.rows.some(material => material.manufacturing == null || material.manufacturing > 0)) {
-          const breakdown = disclosure(t("制造 / 强化用量拆分"), "cart-breakdown");
-          const split = table([t("材料"), t("制造"), t("强化")], t("备料用量拆分"));
-          for (const material of sortedMaterials) row(split.body, [materialLink(material), partialNumber(material.manufacturing, material.knownManufacturing), partialNumber(material.enhancement, material.knownEnhancement)]);
-          breakdown.append(split.region); panel.append(breakdown);
-        }
         if (totals.warningItems.length) panel.append(warningPanel(t("未算全："), totals.warningItems));
         if (totals.minimumCostItems.length) panel.append(warningPanel(t("备料路线："), totals.minimumCostItems));
         return panel;
@@ -11646,15 +12310,21 @@ function getPriceTier(price, direction) {
               const track = node("div", null, "v3-material-stock-track"); track.setAttribute("aria-hidden", "true");
               // Stock plus its unmet demand share one scale. Incoming purchases
               // reduce the purchase shortfall below, but are not stock yet.
+              let segmentLeft = 0;
               for (const [kind, allocated] of [["craft", craft], ["enhance", enhance], ["remaining", remaining], ["missing", missing]]) {
-                if (!(allocated > 0)) continue;
+                if (kind === "craft" && craftDemand === 0) continue;
                 const segment = node("span", null, `v3-material-stock-segment v3-material-stock-${kind}`);
-                segment.style.width = `${allocated / scale * 100}%`;
-                segment.dataset.allocated = allocated;
+                segment.style.width = `${scale > 0 ? allocated / scale * 100 : 0}%`;
+                segment.style.left = `${segmentLeft}%`;
+                segment.style.clipPath = motionClip(segmentLeft, parseFloat(segment.style.width));
+                segmentLeft += parseFloat(segment.style.width);
+                segment.dataset.planMotion = `material:${m.itemHrid}:${m.enhancementLevel}:${kind}`;
+                segment.dataset.motionUnknown = String(stock == null);
+                segment.dataset.allocated = allocated ?? "";
                 track.append(segment);
               }
               const description = t`库存 ${number(stock)}；自制需 ${number(craftDemand)}，可用 ${number(craft)}；强化需 ${number(enhanceDemand)}，可用 ${number(enhance)}；剩余 ${number(remaining)}；库存缺口 ${number(missing)}。条长按库存与总需求较大值计算，按先自制、后强化分配；红色缺口未扣待收货，下方缺少数量已扣待收货。`;
-              stockDisplay.title = description; progress.setAttribute("aria-valuetext", description);
+              progress.setAttribute("aria-valuetext", description);
               progress.setAttribute("aria-label", t`${names[m.itemHrid] || m.name}库存分配`);
               progress.max = scale > 0 ? scale : 1;
               if (stock == null) progress.removeAttribute("value"); else progress.value = stock;
@@ -11694,6 +12364,7 @@ function getPriceTier(price, direction) {
             use.setAttribute("href", `${skillSpriteBase}#${value.skillHrid.slice(8)}`); icon.append(use); title.append(icon);
           }
           title.append(node("span", value.label));
+          title.title = value.label;
           heading.append(title, comparison);
           const track = node("div", null, "v3-xp-track"); track.setAttribute("role", "progressbar");
           track.setAttribute("aria-label", value.label); track.setAttribute("aria-valuemin", "0"); track.setAttribute("aria-valuemax", "100");
@@ -11703,6 +12374,11 @@ function getPriceTier(price, direction) {
           const solid = node("span", null, "v3-xp-current"), projected = node("span", null, "v3-xp-projected");
           solid.style.width = `${value.current ?? 0}%`;
           projected.style.left = `${value.current ?? 0}%`; projected.style.width = `${value.added ?? 0}%`;
+          for (const [kind, segment] of [["current", solid], ["projected", projected]]) {
+            segment.style.clipPath = motionClip(parseFloat(segment.style.left) || 0, parseFloat(segment.style.width));
+            segment.dataset.planMotion = `xp:${value.skillHrid}:${kind}`;
+            segment.dataset.motionUnknown = String(value.current == null || value.added == null);
+          }
           track.append(solid, projected);
           const bottom = node("div", null, "v3-xp-bottom");
           if (cross) bottom.append(node("span", t("跨级"), "v3-xp-level-up"));
@@ -11765,8 +12441,9 @@ function getPriceTier(price, direction) {
           const protects = metric.expectedProtects > 0 && Number.isInteger(metric.protectAt);
           const expectedProtects = metric.expectedProtects == null ? null : metric.expectedProtects * units;
           const protectionText = `(${Number.isFinite(expectedProtects) ? expectedProtects.toLocaleString("en-US", {useGrouping:false, maximumFractionDigits:2}) : t("未知")})`;
-          line.append(stage(0, protects && metric.protectAt === 0 ? metric.protectionItemHrid : null, protectionText));
-          if (protects && metric.protectAt > 0) line.append(arrow(), stage(metric.protectAt, metric.protectionItemHrid, protectionText));
+          const start = metric.startLevel || 0;
+          line.append(stage(start, protects && metric.protectAt <= start ? metric.protectionItemHrid : null, protectionText));
+          if (protects && metric.protectAt > start) line.append(arrow(), stage(metric.protectAt, metric.protectionItemHrid, protectionText));
           if (level !== 0) line.append(arrow(), stage(level, mirrorTarget != null ? "/items/philosophers_mirror" : null));
           else line.append(node("span", t("无需强化")));
           if (mirrorTarget != null) line.append(arrow(), stage(mirrorTarget));
@@ -11774,7 +12451,11 @@ function getPriceTier(price, direction) {
           if (metric.routeType === "refinementCarryover") line.append(node("span", t`· +${metric.refinementAtLevel ?? level} 精炼继承`));
           return line;
         }
-        if (route.routeType === "philosophersMirror") {
+        if (route.preparationParts) {
+          for (const part of route.preparationParts) routes.append(path(item, part, item.enhancementLevel,
+            route.preparationParts.length > 1 ? part.count : null, null, part.count));
+          panel.append(node("small", t("库存续强化单独估算；市场收益仍按完整成本测算。")));
+        } else if (route.routeType === "philosophersMirror") {
           const components = (route.materialComponents || []).map((part, index) => ({part, level:route.componentDetails?.[index]?.level}));
           const primary = components.find(({part, level}) => part.itemHrid === item.itemHrid && level === route.mirrorStartLevel);
           if (primary) routes.append(path(item, primary.part, primary.level, null, item.enhancementLevel, primary.part.quantity * quantity));
@@ -11804,16 +12485,19 @@ function getPriceTier(price, direction) {
         section.classList.toggle("v3-simulation-enabled", simulationEnabled.has(key));
         simulation.updateAppearance({ spriteBase, names });
         const combinedMaterials = node("div");
+        const stockStrip = node("div", null, "v3-stock-strip");
         const strategy = node("div", null, "v3-strategy");
         const plan = node("section", null, "v3-enhancement-plan");
         let materialSignature = "";
         let refreshEconomics = () => {};
         simulation.bind(comparison => {
+          const previousMotion = capturePlanMotion(section);
           const savedView = section.isConnected ? rememberView() : null;
           updateMetrics();
           refreshEconomics();
           const current = comparison?.simulated;
-          const route = current?.metrics;
+          const projected = wages.materials(item, current, quantity, undefined, comparison?.continuation);
+          const route = projected.preparationRoute || current?.metrics;
           const focusKey = strategy.contains(document.activeElement) ? document.activeElement.dataset.focusKey : null;
           strategy.replaceChildren();
           const base = comparison?.baseComparison;
@@ -11821,8 +12505,9 @@ function getPriceTier(price, direction) {
           const actualSource = base?.baseItemSource || selectedSource;
           const craftFallback = selectedSource === "market" && actualSource === "craft";
           const top = node("div", null, "v3-source-top");
-          const identity = app.itemUI.identity(item, spriteBase, `${item.name} +0`);
-          identity.title = `${item.name} +0`;
+          const stockLevel = projected.stockAllocation?.used[0]?.enhancementLevel;
+          const identity = app.itemUI.identity(item, spriteBase, `${item.name} +${stockLevel ?? 0}`);
+          identity.title = `${item.name} +${stockLevel ?? 0}`;
           const options = node("div", null, "v3-source-options");
           options.setAttribute("role", "radiogroup"); options.setAttribute("aria-label", t("底子取得方式"));
           for (const [source, label, cost] of [["market", t("采购"), base?.readyMadeCost], ["craft", t("自制"), base?.craftingCost]]) {
@@ -11844,7 +12529,7 @@ function getPriceTier(price, direction) {
                 onChange();
               });
             });
-            choice.append(input, node("span", `${label} ${number(cost > 0 ? cost : null)}`));
+            choice.append(input, node("span", source === "craft" && stockLevel != null ? t("自制 · 用库存") : `${label} ${number(cost > 0 ? cost : null)}`));
             choice.title = t`${label}底子及同物品保护；同角色的该物品各强化等级共用此选择${source === "market" ? t("；采购报价缺失时使用自制成本") : ""}`;
             options.append(choice);
           }
@@ -11861,6 +12546,7 @@ function getPriceTier(price, direction) {
             ? route.expectedProtects > 0 ? t`普通保护 · +${route.protectAt} 起保` : t("普通路线 · 无需保护")
             : route.routeType === "philosophersMirror" ? t("贤者之镜路线") : t("精炼继承路线");
           const routeLabel = node("span", label, "v3-source-route");
+          routeLabel.title = label;
           const difference = base?.hourlyWageDifference;
           const saving = node("span", craftFallback ? t("缺价，按自制") : difference == null ? t("工时费差未知") : difference === 0 ? t("工时费相同")
             : t`${difference > 0 ? t("获得") : t("失去")}${number(Math.abs(difference))}/h收益`, `v3-source-difference${difference < 0 ? " v3-source-extra" : ""}`);
@@ -11872,12 +12558,12 @@ function getPriceTier(price, direction) {
           else strategy.removeAttribute("title");
           app.itemUI.decorate(strategy, spriteBase, names);
           if (focusKey) [...strategy.querySelectorAll("[data-focus-key]")].find(el => el.dataset.focusKey === focusKey)?.focus({ preventScroll:true });
-          renderEnhancementPlan(plan, item, current?.metrics, quantity, comparison?.changed);
-          if (current?.preparationBasis === "minCostWithoutSale") {
+          renderEnhancementPlan(plan, item, route, quantity, comparison?.changed);
+          if (current?.preparationBasis === "minCostWithoutSale" && !projected.preparationRoute) {
             const cost = node("small", t`无有效售价 · 最低成本强化方案 · 单件预计成本 ${number(route.totalCost)} · 预计耗时 ${number(route.totalTimeHours)} 小时`, "v3-min-cost-summary");
             cost.dataset.totalCost = route.totalCost; cost.dataset.totalTimeHours = route.totalTimeHours; plan.append(cost);
           }
-          const projected = wages.materials(item, current, quantity);
+          renderStockStrip(projected);
           renderExperiencePlan(plan, wages.experiencePlan(item, current, quantity, projected));
           const signature = JSON.stringify([projected, comparison?.materialPrices, selectedSource]);
           if (signature !== materialSignature) {
@@ -11889,9 +12575,51 @@ function getPriceTier(price, direction) {
               .find(el => el.dataset.focusKey === focusKey)?.focus({ preventScroll: true });
           }
           if (savedView) restoreView(savedView);
+          resumePlanMotion(section, previousMotion);
         });
+        function renderStockStrip(projected) {
+          const focusKey = stockStrip.contains(document.activeElement) ? document.activeElement.dataset.focusKey : null;
+          stockStrip.replaceChildren();
+          const heading = node("div", null, "v3-stock-heading");
+          const inCart = cartItems.some(entry => app.materialCart.key(entry) === key);
+          heading.append(node("span", inCart ? t`计划 ${number(quantity)} 件` : t("单件备料预览 · 未加入计划")),
+            node("span", own?.cached ? t("本人挂单（缓存）· 不抵扣") : t("本人挂单 · 不抵扣")));
+          stockStrip.append(heading);
+          const grades = node("div", null, "v3-stock-grades"); grades.setAttribute("aria-label", t("各等级库存与本人挂单"));
+          const listings = own?.characterId === wages.state().simulationOwner ? own?.listings : null;
+          const rows = wages.inventoryLevels(item).map(row => ({ ...row,
+            listed: listedQuantity(listings, { ...item, enhancementLevel: row.enhancementLevel }) }));
+          const unknown = rows.some(row => row.count == null);
+          for (const row of rows.filter(row => row.count > 0 || row.listed > 0 || row.enhancementLevel === item.enhancementLevel ||
+              (row.count == null || row.listed == null) && (row.enhancementLevel === 0 || listings?.some(entry => entry.itemHrid === item.itemHrid && entry.enhancementLevel === row.enhancementLevel)))) {
+            const selected = projected.stockAllocation?.used.some(entry => entry.enhancementLevel === row.enhancementLevel);
+            const label = t`+${row.enhancementLevel}：库存 ${number(row.count)}，本人挂单 ${number(row.listed)}`;
+            const choose = button(null, () => attempt(() => wages.setStockLevel(item, row.enhancementLevel)), label);
+            choose.className = "v3-stock-grade"; choose.dataset.stockLevel = row.enhancementLevel;
+            choose.dataset.inventory = row.count ?? ""; choose.dataset.listed = row.listed ?? "";
+            choose.dataset.focusKey = `stock-level:${key}:${row.enhancementLevel}`;
+            choose.setAttribute("aria-pressed", String(Boolean(selected)));
+            choose.disabled = unknown || wages.baseItemSource(item) !== "craft" || !(row.count >= 1) || row.enhancementLevel >= item.enhancementLevel;
+            choose.title = `${label} · ${selected ? t("本次底子") : row.enhancementLevel >= item.enhancementLevel ? t("不低于目标等级，不作底子")
+              : row.count >= 1 ? t("自制模式下可选为底子") : t("没有可用库存底子")}`;
+            choose.append(node("strong", `+${row.enhancementLevel}${selected ? " ✓" : ""}`),
+              node("span", t`库 ${number(row.count)}`, "v3-stock-count"), node("span", t`挂 ${number(row.listed)}`, "v3-stock-listed"));
+            grades.append(choose);
+          }
+          stockStrip.append(grades);
+          const allocation = projected.stockAllocation;
+          if (allocation) {
+            const note = node("div", null, "v3-stock-note"); note.setAttribute("aria-live", "polite");
+            const used = allocation.used.map(entry => `+${entry.enhancementLevel} ×${number(entry.count)}`).join(" / ");
+            note.textContent = !allocation.known ? t("装备库存未知，暂不抵扣制造用量") : used
+              ? allocation.missing ? t`使用库存 ${used}；还需制造 ${number(allocation.missing)} 件底子` : t`使用库存 ${used}；无需制造底子`
+              : t("无可用低等级库存，按自制备料");
+            stockStrip.append(note);
+          }
+          if (focusKey) [...stockStrip.querySelectorAll("[data-focus-key]")].find(el => el.dataset.focusKey === focusKey)?.focus({ preventScroll: true });
+        }
         const left = node("div", null, "v3-workbench-materials"); const title = node("div", null, "mwi-layu-level-heading");
-        title.append(node("strong", t("配方材料与调价模拟")), node("small", saleBasisLabel(), "v3-sale-basis-note"));
+        title.append(node("strong", t("配方材料与调价模拟")), node("small", saleBasisLabel(item), "v3-sale-basis-note"));
         const reset = button(t("恢复左一"), () => simulation.reset(), t("恢复全部材料当前报价"));
         reset.title = t("重新读取已收到的当前行情，清除全部模拟调价"); reset.className = "v3-sim-reset";
         reset.disabled = !simulationEnabled.has(key);
@@ -11905,9 +12633,7 @@ function getPriceTier(price, direction) {
         toggle.title = simulationEnabled.has(key) ? t("关闭并清除模拟调价，恢复当前行情计算") : t("开启后显示材料调价按钮");
         const simulationActions = node("div", null, "v3-sim-actions"); simulationActions.append(reset, toggle);
         title.append(simulationActions); left.append(plan, title);
-        const inventory = wages.materialInfo(item).inventoryCount;
-        const planLabel = cartItems.some(entry => app.materialCart.key(entry) === key) ? t`计划 ${number(quantity)} 件` : t("单件备料预览 · 未加入计划");
-        left.append(node("p", t`${planLabel} · 库存同等级 ${number(inventory)} 件`, "mwi-layu-group-note"));
+        left.append(stockStrip);
         left.append(strategy, combinedMaterials);
         const actions = node("div", null, "mwi-layu-level-actions");
         const craftType = wages.preparation(item).recipe?.actionHrid?.split("/")[2];
@@ -11920,7 +12646,7 @@ function getPriceTier(price, direction) {
         const planAction = button(t("计划"), () => attempt(() => {
           if (!cartScope) throw new Error(t("角色尚未就绪，请先刷新角色。"));
           if (!cart.read(cartScope).some(entry => app.materialCart.key(entry) === key)) cart.add(cartScope, item, quantity);
-          drawerOpen = true; savePage();
+          workspaceTab = "cart"; drawerOpen = false; savePage();
         }), t`计划：${label}`);
         planAction.title = cartItems.some(entry => app.materialCart.key(entry) === key) ? t("查看采购清单") : t("加入备料并查看采购");
         const planControl = node("div", null, "v3-plan-control");
@@ -11955,7 +12681,8 @@ function getPriceTier(price, direction) {
             .map(el => [el.getAttribute("aria-label"), el.scrollLeft, el.scrollTop]);
           economicDetails.replaceChildren();
           const active = simulation.active();
-          const effectiveQuote = active ? { ...quote, price: simulation.sellPrice() } : quote;
+          // Market labels always identify observed asks/bids, even when a simulation uses the bid as its sale.
+          const effectiveQuote = quote;
           const calculateAt = (target, atPrice) => active ? simulation.calculateAt(atPrice.price) : wages.calculate(target, atPrice);
           economicView.dataset.simulated = String(active);
           simulationNote.hidden = !active;
@@ -12178,9 +12905,9 @@ function getPriceTier(price, direction) {
       const filter = () => { matrixQuery = search.value; for (const tr of grid.body.children) tr.hidden = !tr.dataset.searchText.includes(matrixQuery.trim().toLocaleLowerCase()); };
       search.oninput = filter; filter(); main.append(grid.region); section.append(sidebar, main); return section;
     }
-    return Object.freeze({ element, render, show(tab) { workspaceTab = workspaceTab === tab && ["manage", "settings"].includes(tab) ? "projects" : tab; drawerOpen = false; savePage(); onChange(); }, destroy() { root.clearInterval(marketAgeTimer); lootPage?.destroy(); partitionGesture?.cancel(); drawerObserver.disconnect(); resizeSession?.cancel(); } });
+    return Object.freeze({ element, render, show(tab) { workspaceTab = tab; drawerOpen = false; savePage(); onChange(); }, destroy() { root.clearInterval(marketAgeTimer); lootPage?.destroy(); partitionGesture?.cancel(); splitObserver.disconnect(); resizeSession?.cancel(); } });
   }
-  app.v3Workspace = Object.freeze({ create, number, preparationAction, enhancementPlanMetrics });
+  app.v3Workspace = Object.freeze({ create, number, preparationAction, enhancementPlanMetrics, listedQuantity });
 })(globalThis);
 
 
@@ -12233,6 +12960,8 @@ function getPriceTier(price, direction) {
     element.lang = app.i18n?.locale || "zh-CN";
     element.setAttribute("role", "tabpanel"); element.setAttribute("aria-label", t("强化助手")); element.hidden = true;
     const notifications = app.v3Notifications.create({ onEmptyFocus: () => refresh.focus({ preventScroll: true }) });
+    const marketNotifications = app.v3Notifications.create({ floating: true, onEmptyFocus: () => refresh.focus({ preventScroll: true }) });
+    const marketStatus = marketNotifications.createStatus();
     const createStatus = notifications.createStatus;
     const status = createStatus();
     const lootStatus = createStatus();
@@ -12273,18 +13002,14 @@ function getPriceTier(price, direction) {
     toolbar.append(refresh);
     const header = document.createElement("header"); header.className = "v3-header";
     const brand = document.createElement("strong"); brand.append(app.itemUI.identity({itemHrid:"/items/celestial_enhancer"}, spriteBase, t("柆雨强化助手")));
-    const settingsButton = document.createElement("button"); settingsButton.type = "button"; settingsButton.textContent = t("设置与备份");
-    const manageButton = document.createElement("button"); manageButton.type = "button"; manageButton.textContent = t("管理预设");
-    manageButton.dataset.view = "manage"; manageButton.onclick = () => view.show("manage");
     const lootButton = document.createElement("button"); lootButton.type = "button"; lootButton.textContent = t("掉落与经验");
     lootButton.dataset.view = "loot"; lootButton.onclick = () => view.show("loot");
-    toolbar.append(lootButton, manageButton, settingsButton); header.append(brand, toolbar);
-    settingsButton.dataset.view = "settings"; settingsButton.onclick = () => view.show("settings");
+    toolbar.append(lootButton); header.append(brand, toolbar);
     const health = document.createElement("details"); health.className = "v3-health";
     const healthTitle = document.createElement("summary"); healthTitle.textContent = t("行情与角色状态");
     health.append(healthTitle, priceStatus, wageStatus);
     header.insertBefore(health, toolbar);
-    element.append(header, notifications.element, view.element); document.body.append(element);
+    element.append(header, notifications.element, view.element, marketNotifications.element); document.body.append(element);
     function fail() { status.textContent = t("无法读取或保存收藏，请检查浏览器存储设置后重试。"); }
     function change(item, button, remove = false) {
       try {
@@ -12357,7 +13082,7 @@ function getPriceTier(price, direction) {
         document.activeElement.blur();
       }
       try {
-        const items = store.list().map(item => ({ ...item, name: names[item.itemHrid] || item.name }));
+        const items = store.list().filter(wages.isListItemVisible).map(item => ({ ...item, name: names[item.itemHrid] || item.name }));
         const cartScope = app.materialCart.scope(currentCharacterId);
         let cartItems = [], cartError = "";
         try { cartItems = cart.read(cartScope); } catch (error) { cartError = error.message; }
@@ -12421,7 +13146,7 @@ function getPriceTier(price, direction) {
     }
     async function openMarket(item, button, purchaseMode = null, allLevels = false) {
       button.disabled = true;
-      status.textContent = t("正在打开市场…");
+      marketStatus.textContent = t("正在打开市场…");
       try {
         let quantity = null;
         let reservedCoins = 0;
@@ -12430,7 +13155,7 @@ function getPriceTier(price, direction) {
           const owner = wages.state().simulationOwner;
           await wages.refreshCharacter();
           if (owner !== wages.state().simulationOwner) {
-            status.textContent = t("角色已切换，请在当前角色的材料卡片重新打开市场。"); return;
+            marketStatus.textContent = t("角色已切换，请在当前角色的材料卡片重新打开市场。"); return;
           }
           if (purchaseMode.type === "material") {
             // Card previews also work without a cart entry. Keep the displayed exact
@@ -12451,9 +13176,9 @@ function getPriceTier(price, direction) {
           if (!Number.isSafeInteger(quantity) || quantity < 0) {
             if (purchaseMode.type === "material") {
               purchaseMode = null;
-              purchaseNotice = t("已打开市场；需求、库存或待收货数量未知，本次不预填采购数量，请手动填写。");
+              purchaseNotice = t("市场已打开，采购数量未知，请手动填写。");
             } else {
-              status.textContent = t("采购数量尚未确定，请等待库存、挂单和行情更新后重试。"); return;
+              marketStatus.textContent = t("采购数量尚未确定，请等待库存、挂单和行情更新后重试。"); return;
             }
           }
         }
@@ -12463,11 +13188,11 @@ function getPriceTier(price, direction) {
         if (destroyed) return;
         const error = app.marketBridge?.lastError();
         element.dataset.marketBridgeStatus = opened ? "ready" : error || "unknown";
-        status.textContent = opened ? purchaseMode ? t("已打开市场；两分钟内打开该物品的购买表单将预填数量，超出当前价格可负担数量时自动减至上限，请核对后手动确认。") : purchaseNotice : error === "bridge_timeout"
+        marketStatus.textContent = opened ? purchaseMode ? t("市场已打开。2 分钟内可预填数量（不超过余额），请核对后确认。") : purchaseNotice : error === "bridge_timeout"
           ? t("游戏桥接未响应，请确认脚本更新后已刷新游戏。")
           : t("未找到游戏市场入口，请刷新游戏后重试。");
       } catch (_error) {
-        if (!destroyed) status.textContent = t("打开市场失败，请重试。");
+        if (!destroyed) marketStatus.textContent = t("打开市场失败，请重试。");
       } finally { button.disabled = false; }
     }
     function scan() {
@@ -12646,6 +13371,7 @@ function getPriceTier(price, direction) {
         root.clearInterval(wageTimer);
         view.destroy();
         notifications.destroy();
+        marketNotifications.destroy();
         wages?.destroy();
         prices.destroy();
         document.removeEventListener(app.config.bridgeEvent, onMarketMessage);
