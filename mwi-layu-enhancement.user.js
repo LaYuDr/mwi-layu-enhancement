@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.15
+// @version      0.3.16
 // @author       柆雨
-// @description  强化路线、工时费、物品收藏与材料导航
+// @description  银河奶牛强化助手：比较强化路线与预计收益，汇总材料、库存缺口和备料计划。
 // @name:en      Enhancement Assistant
-// @description:en Enhancement routes, hourly profit, favorites and material planning
+// @description:en Enhancement planning for routes, expected profit, materials, inventory gaps, and preparation lists.
 // @name:zh-CN   强化助手
-// @description:zh-CN 强化路线、工时费、物品收藏与材料导航
+// @description:zh-CN 银河奶牛强化助手：比较强化路线与预计收益，汇总材料、库存缺口和备料计划。
 // @homepageURL  https://github.com/LaYuDr/mwi-layu-enhancement
 // @supportURL   https://github.com/LaYuDr/mwi-layu-enhancement/issues
 // @updateURL    https://update.greasyfork.org/scripts/599358/%E5%BC%BA%E5%8C%96%E5%8A%A9%E6%89%8B.meta.js
@@ -17,8 +17,6 @@
 // @run-at       document-start
 // @grant        GM_getValue
 // @grant        GM_setValue
-// @grant        GM_registerMenuCommand
-// @grant        GM_unregisterMenuCommand
 // @grant        GM_addValueChangeListener
 // @grant        GM_removeValueChangeListener
 // @grant        GM_xmlhttpRequest
@@ -149,11 +147,7 @@
       !/^https:\/\/(www\.)?milkywayidle(cn)?\.com$/.test(env.location?.origin || "")
     )
       return null;
-    if (
-      ![gm.getValue, gm.setValue, gm.request, gm.menu, gm.unmenu, gm.listen, gm.unlisten].every(
-        (f) => typeof f === "function"
-      )
-    )
+    if (![gm.getValue, gm.setValue, gm.request, gm.listen, gm.unlisten].every((f) => typeof f === "function"))
       return null;
     const guard = `__layuUsage_${config.pluginId}`;
     if (env[guard]) return null;
@@ -161,17 +155,13 @@
     let disposed = false,
       suspended = false,
       timer = null,
-      menuId = null,
       listenerId = null;
     let commandBusy = false;
     const pending = new Set();
-    const zh = /^zh/i.test(env.navigator?.language || "zh");
-    const failure = () =>
-      env.alert(
-        zh
-          ? "统计设置未能保存，请稍后重试。插件仍可正常使用。"
-          : "Could not save usage settings. Please retry later. The plugin remains usable."
-      );
+    const settings = new Map();
+    const selector = `[data-layu-usage-settings="${config.pluginId}"]`;
+    let settingsError = false;
+    let observer = null;
     const client = createUsageClient({
       ...config,
       crypto: env.crypto,
@@ -221,33 +211,161 @@
     const report = () => {
       if (!disposed && !suspended) void client.report();
     };
+    function mountSettings(host) {
+      if (settings.has(host) || typeof host.attachShadow !== "function") return;
+      const zh = /^zh/i.test(host.getAttribute("lang") || env.navigator?.language || "zh");
+      const words = zh
+        ? {
+            title: "安装与活跃统计",
+            off: "已关闭",
+            on: "已开启",
+            enable: "开启",
+            disable: "关闭",
+            cancel: "取消",
+            confirm: "确认开启",
+            summary: "默认关闭。开启后统计安装数和每日活跃安装数，不统计游戏内操作；可随时关闭，不影响插件功能。",
+            more: "隐私与数据说明",
+            details: `开启时，仅向柆雨的统计服务（${new URL(config.endpoint).hostname}）发送插件标识、版本和随机安装标识的 SHA-256 摘要。标识仅保存在该脚本的 Tampermonkey 存储中，不使用硬件指纹，不发送账号、角色、聊天、资产、交易或 Cookie。摘要用于识别同一安装，不代表完全匿名；网络服务可见来源 IP。数据通过 HTTPS 发送，按北京时间每日去重，失败时可能重试。服务器暂存后同步到开发者电脑，历史及备份不设自动删除期限。安装数不等于设备数或人数。关闭后不再上报，已有历史保留。`,
+            question: "开启后将发送上述安装与活跃统计，是否继续？",
+            failed: "设置未保存，请重试。",
+            unavailable: "统计设置暂不可用。"
+          }
+        : {
+            title: "Installation and activity statistics",
+            off: "Off",
+            on: "On",
+            enable: "Enable",
+            disable: "Turn off",
+            cancel: "Cancel",
+            confirm: "Confirm enable",
+            summary: "Off by default. Counts installations and daily active installations, not in-game actions. Turn off at any time without affecting plugin features.",
+            more: "Privacy and data details",
+            details: `While on, sends only the plugin ID, version and SHA-256 hash of a random installation ID to LaYu's statistics service (${new URL(config.endpoint).hostname}). The ID stays in this script's Tampermonkey storage. No hardware fingerprint, account, character, chat, asset, trade data or cookies are sent. The hash recognises the same installation, so this is not fully anonymous; the network service sees the source IP. Sent over HTTPS, deduplicated by Beijing calendar day; failures may be retried. Reports are transferred from the server to the developer's computer. History and backups have no automatic deletion deadline. Installation counts are not device or person counts. Turning off stops future reports; existing history remains.`,
+            question: "Enable the installation and activity reports described above?",
+            failed: "Settings were not saved. Please retry.",
+            unavailable: "Usage settings are unavailable."
+          };
+      const root = host.shadowRoot || host.attachShadow({ mode: "open" });
+      root.innerHTML = `<style>
+        :host { display:block; margin-block:12px; color:inherit; font:inherit; min-width:0; }
+        *,*::before,*::after { box-sizing:border-box; }
+        .row,.actions { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+        .row { justify-content:space-between; } strong { font-size:14px; }
+        p,details { margin:6px 0 0; font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
+        button { font:inherit; font-size:13px; color:inherit; background:#34394f; border:1px solid #626b86; border-radius:4px; padding:5px 10px; min-height:32px; cursor:pointer; }
+        button:hover { background:#454e68; } button:disabled { opacity:.55; cursor:default; }
+        button:focus-visible,summary:focus-visible { outline:2px solid #91dfcb; outline-offset:2px; }
+        summary { cursor:pointer; width:fit-content; } .confirm { margin-top:8px; } .actions { margin-top:6px; }
+        [hidden] { display:none!important; } .status { min-height:0; }
+      </style><section><div class="row"><strong></strong><button type="button" data-action="toggle" aria-pressed="false" aria-expanded="false"></button></div>
+      <p class="summary"></p><details><summary></summary><p class="details"></p></details>
+      <div class="confirm" role="group" hidden><p class="question"></p><div class="actions"><button type="button" data-action="confirm"></button><button type="button" data-action="cancel"></button></div></div>
+      <p class="status" role="status" aria-live="polite"></p></section>`;
+      const toggle = root.querySelector('[data-action="toggle"]');
+      const confirmation = root.querySelector(".confirm");
+      const confirm = root.querySelector('[data-action="confirm"]');
+      const cancel = root.querySelector('[data-action="cancel"]');
+      root.querySelector("strong").textContent = words.title;
+      root.querySelector(".summary").textContent = words.summary;
+      root.querySelector("summary").textContent = words.more;
+      root.querySelector(".details").textContent = words.details;
+      root.querySelector(".question").textContent = words.question;
+      confirmation.setAttribute("aria-label", words.question);
+      confirmation.id = `${config.pluginId}-usage-confirm`;
+      toggle.setAttribute("aria-controls", confirmation.id);
+      confirm.textContent = words.confirm;
+      cancel.textContent = words.cancel;
+      const binding = {
+        pending: false,
+        render(on, unavailable = false) {
+          if (on || unavailable) binding.pending = false;
+          toggle.textContent = on ? words.disable : words.enable;
+          toggle.setAttribute("aria-label", `${words.title}: ${on ? words.disable : words.enable}`);
+          toggle.setAttribute("aria-pressed", String(on));
+          toggle.setAttribute("aria-expanded", String(binding.pending));
+          toggle.disabled = commandBusy || unavailable;
+          confirm.disabled = cancel.disabled = commandBusy;
+          confirmation.hidden = !binding.pending;
+          root.querySelector(".status").textContent = unavailable
+            ? words.unavailable
+            : settingsError
+              ? words.failed
+              : on
+                ? words.on
+                : words.off;
+        },
+        dispose() {
+          root.removeEventListener("click", click);
+          root.replaceChildren();
+        }
+      };
+      async function click(event) {
+        // Page scripts must not opt in by dispatching synthetic clicks.
+        if (event.isTrusted !== true || commandBusy || disposed) return;
+        const action = event.target.closest?.("button[data-action]")?.dataset.action;
+        if (!action) return;
+        event.preventDefault();
+        event.stopPropagation();
+        let active;
+        try {
+          active = await client.enabled();
+        } catch (_) {
+          settingsError = true;
+          update();
+          return;
+        }
+        if (action === "cancel") {
+          binding.pending = false;
+          update();
+          toggle.focus();
+          return;
+        }
+        if (action === "toggle" && !active) {
+          binding.pending = !binding.pending;
+          settingsError = false;
+          update();
+          if (binding.pending) confirm.focus();
+          return;
+        }
+        if (action !== "toggle" && (action !== "confirm" || !binding.pending || active)) return;
+        commandBusy = true;
+        settingsError = false;
+        binding.pending = false;
+        cancelPending();
+        update();
+        try {
+          await client.setEnabled(!active);
+          if (!active) report();
+        } catch (_) {
+          settingsError = true;
+        } finally {
+          commandBusy = false;
+          update();
+          if (host.isConnected) toggle.focus();
+        }
+      }
+      root.addEventListener("click", click);
+      settings.set(host, binding);
+    }
+    function discover(nodes) {
+      if (disposed) return;
+      for (const [host, binding] of settings) {
+        if (!host.isConnected) {
+          binding.dispose();
+          settings.delete(host);
+        }
+      }
+      for (const node of nodes) {
+        if (node.matches?.(selector)) mountSettings(node);
+        for (const host of node.querySelectorAll?.(selector) || []) mountSettings(host);
+      }
+      update();
+    }
     function update() {
       if (disposed) return;
       try {
         const on = gm.getValue(`${client.key}_consent`, false) === true;
-        if (menuId !== null) gm.unmenu(menuId);
-        const title = `${config.name}: ${zh ? "使用量统计" : "Usage statistics"} [${on ? (zh ? "已开启" : "on") : zh ? "已关闭" : "off"}]`;
-        menuId = gm.menu(title, async () => {
-          if (commandBusy || disposed) return;
-          commandBusy = true;
-          try {
-            const active = await client.enabled();
-            if (!active) {
-              const notice = zh
-                ? `${config.name}：开启使用量统计？\n\n每个北京时间自然日最多成功上报一次：插件 ID、版本、随机安装标识的 SHA-256 摘要。用于分别统计累计安装数与每日活跃安装数，不是物理设备数。\n不读取硬件编号、角色、账号、聊天、资产或交易，不发送 Cookie。\n接收方：柆雨的雨云中转 ${config.endpoint}\n服务器暂存后同步到开发者电脑，历史统计永久保存。关闭只停止后续上报，不删除已保存统计；网络服务仍会接收到连接 IP。\n可随时从此菜单关闭。确定开启？`
-                : `${config.name}: enable usage statistics?\n\nAt most one successful report per Shanghai calendar day: plugin ID, version and SHA-256 of a random installation ID. Counts installations and daily active installations, not physical devices.\nNo hardware ID, account, character, chat, assets, trades or cookies are sent.\nRecipient: LaYu's Rainyun relay ${config.endpoint}\nPending reports are transferred to the developer's computer and kept indefinitely. Disabling stops future reports, without deleting existing statistics. The network service still receives your IP address.\nYou can disable this from the menu anytime. Enable?`;
-              if (!env.confirm(notice)) return;
-            }
-            cancelPending();
-            await client.setEnabled(!active);
-            update();
-            if (!active) report();
-          } catch (_) {
-            failure();
-          } finally {
-            commandBusy = false;
-          }
-        });
+        for (const binding of settings.values()) binding.render(on);
         if (timer !== null) {
           env.clearInterval(timer);
           timer = null;
@@ -255,7 +373,12 @@
         if (on && !suspended) timer = env.setInterval(report, 15 * 60000);
         if (!on) cancelPending();
       } catch (_) {
-        /* Unavailable storage must never stop the game plugin. */
+        cancelPending();
+        if (timer !== null) {
+          env.clearInterval(timer);
+          timer = null;
+        }
+        for (const binding of settings.values()) binding.render(false, true);
       }
     }
     function changed() {
@@ -288,8 +411,10 @@
       client.stop();
       cancelPending();
       if (timer !== null) env.clearInterval(timer);
+      observer?.disconnect();
+      for (const binding of settings.values()) binding.dispose();
+      settings.clear();
       try {
-        if (menuId !== null) gm.unmenu(menuId);
         if (listenerId !== null) gm.unlisten(listenerId);
       } catch (_) {
         /* Page closing. */
@@ -306,7 +431,17 @@
       env.addEventListener("pagehide", pagehide);
       env.addEventListener("pageshow", pageshow);
       env.document.addEventListener("visibilitychange", visible);
-      update();
+      if (typeof env.MutationObserver === "function" && typeof env.document.querySelectorAll === "function") {
+        observer = new env.MutationObserver((records) => {
+          const added = records.flatMap((record) => Array.from(record.addedNodes || []));
+          if (added.length || records.some((record) => record.removedNodes?.length)) discover(added);
+        });
+        observer.observe(env.document, {
+          childList: true,
+          subtree: true
+        });
+      }
+      discover([env.document]);
       report();
     } catch (_) {
       dispose();
@@ -314,10 +449,8 @@
     return { dispose, report, client };
   }
   if (typeof module !== "undefined" && module.exports) module.exports = { createUsageClient, boot };
-  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.15","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
+  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.16","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
 setValue: typeof GM_setValue === "function" ? GM_setValue : null,
-menu: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : null,
-unmenu: typeof GM_unregisterMenuCommand === "function" ? GM_unregisterMenuCommand : null,
 listen: typeof GM_addValueChangeListener === "function" ? GM_addValueChangeListener : null,
 unlisten: typeof GM_removeValueChangeListener === "function" ? GM_removeValueChangeListener : null,
 request: typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null}); } catch (_) { /* Telemetry is optional. */ }
@@ -9586,6 +9719,10 @@ function getPriceTier(price, direction) {
       retry.disabled = true;
       try { await wages.refreshCharacter(); status.textContent = wages.status(); } finally { retry.disabled = false; }
     });
+    const usageSettings = document.createElement("div");
+    usageSettings.setAttribute("data-layu-usage-settings", "mwi_enhancement");
+    usageSettings.lang = app.i18n?.language || "zh";
+    form.append(usageSettings);
     return container;
   }
   app.v3Settings = Object.freeze({createSettings});
