@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.16
+// @version      0.3.17
 // @author       柆雨
 // @description  银河奶牛强化助手：比较强化路线与预计收益，汇总材料、库存缺口和备料计划。
 // @name:en      Enhancement Assistant
@@ -21,7 +21,7 @@
 // @grant        GM_removeValueChangeListener
 // @grant        GM_xmlhttpRequest
 // @connect      ukpyedhl.cn-hk1.rainapp.top
-// @antifeature  tracking Optional installation and daily activity counts; disabled by default.
+// @antifeature  tracking Installation and daily activity statistics; see the script's settings and privacy details.
 // @grant        GM_addElement
 // @license      MIT
 // ==/UserScript==
