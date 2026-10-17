@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.17
+// @version      0.3.18
 // @author       柆雨
 // @description  银河奶牛强化助手：比较强化路线与预计收益，汇总材料、库存缺口和备料计划。
 // @name:en      Enhancement Assistant
@@ -507,7 +507,7 @@
     return { dispose, report, client };
   }
   if (typeof module !== "undefined" && module.exports) module.exports = { createUsageClient, boot };
-  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.17","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false,"defaultEnabled":true,"reportOptOut":true}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
+  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.18","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false,"defaultEnabled":true,"reportOptOut":true}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
 setValue: typeof GM_setValue === "function" ? GM_setValue : null,
 listen: typeof GM_addValueChangeListener === "function" ? GM_addValueChangeListener : null,
 unlisten: typeof GM_removeValueChangeListener === "function" ? GM_removeValueChangeListener : null,
@@ -527,6 +527,10 @@ request: typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null}); }
 - 上游 `src/header.js` 声明 MIT。`src/vendor/mooncake-wages.js` 提取计算依赖，新增显式输入适配层；不包含上报、交易、聊天或页面安装代码。
 - 本地取得方式适配：显式采购／自制选择传入底子与同物品保护的价格解析；采购报价缺失时使用有效的自制成本，同物品保护同步实际来源，自制成本也缺失时保留未知。不改变强化概率、期望次数和收益公式。显式选择 +0 来源时不使用先强化后精炼的替代取得路径。未传入此选项的上游固定参考用例保持原行为。
 - 提取的声明清单见 `mooncake-wages-symbols.json`。仅去除行尾空白，保留函数及常量语义。更新上游时须重新执行一致性与边界测试。
+
+## Mooncake 挂单时间锚点兼容
+
+`src/runtime/listing-time-anchors.js` 按学学中秋月饼的公开锚点格式及订单 ID 插值规则独立实现，参考本地归档 userscript header 1.6.154（MIT，作者署名见上）。仅只读同源已存在的 `MooncakeListingTime/state`；不包含上游令牌、网络上传、数据库维护或交易逻辑。原有 vendor 公式与许可证保持不变。
 
 ## mathjs 10.6.4 / lz-string 1.5.0
 
@@ -782,6 +786,242 @@ SOFTWARE.
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   app.englishMessages = Object.freeze({
+  "物品可同时属于多个分区，分区归属按物品和强化等级独立保存。全部取消则归入未分区；删除分区保留其他归属。管理列表按游戏编号升序排列。": "Items can belong to multiple partitions. Membership is saved separately for each item and enhancement level. Clearing all memberships moves an item to Unassigned; deleting one partition retains the others. Management rows follow game ID order.",
+  "按备料车顺序分配共享库存；待到账不算备齐。底子就绪不代表强化耗材齐全，请查看备料车材料表。": "Shared stock is allocated in cart order. Pending deliveries are not ready supplies. Having the base item does not mean enhancement materials are ready; check the cart material table.",
+  "强化预填按当前行情方案执行；模拟方案仅用于比较。": "Enhancement forms use the current market route. Simulated routes are for comparison only.",
+  "预设与收藏管理": "Presets and favorite management",
+  "期望成功率（近似）": "Expected success (approx.)",
+  "材料可支撑时间": "Material-supported time",
+  "合计每项最多计入其计划期望时间；行内材料可支撑时间显示剩余库存的容量，不以期望时间封顶。": "The total caps each row at its expected duration. Row material-supported time shows remaining stock capacity without that cap.",
+  "行内成功率和材料可支撑时间按当前已到账库存估算：前项按期望消耗预留，不足时预留可支撑部分；本项按剩余库存中最先耗尽的材料反推。成功率采用指数／Gamma 近似，不是队列整体成功率，保护材料的实际随机消耗可能有偏差。": "Row success rates and material-supported times use physical inventory. Earlier rows reserve expected consumption, or the supported fraction if short; this row is limited by the first material to run out in the remainder. Rates use an exponential/Gamma approximation, not a joint queue probability. Actual random protection consumption may differ.",
+  "混合起始等级，暂不能用同尺度 Gamma 模型估算成功率。": "Mixed starting levels cannot be estimated with a common-scale Gamma model.",
+  "缺少起始底子，当前库存不能完成整行计划。": "Missing base equipment: current inventory cannot complete the entire row.",
+  "按本行剩余件数与可用材料容量估算；不是单次强化点击成功率。": "Estimated for this row\u2019s remaining units and available material capacity, not success per click.",
+
+  "计划已变化，请重新输入成功率。": "The plan changed. Please enter the success rate again.",
+  "备料设置数据异常，原数据已保留": "Invalid preparation settings. Original data has been preserved.",
+  "备料倍率须为 0～100": "Preparation multipliers must be between 0 and 100.",
+  "队列备料设置 · 角色 {0}": "Queue preparation settings \u00b7 Character {0}",
+  "逐行设置：成功率以计划材料备齐为前提，按该行剩余件数共用预算的 Gamma 模型估算；倍率以该行剩余强化的期望消耗为基准。输入成功率后，倍率向上取两位小数，回显对应概率。回车或离开输入框保存。": "Per-row settings: rates assume all planned materials are supplied and use a Gamma model with a shared budget for the remaining units in that row. Multipliers apply to expected remaining enhancement consumption. Entering a rate rounds the multiplier up to two decimals and displays the resulting rate. Press Enter or leave the field to save.",
+  "强化耗材与保护材料分别估算，不代表两类材料同时够用的概率，也不是单次点击成功率。混合起始等级暂不估算概率；缺少底子时以补齐底子为前提，不含底子成本。": "Enhancement and protection materials are estimated separately. Rates do not represent joint material sufficiency or success per click. Mixed starting levels have no probability estimate. Missing bases must be supplied first; base costs are excluded.",
+  "期望时间（整行）": "Expected time (row)",
+  "强化耗材 · 成功率 / 倍率": "Enhancement \u00b7 Success / Multiplier",
+  "保护材料 · 覆盖率 / 倍率": "Protection \u00b7 Coverage / Multiplier",
+  "已完成 · 100%": "Completed \u00b7 100%",
+  "无需此类材料": "Not required",
+  "待强化 {0} 件": "{0} units remaining",
+  "混合起点 · 概率未知": "Mixed starts \u00b7 Rate unknown",
+  "数据未齐 · 概率未知": "Missing data \u00b7 Rate unknown",
+  "近似完成概率；接近 100% 时显示 99.99%。": "Approximate completion probability; displayed as 99.99% near 100%.",
+
+  "计划顺序已变化，请重新拖动。": "Plan order changed. Please drag again.",
+  "拖动调整顺序；Alt + 上下方向键移动，Esc 取消拖动。": "Drag to reorder; Alt + Up/Down moves the row, Esc cancels dragging.",
+  "调整顺序：{0} +{1}": "Reorder: {0} +{1}",
+  "队列计划": "Queue plans",
+  "队列外计划": "Manual plans",
+  "队列计划装备": "Queue equipment",
+  "队列外计划装备": "Manual equipment",
+  "清空队列外计划": "Clear manual plans",
+  "未启用保护": "Protection disabled",
+  "队列尚未读取完整，正在自动重试；手动计划已保留，合计与采购暂不可用。": "Queue data is incomplete. Retrying automatically; manual plans are preserved. Totals and purchasing are unavailable.",
+  "队列强化参数暂不支持核算，已保留原始设置。": "These queue parameters cannot be calculated yet. Original settings are preserved.",
+  "自动同步游戏中的强化动作，每条动作单独显示并按 1 件核算。顺序、起始等级、目标与保护设置以队列为准；重复次数不是装备件数。": "Enhancement actions sync automatically, in queue order, at one piece per action. Starting levels, targets and protection come from the queue. Repeat counts are not equipment quantities.",
+  "当前没有强化队列。游戏中加入强化动作后会自动显示。": "No enhancement actions in the queue. Actions added in the game will appear automatically.",
+  "手动添加和填写，可调整数量、等级与顺序。旧版已保存的计划保留在此；如与队列重复且不需额外强化，请手动移除。": "Add and edit quantities, levels and order manually. Previously saved plans remain here; remove overlaps with the queue if no additional enhancement is intended.",
+  "合计按队列计划在前、队列外计划在后的顺序核算，共用库存只扣除一次。": "Totals use queue plans first, then manual plans. Shared stock is deducted only once.",
+
+  "全部计划期望时长": "Total expected enhancement time",
+  "库存材料可支撑时长": "Time supported by current stock",
+  "强化计划时长": "Enhancement plan duration",
+  "不足 0.01 小时": "Less than 0.01 hours",
+  "暂无法计算": "Unavailable",
+  "未算全（已知 {0}）": "Incomplete (known: {0})",
+  "库存或强化时长未读取完整，暂不能估算。": "Stock or enhancement duration is incomplete; an estimate is unavailable.",
+  "按计划顺序扣除共用库存，缺料项计入可支撑的部分时间，再继续计算后续项目。仅计已到账材料与金币，不计待到账、采购或备料倍率，不含制造及等待时间。强化有随机性，实际时长会有差异。": "Shared stock is allocated in plan order. Partially supplied items contribute their supported time, then later items use the remaining stock. Only physical materials and coins count; excludes deliveries, purchases, preparation buffers, manufacturing and waiting. Actual duration varies with enhancement outcomes.",
+  "缺少装备底子的部分不计入可支撑时长，其余项目继续按剩余库存计算。": "Portions without base equipment are excluded. Other items continue to use the remaining stock.",
+  "数量": "Quantity",
+  "上移": "Move up",
+  "下移": "Move down",
+  "保护": "Protection",
+  "状态": "Status",
+
+  "已加入": "Added",
+    "清空强化计划": "Clear enhancement plan",
+    "撤销清空": "Undo clear",
+    "强化计划已有新项目，未覆盖当前计划。": "The plan has new projects. They were not overwritten.",
+    "从当前队列添加并排序": "Add from queue and sort",
+    "当前强化队列尚未读取完整，未修改强化计划。": "The current enhancement queue is incomplete. The plan was not changed.",
+    "已添加 {0} 项并按队列逐条排列；重复物品分别显示，未入队项目按添加顺序排在末尾。": "Added {0} projects in queue order, retaining repeated items as separate rows. Unqueued projects follow in the order added.",
+    "按当前及排队中的强化动作逐条导入，同物品每次出现各占一行。再次导入复用已有行并保留数量与设置；未入队项目按添加顺序放在末尾。": "Import each active and queued enhancement as a separate row, including repeated items. Reimport reuses existing rows and preserves quantities and settings. Unqueued projects follow in the order added.",
+    "队列新增项目带入有效保护等级，未设置或不支持的保护等级使用自动方案；重复次数不作为装备数量。": "New queue projects use valid protection levels; unset or unsupported levels use the automatic plan. Repeat counts are not equipment quantities.",
+    "加入强化计划": "Add to enhancement plan",
+    "已加入强化计划": "Already in enhancement plan",
+    "已加入强化计划，可在强化计划页调整数量": "Already added. Adjust quantity on the enhancement plan page.",
+    "加入 1 件强化计划": "Add one unit to the enhancement plan",
+    "按当前队列排序": "Sort by current queue",
+    "当前强化队列尚未读取完整，未调整计划顺序。": "The current enhancement queue is incomplete. Plan order was not changed.",
+    "角色已切换或尚未就绪，未调整计划顺序。": "The character changed or is not ready. Plan order was not changed.",
+    "已按当前队列排序；未入队项目按添加顺序排在末尾。": "Sorted by the current queue. Unqueued projects follow in the order added.",
+    "按物品与目标等级匹配，包含正在强化的项目；重复入队取首次位置。未入队项目按添加顺序排在末尾，金币分配随新顺序更新。": "Matches item and target level, including the active enhancement. Repeated entries use their first position. Unqueued projects follow in the order added. Coin allocation follows the new order.",
+    "强化计划": "Enhancement schedule",
+  "强化计划与采购": "Enhancement schedule and purchasing",
+  "强化计划 · 角色 {0}": "Enhancement schedule · Character {0}",
+  "强化计划数据异常，原数据已保留": "Invalid enhancement schedule. The original data has been preserved.",
+  "项目已移出强化计划": "This item is no longer in the enhancement schedule.",
+  "同物品有多个计划，请选择具体一行。": "This item has multiple projects. Select a specific row.",
+  "无效的强化顺序": "Invalid enhancement order.",
+  "强化方案未算全，暂不能分配。": "Enhancement requirements are incomplete. Budget allocation is unavailable.",
+  "装备库存未知，暂不能核算强化计划": "Equipment inventory is unknown. Cannot calculate the enhancement schedule.",
+  "强化材料数据未知": "Enhancement material data is unknown.",
+  "角色或强化材料数据未就绪": "Character or enhancement material data is not ready.",
+  "强化路线或材料报价未就绪": "The enhancement route or material quotes are not ready.",
+  "批量添加装备": "Add equipment in bulk",
+  "仅核算普通强化耗材与保护材料，不含底子制造或镜子、精炼路线。与备料车分别核算，共用的库存不能视为已被两个清单同时预留。": "Includes ordinary enhancement consumables and protection materials only; excludes base manufacturing, mirror and refinement routes. Calculated separately from the preparation cart; shared inventory cannot be reserved by both lists at once.",
+  "添加强化计划": "Add to enhancement schedule",
+  "搜索装备": "Search equipment",
+  "搜索可添加装备": "Search equipment to add",
+  "选择强化计划：{0} +{1}": "Select for enhancement: {0} +{1}",
+  "选择可见项": "Select visible items",
+  "添加所选（每项 1 件）": "Add selected (1 each)",
+  "请先选择装备": "Select equipment first.",
+  "列表中暂无强化装备，请先在列表或分区中添加目标物品。": "No enhancement equipment in the list. Add target items to the list or groups first.",
+  "选择装备后，将按计划顺序合并材料和采购缺口。": "Select equipment to combine materials and purchase shortages in schedule order.",
+  "顺序": "Order",
+  "计划物品": "Planned item",
+  "起始等级": "Starting level",
+  "目标等级": "Target level",
+  "保护等级": "Protection level",
+  "库存与路线": "Inventory and route",
+  "强化计划装备": "Scheduled equipment",
+  "强化数量：{0} +{1}": "Enhancement quantity: {0} +{1}",
+  "数量须为 1～1,000,000 的整数": "Quantity must be an integer from 1 to 1,000,000.",
+  "自动匹配库存": "Match inventory automatically",
+  "自动最低剩余成本": "Auto: lowest remaining cost",
+  "目标等级已有 {0} 件": "Already at target: {0}",
+  "缺少起始底子 {0} 件（不计入采购）": "Missing starting equipment: {0} (excluded from purchases)",
+  "强化备料倍率 {0}× · 保护材料倍率 {1}×（在设置中调整）": "Enhancement multiplier {0}× · Protection multiplier {1}× (change in Settings)",
+  "按当前金币顺序分配": "Allocate current coins in order",
+  "按当前": "Allocate current ",
+  "顺序分配": " in order",
+  "总缺口预算": "Total shortage budget",
+  "预算未计全": "Budget incomplete",
+  "按顺序先备齐前项；不足时仅为当前项按比例备料，停止向后分配。备料比例不代表强化成功率。": "Fund earlier items first. If funds run short, partially supply the current item proportionally and stop. The supply percentage is not an enhancement success probability.",
+  "目标已备齐": "Target already owned",
+  "本项已分配": "Fully allocated",
+  "部分备料": "Partially supplied",
+  "尚未分配": "Not allocated",
+  "期望消耗": "Expected consumption",
+  "计划需备": "Planned supply",
+  "可用库存": "Available inventory",
+  "本次采购": "Purchase now",
+  "参考单价": "Reference unit price",
+  "采购金额": "Purchase amount",
+  "强化计划材料合计": "Enhancement schedule materials",
+  "直接消耗": "Direct consumption",
+  "采购强化材料：{0}": "Purchase enhancement material: {0}",
+  "市场预填": "Prefill market",
+  "待到账只抵扣采购缺口，不表示已备齐。采购前重新核算库存、买单与余额；仅预填，由你确认交易。倍率备料不保证全部强化成功。": "Pending purchases reduce purchase shortages but are not ready inventory. Inventory, buy orders and balance are recalculated before prefilling; you confirm the trade. Supply multipliers do not guarantee completion.",
+
+  "加入计划": "Add to plan",
+  "加入计划：{0}": "Add to plan: {0}",
+  "加入 1 件备料计划": "Add 1 item to the preparation plan",
+  "取消": "Cancel",
+  "操作记录": "Operation history",
+  "保存天数": "Save retention",
+  "操作记录保存天数": "Operation history retention in days",
+  "已设置保存 {0} 天，已清理到期记录。": "Retention set to {0} days. Expired records cleared.",
+  "显示更多记录": "Show more records",
+  "记录分区归属调整，包含拖动、分区设置和预设添加；只影响对应物品的强化等级。": "Records group changes from dragging, group settings and presets. Each change applies to the specified item and enhancement level.",
+  "默认保存 7 天，可设为 1–3650 天。缩短期限会立即清理到期记录，清理后无法撤销。": "Records are kept for 7 days by default (range: 1–3650 days). Shortening retention immediately removes expired records; those changes can no longer be undone.",
+  "暂无操作记录。拖动物品调整分区后，可在这里查看和撤销。": "No operations recorded yet. Drag an item to change its groups, then view and undo the change here.",
+  "分区：{0} → {1}": "Groups: {0} → {1}",
+  "撤销此操作": "Undo this change",
+  "已撤销此条分区调整。": "This group change has been undone.",
+  "操作记录保存天数无效。": "Invalid operation history retention period.",
+  "操作记录格式异常，原数据已保留。": "Invalid operation history format. Original data retained.",
+  "请输入 1 至 3650 的整数天数。": "Enter a whole number of days between 1 and 3650.",
+  "记录已到期，无法撤销。": "This record has expired and cannot be undone.",
+  "已撤销": "Undone",
+  "归属已变化，请先撤销后续操作。": "Membership has changed. Undo later changes first.",
+  "原分区已删除，无法撤销。": "The original group was deleted. Undo is unavailable.",
+  "原默认归属已变化，无法撤销。": "The inherited membership changed. Undo is unavailable.",
+  "无效的列顺序": "Invalid column order",
+  "移动列：{0}": "Move column: {0}",
+  "拖动调整列顺序；Alt + 左右方向键移动": "Drag to reorder columns; Alt + Left/Right moves the column",
+  "列顺序保存失败，已保留原顺序，请重试。": "Column order could not be saved. The previous order is retained; try again.",
+  "无效物品或强化等级": "Invalid item or enhancement level",
+  "独立等级分区已达上限。": "The limit for per-level group assignments has been reached.",
+  "此等级的分区已再次变化，无法撤销。": "Groups for this level have changed again; undo is unavailable.",
+  "已撤销分区调整。": "Group change undone.",
+  "无法撤销，请重新调整分区。": "Could not undo. Adjust the groups again.",
+  "分区归属未变化。": "Group membership is unchanged.",
+  "已移出全部分区，回到未分区。": "Removed from all groups and returned to Unassigned.",
+  "已加入「{0}」。": "Added to \"{0}\".",
+  "已移出「{0}」。": "Removed from \"{0}\".",
+  "已更新此等级的分区。": "Groups updated for this level.",
+  "未能保存分区，原归属已保留，请重试。": "Could not save groups. Original membership is retained. Try again.",
+  "仅调整当前强化等级；可同时属于多个分区。": "Changes apply only to this enhancement level. Multiple groups are allowed.",
+  "调整分区": "Adjust groups",
+  "暂无自定义分区，请先在分区栏新增分区。": "No custom groups. Create one in the group bar first.",
+  "保存归属": "Save membership",
+  "此等级的分区已变化，请关闭后重新调整。": "Groups for this level changed. Close and reopen to adjust them.",
+  "未能读取分区，请关闭后重试。": "Could not read groups. Close and try again.",
+  "移出全部分区": "Remove from all groups",
+  "保存后回到未分区。": "Saving will return this level to Unassigned.",
+  "移出全部分区，回到未分区": "Remove from all groups and return to Unassigned",
+  "移出「{0}」": "Remove from \"{0}\"",
+  "已在此分区": "Already in this group",
+  "加入「{0}」": "Add to \"{0}\"",
+  "拖到分区标签加入；松手到空白处取消": "Drop on a group to add; release on empty space to cancel",
+  "目标分区已变化，请重新拖动。": "The target group changed. Drag again.",
+  "单击展开；拖动调整分区；右键或 Shift+F10 打开分区设置": "Click for details; drag to adjust groups; right-click or Shift+F10 for group settings",
+  "调整分区：{0} +{1}": "Adjust groups: {0} +{1}",
+  "按物品和强化等级独立归属；全部取消后退回未分区。": "Membership is independent for each item and enhancement level. Clearing all returns it to Unassigned.",
+  "单击切换基准并保留顺序；双击当前选项按原规则重新排序（键盘：Shift+Enter）。": "Click to change the price basis without moving rows; double-click the selected option to reapply the previous sort (keyboard: Shift+Enter).",
+  "行情更新失败，请重试；角色与挂单状态见页面提示。": "Market refresh failed. Try again; see the page for character and listing status.",
+  "行情时间 {0}{1}": "Market data time {0}{1}",
+  "行情时间 {0}": "Market data time {0}",
+  "正在获取行情…": "Loading market data…",
+  " 本人挂单 {0} 单{1}。": " Your listings: {0}{1}.",
+  "行情 {0}": "Market {0}",
+  "{0}{1}": "{0}{1}",
+  "尚未读取行情": "Market data not read yet",
+  "买单明细未读取，请打开该物品市场。": "Buy orders have not been read. Open this item's market.",
+  "左一：{0}": "Best ask: {0}",
+  "{0}；采购 {1} 份": "{0}; buy {1} units",
+  "优于行情": "Better than market",
+  "暂无法预估": "Estimate unavailable",
+  "请刷新物品市场；保留当前输入。": "Refresh the item market; current input is retained.",
+  "请打开或刷新该物品市场。": "Open or refresh this item’s market.",
+  "区间外按报价估算，低于下限的卖单实际按区间下限执行。左一非现档时保留原价参考。": "Out-of-range quotes are used as quoted for estimates; sell orders below the lower bound execute at that bound. Off-tick best asks retain their original quote for reference.",
+  "库存概况": "Stock overview",
+  "低等级库存": "Lower-level stock",
+  "库存与制作": "Inventory & production",
+  "制作中": "In progress",
+  "低等级": "Lower levels",
+  "持续": "Ongoing",
+  "当前 +{0} 等级的库存数量": "Inventory at the current +{0} level",
+  "当前及排队制作任务的剩余配方产出；不含已完成量，不表示已得到当前强化等级成品。同款不同等级行共享队列，不能相加。": "Remaining recipe output from active and queued production, excluding completed output. This is not finished equipment at the target enhancement level. Rows for the same item share a queue; do not add them together.",
+  "低于 +{0} 的同款库存总数（含 +0，不含制作中）": "Inventory of the same item below +{0}, including +0 and excluding production",
+  "；数据尚未读取，请等待游戏同步": "; data not read yet; wait for the game to sync",
+  "{0} 分钟": "{0} min",
+  "{0} 小时": "{0} hr",
+  "已挂参考": "Listing age",
+  "暂无数据": "unavailable",
+  "读取中…": "loading…",
+  "参考挂单时长：{0}": "Reference listing age: {0}",
+  "{0}到{1}": "{0} to {1}",
+  "秒": " seconds",
+  "分钟": " minutes",
+  "个小时": " hours",
+  "天": " days",
+  "以内": " or less",
+  "以內": " or less",
+  "以上": " or more",
+  "参考挂单时长：暂无数据": "Reference listing age: unavailable",
+  "参考挂单时长：读取中…": "Reference listing age: loading…",
+  "参考 {0} 档首条订单的已挂时长，不是预计成交时间。": "Age of the first listing at price {0}, not an estimated fill time.",
+  "相邻价格档位未提供可读取的挂单时长。": "No readable listing age at the adjacent price level.",
   "制作进度待确认": "Production progress unknown",
   "待购买材料": "Materials needed",
   "材料待到账": "Materials pending delivery",
@@ -833,6 +1073,10 @@ SOFTWARE.
 
   "使用参考售价计算整表收益": "Use reference sale prices for all project returns",
   "未设 · 用右一": "Unset · use bid",
+  "未设 · 用右": "Unset · use bid",
+  "默认使用最近记录到的本人已成交卖单原挂单价，并非实际成交单价。": "Defaults to the original listing price of your most recently observed filled sell order, not its execution price.",
+  "支持 K / M / B（大小写均可）；清空恢复成交记录默认价，无记录则留空。": "Accepts K / M / B (case-insensitive). Clear to restore the sale-history default, or leave blank when no record exists.",
+  "未设 · 用左": "Unset · use ask",
   "未设 · 用左一": "Unset · use ask",
   "按参考售价计算收益": "Returns based on reference sale price",
   "保护材料备料倍率": "Protection preparation multiplier",
@@ -1127,6 +1371,9 @@ SOFTWARE.
   "强化方案未就绪": "Enhancement plan not ready",
   "材料数据尚未就绪，请重新读取角色或刷新游戏。": "Material data not ready. Read the character again or refresh the game.",
   "操作提示": "Notifications",
+  "暂无提示": "No notifications",
+  "行情更新失败，请重试；角色与挂单状态见设置。": "Market refresh failed. Try again; see Settings for character and listing status.",
+  "已更新买卖一价；本人挂单保存状态见设置。": "Best ask and bid updated. See Settings for your listing save status.",
   "删除提示": "Dismiss notification",
   "生活衣裤": "Skilling clothing",
   "各生活技能衣裤 · 按装备等级建分区": "Skilling tops and bottoms · Grouped by item level",
@@ -1345,7 +1592,8 @@ SOFTWARE.
   "{0} 次": "{0} actions",
   "{0} + 未知": "{0} + unknown",
   "保存失败，请重试": "Save failed. Please retry.",
-  "拖动改变分区顺序（触屏长按）；Alt + 左右方向键排序": "Drag to reorder groups (hold on touch screens); Alt + Left/Right to reorder",
+  "长按编辑分区；F2 编辑；拖动或 Alt + 左右方向键排序": "Hold to edit group; F2 to edit; drag or Alt + Left/Right to reorder",
+  "拖动或 Alt + 左右方向键排序": "Drag or Alt + Left/Right to reorder",
   "数量为 1，点击后再次点击可移除规划": "Quantity is 1. Click, then click again to remove the plan.",
   "继续下拉收起": "Pull farther down to collapse",
   "调整备料抽屉高度": "Resize preparation drawer",
@@ -1671,6 +1919,16 @@ SOFTWARE.
   "尚未记录到该等级的本人卖出成交。": "No recorded filled sell orders at this level yet.",
   "分区分类管理": "Manage groups",
   "新分区名称": "New group name",
+  "添加分区": "Add group",
+  "编辑分区": "Edit group",
+  "编辑分区：{0}": "Edit group: {0}",
+  "分区名称": "Group name",
+  "删除分区": "Delete group",
+  "删除此分区": "Delete this group",
+  "分区已不存在，请关闭后重试。": "This group no longer exists. Close and try again.",
+  "删除「{0}」？保留收藏及其他分区归属；无其他归属的物品回到未分区。": "Delete “{0}”? Favorites and other memberships are kept. Items without another group return to Ungrouped.",
+  "已删除分区，收藏已保留。": "Group deleted. Favorites kept.",
+  "分区已保存。": "Group saved.",
   "新增分区": "Add group",
   "{0} 件": "Items: {0}",
   "重命名分区：{0}": "Rename group: {0}",
@@ -2164,6 +2422,41 @@ SOFTWARE.
     let webpackLanguage = "";
     let lastWebpackRead = 0;
     let purchaseTimer = null;
+    function listingForm() {
+      const modal = window.document.querySelector?.('[class*="MarketplacePanel_modalContent"]');
+      if (!modal || !modal.querySelector?.('[class*="MarketplacePanel_quantityInputs"]')) return null;
+      const panel = find(fiber => {
+        const instance = fiber.stateNode;
+        return instance?.state?.showPostListing === true && typeof instance.handleSetPriceInput === "function" &&
+          typeof instance.handleShowPrefilledPostListing === "function" ? instance : null;
+      }, false);
+      if (!panel || !validHrid(panel.state.itemHrid)) return null;
+      return { panel };
+    }
+    function formSnapshot(form) {
+      const { state } = form.panel;
+      const level = Number(state.enhancementLevelInput);
+      const numeric = value => typeof value === "number" && Number.isFinite(value) ? value :
+        typeof value === "string" && /^\d+$/.test(value) ? Number(value) : null;
+      const books = state.marketItemOrderBooks;
+      const book = books?.itemHrid === state.itemHrid && Number.isSafeInteger(level) && level >= 0 && level <= 20 ? books.orderBooks?.[level] : null;
+      const sourceRows = book?.[state.isSell === true ? "asks" : "bids"];
+      const orderRows = Array.isArray(sourceRows) ? sourceRows.slice(0, 2000).map(row => {
+        const listingId = Array.isArray(row) ? row[2] : row?.listingId ?? row?.id;
+        const rawTime = Array.isArray(row) ? null : row?.createdTimestamp ?? row?.createdAt;
+        const createdAt = typeof rawTime === "number" ? rawTime : typeof rawTime === "string" ? (/^\d{12,16}$/.test(rawTime) ? Number(rawTime) : Date.parse(rawTime)) : null;
+        return { price: numeric(Array.isArray(row) ? row[0] : row?.price),
+          listingId: (typeof listingId !== "number" || Number.isSafeInteger(listingId)) && /^[1-9]\d{0,23}$/.test(String(listingId ?? "")) ? String(listingId) : null,
+          createdAt: Number.isSafeInteger(createdAt) && createdAt > 0 ? createdAt : null };
+      }).filter(row => row.price > 0) : null;
+      return { itemHrid: state.itemHrid,
+        orderRows,
+        enhancementLevel: Number.isSafeInteger(level) && level >= 0 && level <= 20 ? level : null,
+        bookEnhancementLevel: numeric(state.enhancementLevel),
+        side: state.isSell === true ? "sell" : state.isSell === false ? "buy" : null,
+        price: numeric(state.isPriceEditing ? state.priceInputDraft : state.priceInput),
+        invalid: Boolean(state.priceError || state.enhancementLevelError) };
+    }
     function cancelPurchasePrefill() {
       if (purchaseTimer != null) window.clearInterval(purchaseTimer);
       purchaseTimer = null;
@@ -2293,9 +2586,14 @@ SOFTWARE.
       let enhancementState = null;
       let listings = null;
       let listingCharacterId = null;
+      let listingFormState = null;
       try {
         if (request.action === "ping") {
           accepted = true;
+        } else if (request.action === "listing-form") {
+          const form = listingForm();
+          error = "listing_form_missing";
+          if (form) { listingFormState = formSnapshot(form); accepted = true; }
         } else if (request.action === "language") {
           const read = candidate => {
             const lang = candidate?.resolvedLanguage || candidate?.language;
@@ -2347,6 +2645,28 @@ SOFTWARE.
             const items = values(itemSource);
             enhancementState = {
               characterId: state.character.id,
+              // Official queue includes the active task at index 0. Copy only
+              // counters needed for display, never item hashes or controller data.
+              productionQueue: Array.isArray(state.characterActions) ? state.characterActions.map(action => ({
+                actionHrid: typeof action?.actionHrid === "string" && /^\/actions\/[a-z0-9_/]+$/.test(action.actionHrid) ? action.actionHrid : null,
+                hasMaxCount: typeof action?.hasMaxCount === "boolean" ? action.hasMaxCount : null,
+                maxCount: Number.isSafeInteger(action?.maxCount) && action.maxCount >= 0 ? action.maxCount : null,
+                currentCount: Number.isSafeInteger(action?.currentCount) && action.currentCount >= 0 ? action.currentCount : null
+              })) : null,
+              // Resolve only public item identities and enhancement parameters. Do not forward
+              // hashes, action IDs, account fields, or the mutable controller.
+              enhancementQueue: Array.isArray(state.characterActions) ? state.characterActions
+                .filter(action => !action || typeof action.actionHrid !== "string" || action.actionHrid === "/actions/enhancing/enhance")
+                .map(action => {
+                  const parts = typeof action?.primaryItemHash === "string" ? action.primaryItemHash.split("::") : [];
+                  const itemHrid = parts.length === 4 && parts[0] === String(state.character.id) && /^\/item_locations\/[a-z0-9_]+$/.test(parts[1]) && /^\d+$/.test(parts[3]) && validHrid(parts[2]) ? parts[2] : null;
+                  const protection = typeof action?.secondaryItemHash === "string" && action.secondaryItemHash ? action.secondaryItemHash.split("::") : null;
+                  const protectionItemHrid = protection && protection.length === 4 && protection[0] === String(state.character.id) && /^\/item_locations\/[a-z0-9_]+$/.test(protection[1]) && protection[3] === "0" && validHrid(protection[2]) ? protection[2] : null;
+                  return { itemHrid, startLevel:itemHrid && Number.isInteger(Number(parts[3])) && Number(parts[3]) <= 20 ? Number(parts[3]) : null,
+                    protectionEnabled:Boolean(protection), protectionItemHrid,
+                    protectAt:typeof action?.secondaryItemHash === "string" && action.secondaryItemHash && Number.isInteger(action?.enhancingProtectionMinLevel) ? action.enhancingProtectionMinLevel : null,
+                    enhancementLevel:Number.isInteger(action?.enhancingMaxLevel) && action.enhancingMaxLevel >= 1 && action.enhancingMaxLevel <= 20 ? action.enhancingMaxLevel : null };
+                }) : null,
               characterSkills: values(state.characterSkillMap || state.characterSkills).map((skill) => ({ skillHrid: skill.skillHrid || skill.hrid, level: skill.level, experience: experience(skill.experience) })),
               experienceBuffs: { types: wisdomMap(state.skillingActionTypeBuffsDict), actions: wisdomMap(state.skillingActionHridBuffsDict) },
               characterItems: itemSource && typeof itemSource === "object" ? items
@@ -2443,7 +2763,7 @@ SOFTWARE.
         }
       } catch (_error) { accepted = false; error = "page_error"; }
       window.document.dispatchEvent(new CustomEvent(options.responseEvent, {
-        detail: JSON.stringify({ requestId: request.requestId, accepted, names, language, enhancementState, listings, listingCharacterId, destination, notice, preparationInfo, error: accepted ? "" : error })
+        detail: JSON.stringify({ requestId: request.requestId, accepted, names, language, enhancementState, listings, listingCharacterId, listingFormState, destination, notice, preparationInfo, error: accepted ? "" : error })
       }));
     });
   }
@@ -2515,6 +2835,13 @@ SOFTWARE.
   function normalizeOrderBook(data) {
     if (!/^\/items\/[a-z0-9_]+$/.test(data?.itemHrid || "") || !Array.isArray(data?.orderBooks)) return null;
     const books = data.orderBooks.slice(0, 21);
+    const creation = entry => {
+      const value = entry?.createdTimestamp ?? entry?.createdAt;
+      const numeric = typeof value === "number" ? value : NaN;
+      const at = Number.isFinite(numeric) ? (numeric < 1e12 ? numeric * 1000 : numeric)
+        : typeof value === "string" ? Date.parse(value) : NaN;
+      return Number.isFinite(at) && at > 0 && at <= Date.now() ? { createdAt: at } : {};
+    };
     const best = (book, side) => {
       let result = side === "asks" ? Infinity : 0;
       for (const entry of Array.isArray(book?.[side]) ? book[side] : []) {
@@ -2530,16 +2857,18 @@ SOFTWARE.
       sellBooks: books.map((book) => Array.isArray(book?.asks) ? book.asks.slice(0, 100).map((entry) => ({
         id: Number.isSafeInteger(entry?.listingId) && entry.listingId > 0 ? entry.listingId : null,
         price: Array.isArray(entry) ? entry[0] : entry?.price ?? entry?.p,
-        quantity: Array.isArray(entry) ? entry[1] : entry?.quantity
-      })).map((entry) => ({ id: entry.id,
+        quantity: Array.isArray(entry) ? entry[1] : entry?.quantity,
+        ...creation(entry)
+      })).map((entry) => ({ id: entry.id, ...(entry.createdAt ? { createdAt: entry.createdAt } : {}),
         price: typeof entry.price === "number" && Number.isFinite(entry.price) && entry.price > 0 ? entry.price : null,
         quantity: typeof entry.quantity === "number" && Number.isFinite(entry.quantity) && entry.quantity >= 0 ? entry.quantity : null
       })) : null),
       buyBooks: books.map((book) => Array.isArray(book?.bids) ? book.bids.slice(0, 100).map((entry) => ({
         id: Number.isSafeInteger(entry?.listingId) && entry.listingId > 0 ? entry.listingId : null,
         price: Array.isArray(entry) ? entry[0] : entry?.price ?? entry?.p,
-        quantity: Array.isArray(entry) ? entry[1] : entry?.quantity
-      })).map((entry) => ({ id: entry.id,
+        quantity: Array.isArray(entry) ? entry[1] : entry?.quantity,
+        ...creation(entry)
+      })).map((entry) => ({ id: entry.id, ...(entry.createdAt ? { createdAt: entry.createdAt } : {}),
         price: typeof entry.price === "number" && Number.isFinite(entry.price) && entry.price > 0 ? entry.price : null,
         quantity: typeof entry.quantity === "number" && Number.isFinite(entry.quantity) && entry.quantity >= 0 ? entry.quantity : null
       })) : null),
@@ -3409,22 +3738,49 @@ SOFTWARE.
   const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const storageKey = "mwi-layu:partitions:v1";
   const projectColumns = Object.freeze(Object.entries({ name: 180, market: 100, bid: 100, reference: 100, profit: 80, wage: 90,
-    margin: 80, own: 130, prepare: 110 }).map(([key, width]) => Object.freeze({
-      key, width, min: ({ name: 112, own: 100, prepare: 90 })[key] || 80, max: 640
+    margin: 80, own: 130, prepare: 110, stock: 220, enhancement: 150 }).map(([key, width]) => Object.freeze({
+      key, width, min: ({ name: 112, own: 100, prepare: 90, stock: 110, enhancement: 130 })[key] || 80, max: 640
     })));
   const validColumnWidth = (column, value) => column && Number.isInteger(value) && value >= column.min && value <= column.max;
   const columnWidths = state => Object.fromEntries(projectColumns.map(column => [column.key,
     validColumnWidth(column, state.projectColumnWidths?.[column.key]) ? state.projectColumnWidths[column.key] : column.width]));
+  const columnGroups = projectColumns.map(column => column.key).filter(key => key !== "bid");
+  const columnOrder = state => [...new Set([
+    ...(Array.isArray(state.projectColumnOrder) ? state.projectColumnOrder.filter(key => columnGroups.includes(key)) : []), ...columnGroups
+  ])];
   const editableDefaultClothes = app.config?.editableDefaultClothes === true;
   const builtins = [...(editableDefaultClothes ? [] : [{ id: "clothes", get name() { return t("生活衣裤"); } }]), { id: "materials", get name() { return t("原材料"); } }, { id: "unassigned", get name() { return t("未分区"); } }];
   const isClothing = (hrid) => /^\/items\/(dairyhands|foragers|lumberjacks|cheesemakers|crafters|tailors|chefs|brewers|alchemists|enhancers)_(top|bottoms)(?:_refined)?$/.test(hrid);
   const validItem = (hrid) => /^\/items\/[a-z0-9_]+$/.test(hrid);
+  const day = 86400000;
+  const retentionDays = state => state.historyRetentionDays ?? 7;
+  const sameGroups = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every(id => b.includes(id));
+  function trimHistory(state, now = Date.now()) {
+    if (state.operationHistory) state.operationHistory = state.operationHistory.filter(entry => entry.at > now - retentionDays(state) * day);
+  }
+  // Both membership and its undo record live in the same storage transaction.
+  function writeLevelAssignment(state, item, next, before, now = Date.now()) {
+    const key = `${item.itemHrid}:${item.enhancementLevel}`;
+    state.levelAssignments ||= {};
+    if (sameGroups(before, next)) return { previous:state.levelAssignments[key] ?? null, next };
+    const previous = Object.hasOwn(state.levelAssignments, key) ? [...state.levelAssignments[key]] : null;
+    trimHistory(state, now);
+    state.operationHistory ||= [];
+    state.operationHistory.push({ id:`op-${now}-${Math.random().toString(36).slice(2, 10)}`, at:now,
+      itemHrid:item.itemHrid, enhancementLevel:item.enhancementLevel, name:item.name || item.itemHrid.slice(7),
+      before:[...before], previous, after:[...next], groupNames:Object.fromEntries([...builtins, ...state.groups].filter(group => before.includes(group.id) || next.includes(group.id)).map(group => [group.id, group.name])) });
+    state.levelAssignments[key] = [...next];
+    return { previous, next:[...next] };
+  }
   function create(storage = root.localStorage) {
     let materialHrids = new Set();
     function read() {
       const raw = storage.getItem(storageKey);
       const value = raw ? JSON.parse(raw) : { groups: [], assignments: {}, quantities: {}, collapsed: {}, selected: "clothes" };
       if (!Array.isArray(value?.groups) || !value.assignments || !value.quantities || !value.collapsed) throw new Error(t("分区数据格式异常，原数据已保留"));
+      if (value.levelAssignments != null && (typeof value.levelAssignments !== "object" || Array.isArray(value.levelAssignments) ||
+          Object.entries(value.levelAssignments).some(([key, ids]) => !/^\/items\/[a-z0-9_]+:(?:[0-9]|1[0-9]|20)$/.test(key) ||
+            !Array.isArray(ids) || ids.some(id => typeof id !== "string")))) throw new Error(t("物品分区数据异常，原数据已保留"));
       if (editableDefaultClothes && value.clothesInitialized !== true) {
         // Preserve the legacy ID, explicit memberships and selected groups.
         // Convert only existing favorites' implicit clothing memberships into saved assignments.
@@ -3440,11 +3796,32 @@ SOFTWARE.
         value.clothesInitialized = true;
         storage.setItem(storageKey, JSON.stringify(value));
       }
+      if (value.historyRetentionDays != null && (!Number.isInteger(value.historyRetentionDays) || value.historyRetentionDays < 1 || value.historyRetentionDays > 3650)) throw new Error(t("操作记录保存天数无效。"));
+      if (value.operationHistory != null && (!Array.isArray(value.operationHistory) || value.operationHistory.some(entry => !entry || !Number.isFinite(entry.at) ||
+          !validItem(entry.itemHrid) || !Number.isInteger(entry.enhancementLevel) || !Array.isArray(entry.before) || !Array.isArray(entry.after) ||
+          (entry.previous !== null && !Array.isArray(entry.previous))))) throw new Error(t("操作记录格式异常，原数据已保留。"));
+      const count = value.operationHistory?.length;
+      trimHistory(value);
+      if (count !== value.operationHistory?.length) {
+        // Expired records are hidden even if storage is temporarily read-only; retry cleanup on the next read.
+        try { storage.setItem(storageKey, JSON.stringify(value)); } catch (_) {}
+      }
       return value;
     }
     function mutate(change) {
       const value = read(); change(value);
       storage.setItem(storageKey, JSON.stringify(value));
+    }
+    function setColumnWidths(updates) {
+      const entries = updates && !Array.isArray(updates) ? Object.entries(updates) : [];
+      if (!entries.length || entries.some(([key, value]) => !validColumnWidth(projectColumns.find(column => column.key === key), value))) {
+        throw new RangeError(t("无效的列或列宽"));
+      }
+      // A grouped resize must persist both columns in one write, or neither.
+      mutate(state => {
+        state.projectColumnWidths = { ...columnWidths(state), ...updates };
+        delete state.projectWidth;
+      });
     }
     function groups() {
       // Translate only the untouched built-in title, never arbitrary user group names.
@@ -3452,8 +3829,10 @@ SOFTWARE.
         ? { ...group, name: t("生活衣裤") } : group);
       return editableDefaultClothes ? [...saved.filter(group => group.id === "clothes"), ...builtins, ...saved.filter(group => group.id !== "clothes")] : [...builtins, ...saved];
     }
-    function groupsOf(hrid) {
-      const state = read(); const assigned = state.assignments[hrid];
+    function groupsOf(hrid, level) {
+      const state = read();
+      const key = levelKey(hrid, level);
+      const assigned = key && Object.hasOwn(state.levelAssignments || {}, key) ? state.levelAssignments[key] : state.assignments[hrid];
       if (assigned != null) {
         const ids = typeof assigned === "string" ? [assigned] : assigned;
         if (!Array.isArray(ids) || ids.some(id => typeof id !== "string")) throw new Error(t("物品分区数据异常，原数据已保留"));
@@ -3463,11 +3842,35 @@ SOFTWARE.
       }
       return [!editableDefaultClothes && isClothing(hrid) ? "clothes" : materialHrids.has(hrid) ? "materials" : "unassigned"];
     }
-    function groupOf(hrid) { return groupsOf(hrid)[0]; }
+    function levelKey(hrid, level) {
+      if (level === undefined) return null;
+      if (!validItem(hrid) || !Number.isInteger(level) || level < 0 || level > 20) throw new Error(t("无效物品或强化等级"));
+      return `${hrid}:${level}`;
+    }
+    function groupOf(hrid, level) { return groupsOf(hrid, level)[0]; }
+    function validateGroups(ids) {
+      if (!Array.isArray(ids) || ids.some(id => !groups().some(group => group.id === id))) throw new Error(t("无效物品或分区"));
+      const actual = [...new Set(ids)].filter(id => id !== "unassigned");
+      return actual.length ? actual : ["unassigned"];
+    }
     function selectedGroups() {
       const state = read(); const ids = groups().map(group => group.id);
       if (state.selectedGroups != null && (!Array.isArray(state.selectedGroups) || state.selectedGroups.some(id => typeof id !== "string"))) throw new Error(t("分区选择数据异常，原数据已保留"));
       return [...new Set(state.selectedGroups ?? (state.selected === "all" ? ids : [state.selected || "clothes"]))].filter(id => ids.includes(id));
+    }
+    function operationStatus(state, entry) {
+      if (!entry || entry.at <= Date.now() - retentionDays(state) * day) return t("记录已到期，无法撤销。");
+      if (entry.undoneAt) return t("已撤销");
+      const key = `${entry.itemHrid}:${entry.enhancementLevel}`;
+      if (!sameGroups(state.levelAssignments?.[key], entry.after)) return t("归属已变化，请先撤销后续操作。");
+      const available = [...builtins, ...state.groups].map(group => group.id);
+      if (entry.before.some(id => !available.includes(id))) return t("原分区已删除，无法撤销。");
+      if (entry.previous === null) {
+        const saved = state.assignments[entry.itemHrid];
+        const inherited = saved == null ? [!editableDefaultClothes && isClothing(entry.itemHrid) ? "clothes" : materialHrids.has(entry.itemHrid) ? "materials" : "unassigned"] : typeof saved === "string" ? [saved] : saved;
+        if (!sameGroups(inherited.length ? inherited : ["unassigned"], entry.before)) return t("原默认归属已变化，无法撤销。");
+      }
+      return "";
     }
     function name(value) {
       const text = String(value).trim();
@@ -3476,22 +3879,57 @@ SOFTWARE.
     }
     return Object.freeze({ read, groups, groupOf, groupsOf, selectedGroups,
       columnWidths() { return columnWidths(read()); },
+      columnOrder() { return columnOrder(read()); },
+      setColumnOrder(order) {
+        if (!Array.isArray(order) || order.length !== columnGroups.length || new Set(order).size !== order.length ||
+            order.some(key => !columnGroups.includes(key))) throw new RangeError(t("无效的列顺序"));
+        mutate(state => { state.projectColumnOrder = [...order]; });
+      },
+      setColumnWidths,
       setColumnWidth(key, value) {
-        const column = projectColumns.find(column => column.key === key);
-        if (!validColumnWidth(column, value)) throw new RangeError(t("无效的列或列宽"));
-        mutate(state => {
-          state.projectColumnWidths = { ...columnWidths(state), [key]: value };
-          delete state.projectWidth;
-        });
+        setColumnWidths({ [key]: value });
       },
       setSelectedGroups(ids) {
         if (!Array.isArray(ids) || ids.some(id => !groups().some(group => group.id === id))) throw new Error(t("无效分区选择"));
         mutate(state => { state.selectedGroups = [...new Set(ids)]; });
       },
       setMaterialHrids(hrids) { materialHrids = new Set(hrids.filter(validItem)); },
-      setGroups(hrid, ids) {
-        if (!validItem(hrid) || !Array.isArray(ids) || ids.some(id => !groups().some(group => group.id === id))) throw new Error(t("无效物品或分区"));
-        mutate(state => { state.assignments[hrid] = [...new Set(ids.length ? ids : ["unassigned"])]; });
+      setGroups(hrid, ids, level, details = {}) {
+        if (!validItem(hrid)) throw new Error(t("无效物品或分区"));
+        const key = levelKey(hrid, level), next = validateGroups(ids);
+        const before = groupsOf(hrid, level);
+        let change;
+        mutate(state => {
+          if (key) {
+            state.levelAssignments ||= {};
+            if (!Object.hasOwn(state.levelAssignments, key) && Object.keys(state.levelAssignments).length >= 10000) throw new Error(t("独立等级分区已达上限。"));
+            let label = details.name;
+            if (!label) {
+              const favorites = JSON.parse(storage.getItem(storageKey.replace(":partitions:", ":market-favorites:")) || "[]");
+              label = favorites.find(item => item.itemHrid === hrid)?.name;
+            }
+            change = writeLevelAssignment(state, { itemHrid:hrid, enhancementLevel:level, name:label }, next, before);
+          } else state.assignments[hrid] = next;
+        });
+        return change;
+      },
+      historyRetentionDays() { return retentionDays(read()); },
+      setHistoryRetentionDays(days) {
+        if (!Number.isInteger(days) || days < 1 || days > 3650) throw new Error(t("请输入 1 至 3650 的整数天数。"));
+        mutate(state => { state.historyRetentionDays = days; trimHistory(state); });
+      },
+      operationHistory() { return [...(read().operationHistory || [])].reverse(); },
+      operationStatus(entry) { return operationStatus(read(), entry); },
+      undoOperation(id) {
+        mutate(state => {
+          const entry = state.operationHistory?.find(entry => entry.id === id);
+          const reason = operationStatus(state, entry);
+          if (reason) throw new Error(reason);
+          const key = `${entry.itemHrid}:${entry.enhancementLevel}`;
+          if (entry.previous === null) delete state.levelAssignments[key];
+          else state.levelAssignments[key] = [...entry.previous];
+          entry.undoneAt = Date.now();
+        });
       },
       quantity(hrid) { const n = read().quantities[hrid]; return Number.isSafeInteger(n) && n >= 1 && n <= 1000000 ? n : 1; },
       setQuantity(hrid, value) {
@@ -3518,10 +3956,10 @@ SOFTWARE.
         mutate(state => {
           if (id === targetId || !state.groups.some(group => group.id === id) ||
               ![...builtins, ...state.groups].some(group => group.id === targetId)) throw new Error(t("合并分区已变化，请重新选择"));
-          for (const hrid of Object.keys(state.assignments)) {
-            const assigned = state.assignments[hrid];
+          for (const assignments of [state.assignments, state.levelAssignments || {}]) for (const hrid of Object.keys(assignments)) {
+            const assigned = assignments[hrid];
             const ids = Array.isArray(assigned) ? assigned : [assigned];
-            if (ids.includes(id)) state.assignments[hrid] = [...new Set(ids.map(value => value === id ? targetId : value))];
+            if (ids.includes(id)) assignments[hrid] = [...new Set(ids.map(value => value === id ? targetId : value))];
           }
           state.groups = state.groups.filter(group => group.id !== id);
           if (state.selected === id) state.selected = targetId;
@@ -3532,12 +3970,12 @@ SOFTWARE.
         mutate((state) => {
           if (!state.groups.some((g) => g.id === id)) throw new Error(t("默认分区不可删除"));
           state.groups = state.groups.filter((g) => g.id !== id);
-          for (const hrid of Object.keys(state.assignments)) {
-            const assigned = state.assignments[hrid];
-            if (assigned === id) state.assignments[hrid] = "unassigned";
+          for (const assignments of [state.assignments, state.levelAssignments || {}]) for (const hrid of Object.keys(assignments)) {
+            const assigned = assignments[hrid];
+            if (assigned === id) assignments[hrid] = ["unassigned"];
             else if (Array.isArray(assigned) && assigned.includes(id)) {
               const remaining = assigned.filter(value => value !== id);
-              state.assignments[hrid] = remaining.length ? remaining : ["unassigned"];
+              assignments[hrid] = remaining.length ? remaining : ["unassigned"];
             }
           }
           if (state.selected === id) state.selected = "unassigned";
@@ -3612,7 +4050,7 @@ SOFTWARE.
       const standing = !valid ? "unknown" : price === best ? "leading" : (row.isSell ? price > best : price < best) ? "behind" : "ahead";
       const side = row.isSell ? t("左一") : t("右一");
       return { ...row, price, best, standing, label: standing === "unknown" ? t`${side}未知` : standing === "leading" ? t`${side}同价` :
-        standing === "behind" ? t("被压价") : t("优于快照"), stale: Boolean(quote?.stale || quote?.cached) };
+        standing === "behind" ? t("被压价") : t("优于行情"), stale: Boolean(quote?.stale || quote?.cached) };
     });
   }
   const collator = new Intl.Collator("zh-CN", { numeric: true });
@@ -3622,7 +4060,7 @@ SOFTWARE.
     if (missing(b)) return -1;
     return direction * (typeof a === "number" && typeof b === "number" ? a - b : collator.compare(a, b));
   }
-  app.marketPartitions = Object.freeze({ storageKey, projectColumns, isClothing, create, visibleOrders, splitOwnPriceOrders, compareListings, compare });
+  app.marketPartitions = Object.freeze({ storageKey, projectColumns, isClothing, writeLevelAssignment, create, visibleOrders, splitOwnPriceOrders, compareListings, compare });
 })(globalThis);
 
 
@@ -3766,23 +4204,20 @@ SOFTWARE.
         if (savedGroup && !targetGroup) savedGroup.presetId = group.id;
         targets.push({ presetId: group.id, id: target.id, name: target.name });
         for (const item of group.items) {
-          const current = partitions.groupsOf(item.itemHrid);
-          const next = [...new Set([...current.filter(id => id !== "unassigned"), target.id])];
-          // Accumulate overlaps in this batch as well as already-saved memberships.
-          const assigned = state.assignments[item.itemHrid];
-          if (assigned != null) for (const id of typeof assigned === "string" ? [assigned] : assigned) {
-            if (id !== "unassigned" && available.some(entry => entry.id === id) && !next.includes(id)) next.push(id);
-          }
-          if (!current.includes(target.id)) memberships += 1;
-          state.assignments[item.itemHrid] = next;
           for (const level of item.enhanceable ? [...new Set(levels)] : [0]) {
             const row = { itemHrid: item.itemHrid, enhancementLevel: level, name: names[item.itemHrid] || item.name };
+            const key = app.marketFavoritesStore.key(row);
+            state.levelAssignments ||= {};
+            const current = state.levelAssignments[key] || partitions.groupsOf(item.itemHrid, level);
+            const next = [...new Set([...current.filter(id => id !== "unassigned"), target.id])];
+            if (!current.includes(target.id)) memberships += 1;
+            app.marketPartitions.writeLevelAssignment(state, row, next, current);
             incoming.set(app.marketFavoritesStore.key(row), row);
           }
         }
       }
       const fresh = [...incoming].filter(([key]) => !known.has(key)).map(([, row]) => ({ ...row, presetAdded: true }));
-      if (rows.length + fresh.length > 10000 || state.groups.length > 200) throw Error(t("添加后将超过 10,000 条收藏或 200 个分区，请减少所选等级或分区。"));
+      if (rows.length + fresh.length > 10000 || Object.keys(state.levelAssignments || {}).length > 10000 || state.groups.length > 200) throw Error(t("添加后将超过 10,000 条收藏或 200 个分区，请减少所选等级或分区。"));
       const selected = partitions.selectedGroups();
       state.selectedGroups = [...new Set([...selected, ...targets.map(target => target.id)])];
       return { before, state, rows: [...rows, ...fresh], newGroups, added: fresh.length, reused: incoming.size - fresh.length,
@@ -4160,11 +4595,13 @@ SOFTWARE.
     if (validTime(value.book?.at, now) && Array.isArray(value.book.rows)) result.book = {
       at: value.book.at, bandMin: price(value.book.bandMin), bandMax: price(value.book.bandMax),
       rows: value.book.rows.slice(0, 100).map(row => ({
+        ...(Number.isFinite(row?.createdAt) && row.createdAt > 0 && row.createdAt <= value.book.at ? { createdAt: row.createdAt } : {}),
         id: Number.isSafeInteger(row?.id) && row.id > 0 ? row.id : null,
         price: price(row?.price),
         quantity: typeof row?.quantity === "number" && Number.isFinite(row.quantity) && row.quantity >= 0 ? row.quantity : null
       })),
       buyRows: Array.isArray(value.book.buyRows) ? value.book.buyRows.slice(0, 100).map(row => ({
+        ...(Number.isFinite(row?.createdAt) && row.createdAt > 0 && row.createdAt <= value.book.at ? { createdAt: row.createdAt } : {}),
         id: Number.isSafeInteger(row?.id) && row.id > 0 ? row.id : null,
         price: price(row?.price),
         quantity: typeof row?.quantity === "number" && Number.isFinite(row.quantity) && row.quantity >= 0 ? row.quantity : null
@@ -4433,11 +4870,13 @@ SOFTWARE.
           bandMin: positivePrice(envelope.message.priceBandMins?.[level]),
           bandMax: positivePrice(envelope.message.priceBandMaxs?.[level]),
           rows: rows.slice(0, 100).map((row) => ({
+          ...(Number.isFinite(row?.createdAt) && row.createdAt > 0 && row.createdAt <= receivedAt ? { createdAt: row.createdAt } : {}),
           id: Number.isSafeInteger(row?.id) && row.id > 0 ? row.id : null,
           price: positivePrice(row?.price),
           quantity: typeof row?.quantity === "number" && Number.isFinite(row.quantity) && row.quantity >= 0 ? row.quantity : null
         })),
           buyRows: Array.isArray(envelope.message.buyBooks?.[level]) ? envelope.message.buyBooks[level].slice(0, 100).map((row) => ({
+          ...(Number.isFinite(row?.createdAt) && row.createdAt > 0 && row.createdAt <= receivedAt ? { createdAt: row.createdAt } : {}),
           id: Number.isSafeInteger(row?.id) && row.id > 0 ? row.id : null,
           price: positivePrice(row?.price),
           quantity: typeof row?.quantity === "number" && Number.isFinite(row.quantity) && row.quantity >= 0 ? row.quantity : null
@@ -4521,6 +4960,335 @@ SOFTWARE.
   }
 
   app.marketPrices = Object.freeze({ create, positivePrice, snapshotUrl, priceStep, previousPrice, nextPrice, priceLadder });
+})(globalThis);
+
+
+// ---- src/runtime/listing-age-reference.js ----
+(function initListingAgeReference(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  function adjacent(rows, side, price) {
+    if (!Array.isArray(rows) || !["buy", "sell"].includes(side) || !Number.isFinite(price) || price <= 0) return null;
+    let target = null;
+    for (const row of rows) {
+      if (!Number.isFinite(row?.price) || row.price <= 0 || !(side === "buy" ? row.price < price : row.price > price)) continue;
+      // Strictly worse price, nearest existing level; preserve its FIRST listing.
+      if (!target || (side === "buy" ? row.price > target.price : row.price < target.price)) target = row;
+    }
+    return target;
+  }
+  function displayAge(text) {
+    const value = String(text ?? "").trim();
+    return /^(?:[<>]=?|[≤≥])?\s*\d+(?:\.\d+)?\s*(?:s|m|h|d|秒|分钟|分|小时|时|天)(?:以内|以上|以內)?$/.test(value) && value.length <= 24 ? value : null;
+  }
+  function levels(rows, side, price) {
+    return { current: Array.isArray(rows) ? rows.find(row => row.price === price) || null : null,
+      adjacent: adjacent(rows, side, price) };
+  }
+  function ageParts(text) {
+    const value = displayAge(text);
+    if (!value) return null;
+    const match = value.match(/^([<>]=?|[≤≥])?\s*(\d+(?:\.\d+)?)\s*(s|m|h|d|秒|分钟|分|小时|时|天)(以内|以上|以內)?$/);
+    const unit = { s: "秒", 秒: "秒", m: "分钟", 分: "分钟", 分钟: "分钟", h: "个小时", 小时: "个小时", 时: "个小时", d: "天", 天: "天" }[match[3]];
+    return { value: match[2], unit, prefix: match[1] || "", suffix: match[4] || "",
+      seconds: Number(match[2]) * ({ 秒: 1, 分钟: 60, 个小时: 3600, 天: 86400 }[unit]) };
+  }
+  function parsePrice(text) {
+    const match = String(text ?? "").trim().replaceAll(",", "").match(/^(\d+(?:\.\d+)?)\s*([KMB])?$/i);
+    if (!match) return null;
+    const value = Number(match[1]) * ({ K: 1e3, M: 1e6, B: 1e9 }[match[2]?.toUpperCase()] || 1);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+  function timestampAge(createdAt, now) {
+    if (!Number.isFinite(createdAt) || createdAt <= 0 || createdAt > now) return null;
+    const elapsed = now - createdAt;
+    return elapsed >= 86400000 ? `${(elapsed / 86400000).toFixed(1)}d` : elapsed >= 3600000
+      ? `${(elapsed / 3600000).toFixed(1)}h` : `${Math.floor(elapsed / 60000)}m`;
+  }
+  app.listingAgeReference = Object.freeze({ adjacent, levels, displayAge, ageParts, parsePrice, timestampAge });
+})(globalThis);
+
+
+// ---- src/runtime/listing-time-anchors.js ----
+(function initListingTimeAnchors(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const id = value => /^[1-9]\d{0,23}$/.test(String(value ?? "")) ? String(value) : null;
+  const compare = (a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0);
+  function normalize(remote, pending = [], now = Date.now()) {
+    const rows = new Map();
+    const valid = row => Array.isArray(row) && id(row[0]) && Number.isSafeInteger(row[1]) && row[1] > 0 && row[1] >= now - 35 * 86400000 && row[1] <= now + 86400000;
+    if (!Array.isArray(remote) || remote.length > 120000 || !Array.isArray(pending) || pending.length > 120000) return [];
+    for (const row of remote) if (valid(row)) {
+      const key = id(row[0]);
+      if (rows.has(key) && rows.get(key) !== row[1]) return [];
+      rows.set(key, row[1]);
+    }
+    const sorted = [...rows].sort((a, b) => compare(a[0], b[0]));
+    if (sorted.some((row, i) => i > 0 && row[1] < sorted[i - 1][1])) return [];
+    // Mooncake keeps remote anchors authoritative and inserts only monotonic local anchors.
+    for (const row of pending.filter(valid).sort((a, b) => compare(id(a[0]), id(b[0])))) {
+      const key = id(row[0]);
+      if (rows.has(key)) continue;
+      const index = lowerBound(sorted, key);
+      if (index > 0 && sorted[index - 1][1] > row[1] || index < sorted.length && sorted[index][1] < row[1]) continue;
+      sorted.splice(index, 0, [key, row[1]]); rows.set(key, row[1]);
+    }
+    return sorted;
+  }
+  function lowerBound(rows, key) {
+    let low = 0, high = rows.length;
+    while (low < high) { const mid = (low + high) >>> 1; if (compare(rows[mid][0], key) < 0) low = mid + 1; else high = mid; }
+    return low;
+  }
+  function estimate(rows, listingId) {
+    const key = id(listingId);
+    if (!key || !rows.length) return null;
+    const index = lowerBound(rows, key);
+    if (rows[index]?.[0] === key) return { createdAt: rows[index][1], quality: "exact" };
+    if (index === 0) return { createdAt: rows[0][1], quality: "lower" };
+    if (index === rows.length) return { createdAt: rows.at(-1)[1], quality: "upper" };
+    const left = rows[index - 1], right = rows[index];
+    const offset = Number(BigInt(key) - BigInt(left[0])), span = Number(BigInt(right[0]) - BigInt(left[0]));
+    if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(span) || span <= 0) return null;
+    return { createdAt: Math.round(left[1] + offset / span * (right[1] - left[1])), quality: "estimated" };
+  }
+  function create({ indexedDB = root.indexedDB, now = () => Date.now() } = {}) {
+    let cache = [], readAt = -Infinity, attemptedAt = -Infinity, pending = null, destroyed = false;
+    const retentionMs = 120000, refreshMs = 30000, retryMs = 3000;
+    function read() {
+      return new Promise(resolve => {
+        if (!indexedDB) { resolve([]); return; }
+        let db = null, done = false;
+        const finish = value => { if (done) return; done = true; root.clearTimeout(timeout); db?.close(); resolve(value); };
+        const timeout = root.setTimeout(() => finish([]), 1500);
+        try {
+          // Open existing DB only. Abort upgrades so this reader never creates or changes Mooncake data.
+          const request = indexedDB.open("MooncakeListingTime");
+          request.onupgradeneeded = () => { request.transaction.abort(); };
+          request.onerror = request.onblocked = () => finish([]);
+          request.onsuccess = () => {
+            db = request.result;
+            if (done || destroyed || !db.objectStoreNames.contains("state")) { db.close(); finish([]); return; }
+            const transaction = db.transaction("state", "readonly"), store = transaction.objectStore("state");
+            const remote = store.get("remote"), legacy = store.get("pending"), local = [];
+            const cursor = store.openCursor(root.IDBKeyRange.bound("pending:", "pending:\uffff"));
+            cursor.onsuccess = () => {
+              const entry = cursor.result;
+              if (!entry) return;
+              local.push([String(entry.key).slice(8), entry.value?.value]);
+              if (local.length > 120000) { transaction.abort(); return; }
+              entry.continue();
+            };
+            transaction.oncomplete = () => finish(normalize(remote.result?.value?.anchors || [], [...(Array.isArray(legacy.result?.value) ? legacy.result.value : []), ...local], now()));
+            transaction.onerror = transaction.onabort = () => finish([]);
+          };
+        } catch { finish([]); }
+      });
+    }
+    function refresh() {
+      if (!pending) {
+        attemptedAt = now();
+        pending = read().then(rows => {
+          if (destroyed) return [];
+          // A transient failed/empty read must not erase a still-valid warm cache.
+          if (rows.length) { cache = rows; readAt = now(); }
+          if (now() < readAt || now() - readAt >= retentionMs) cache = [];
+          return cache;
+        }).finally(() => { pending = null; });
+      }
+      return pending;
+    }
+    return Object.freeze({
+      async get() {
+        if (destroyed) return [];
+        const age = now() - readAt, sinceAttempt = now() - attemptedAt;
+        if (cache.length && age >= 0 && age < retentionMs) {
+          // Revalidate in the background; opening a form never waits on a fresh database read.
+          if (sinceAttempt < 0 || sinceAttempt >= refreshMs) refresh();
+          return cache;
+        }
+        if (!pending && sinceAttempt >= 0 && sinceAttempt < retryMs) return [];
+        return refresh();
+      },
+      destroy() { destroyed = true; cache = []; }
+    });
+  }
+  app.listingTimeAnchors = Object.freeze({ normalize, estimate, create });
+})(globalThis);
+
+
+// ---- src/ui/listing-age-hint.js ----
+(function initListingAgeHint(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text :
+    text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
+  const selector = '[class*="MarketplacePanel_modalContent"]';
+  function create({ prices, now = () => Date.now() }) {
+    const document = root.document, reference = app.listingAgeReference;
+    const anchors = app.listingTimeAnchors.create({ now });
+    const hint = document.createElement("p"); hint.className = "mwi-layu-listing-age-hint";
+    hint.setAttribute("role", "status");
+    hint.style.cssText = "position:absolute;bottom:0;left:0;right:0;margin:0;box-sizing:border-box;height:36px;padding:8px 10px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:4px;background:#19312e;color:#abe6da;font-size:12px;line-height:18px;max-width:100%;white-space:nowrap;font-variant-numeric:tabular-nums";
+    const clock = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    clock.setAttribute("viewBox", "0 0 20 20"); clock.setAttribute("aria-hidden", "true");
+    clock.setAttribute("fill", "none"); clock.setAttribute("stroke", "currentColor"); clock.setAttribute("stroke-width", "1.5");
+    clock.style.cssText = "width:14px;height:14px;flex:0 0 14px";
+    const circle = document.createElementNS(clock.namespaceURI, "circle");
+    circle.setAttribute("cx", "10"); circle.setAttribute("cy", "10"); circle.setAttribute("r", "7.3");
+    const hands = document.createElementNS(clock.namespaceURI, "path"); hands.setAttribute("d", "M10 5.8V10l3 1.8");
+    clock.append(circle, hands);
+    const label = document.createElement("span"), value = document.createElement("strong");
+    label.style.cssText = "flex-shrink:0";
+    value.style.cssText = "color:#bdf4e9;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis";
+    hint.append(clock, label, value);
+    function setValue(text) {
+      const caption = t("已挂参考") + " ";
+      if (label.textContent !== caption) label.textContent = caption;
+      if (value.textContent !== text) value.textContent = text;
+    }
+    // Reserve the line before the modal's first paint, independently of async data and DOM mounting.
+    const style = document.createElement("style");
+    const slot = `${selector} [class*="MarketplacePanel_inputContainer"]:has(> [class*="MarketplacePanel_priceInputs"])`;
+    style.textContent = `${slot}{position:relative}${slot}::after{content:"";display:block;height:36px;min-height:36px;margin-top:8px;flex-shrink:0;pointer-events:none}`;
+    document.head.append(style);
+    let destroyed = false, pending = false, timer = null, generation = 0;
+    function mount() {
+      const modal = document.querySelector(selector);
+      const container = modal?.querySelector('[class*="MarketplacePanel_priceInputs"]')?.closest('[class*="MarketplacePanel_inputContainer"]');
+      if (!container) {
+        if (hint.parentElement) { generation++; hint.remove(); return true; }
+        return false;
+      }
+      if (hint.parentElement === container) return false;
+      generation++;
+      setValue(t("读取中…")); hint.title = "";
+      hint.setAttribute("aria-busy", "true"); container.append(hint);
+      return true;
+    }
+    const visible = el => el.getClientRects().length > 0 && root.getComputedStyle(el).visibility !== "hidden";
+    function prefetch() {
+      // The Mooncake index maps global listing IDs to timestamps. Warm it once for both sides;
+      // item/level/price selection still comes from the current native form, never a cached book.
+      const books = document.querySelectorAll('[class*="MarketplacePanel_orderBooksContainer"],table[class*="MarketplacePanel_orderBookTable__"]');
+      if ([...books].some(visible)) anchors.get().catch(() => {});
+    }
+    const ageSelector = ".mooncake-listing-age-cell,.volume-listing-age-cell,.RangedWayIdleOrderBooksInfo,.mooncake-market-inline-listing-age,.volume-market-inline-listing-age";
+    function priceText(node) {
+      if (!node) return null;
+      // Icons, pegged-price markers and inline plugin labels are not part of the quoted price.
+      const copy = node.cloneNode(true);
+      copy.querySelectorAll(`svg,img,[role="img"],sup,${ageSelector},.mooncake-market-inline-hourly-wage,.volume-market-inline-hourly-wage`).forEach(el => el.remove());
+      return reference.parsePrice(copy.textContent);
+    }
+    function visibleReference(modal, form) {
+      if (form.bookEnhancementLevel !== form.enhancementLevel) return null;
+      const scope = modal.closest('[class*="MarketplacePanel_marketListings"]') || document;
+      const marker = form.side === "buy" ? "MarketplacePanel_bids" : "MarketplacePanel_asks";
+      // Mooncake identifies the two books by their orderBooksContainer, not header styling.
+      const containers = [...scope.querySelectorAll('[class*="MarketplacePanel_orderBooksContainer"]')].filter(visible);
+      const pairedTables = containers.length === 1 ? [...containers[0].querySelectorAll("table")].filter(table => visible(table) && !table.parentElement.closest("table")) : [];
+      const tables = pairedTables.length === 2 ? [pairedTables[form.side === "buy" ? 1 : 0]] : [...scope.querySelectorAll('table[class*="MarketplacePanel_orderBookTable__"]')]
+        .filter(table => visible(table) && table.querySelector(`thead tr[class*="${marker}"]`));
+      if (tables.length !== 1) return null;
+      const table = tables[0], headers = [...table.querySelector("thead tr").children];
+      const ageIndex = headers.findIndex(cell => /^(时长|時長|挂单时长|掛單時長|age|duration|time)$/i.test(cell.textContent.trim()));
+      const priceIndex = headers.findIndex(cell => /^(价格|價格|单价|單價|出售价|出售價|收购价|收購價|(?:ask|bid|sell|buy|unit) price|price)$/i.test(cell.textContent.trim()));
+      const rows = [...table.querySelectorAll(":scope > tbody > tr")].filter(visible).map(row => {
+        const ageNode = [...row.querySelectorAll(ageSelector)].find(visible);
+        const ageText = ageNode ? ageNode.textContent.trim().replace(/^(?:时长|時長|Age)\s*[:：]\s*/i, "") : row.children[ageIndex]?.textContent;
+        const createdAt = Number(ageNode?.dataset.mooncakeListingCreatedAt);
+        const quality = ageNode?.dataset.mooncakeListingAgeQuality;
+        const storedAge = ["exact", "estimated", "lower", "upper"].includes(quality) && createdAt > 0
+          ? reference.timestampAge(Math.min(now(), createdAt), now()) : null;
+        return {
+          price: priceText(row.querySelector('[class*="MarketplacePanel_price__"]') || row.children[priceIndex]),
+          age: storedAge ? storedAge + (quality === "lower" ? "以上" : quality === "upper" ? "以内" : "") : reference.displayAge(ageText)
+        };
+      });
+      return reference.levels(rows, form.side, form.price);
+    }
+    async function readReference(modal, form) {
+      const visibleLevels = visibleReference(modal, form) || {};
+      const book = prices.orderBook(form), time = now();
+      const fresh = book && !book.cached && !book.stale && Number.isFinite(book.at) && book.at <= time && time - book.at < 300000;
+      const rawLevels = fresh ? reference.levels(form.side === "buy" ? book.buyRows : book.rows, form.side, form.price) : {};
+      const nativeLevels = Array.isArray(form.orderRows) ? reference.levels(form.orderRows, form.side, form.price) : null;
+      const sourceLevels = nativeLevels || rawLevels;
+      const needsAnchors = [sourceLevels.current, sourceLevels.adjacent].some(row => row?.listingId && !reference.timestampAge(row.createdAt, time));
+      const points = needsAnchors ? await anchors.get() : [];
+      return ["current", "adjacent"].map(key => {
+        const row = sourceLevels[key], visibleRow = visibleLevels[key];
+        if (nativeLevels && !row) return null;
+        if (!nativeLevels && visibleRow?.age) return visibleRow;
+        const exact = row && reference.timestampAge(row.createdAt, time);
+        if (exact) return { price: row.price, age: exact };
+        const estimate = row?.listingId && app.listingTimeAnchors.estimate(points, row.listingId);
+        if (estimate) {
+          const age = reference.timestampAge(Math.min(time, estimate.createdAt), time);
+          if (age) return { price: row.price, age: age + (estimate.quality === "lower" ? "以上" : estimate.quality === "upper" ? "以内" : "") };
+        }
+        // DOM is only a compatibility fallback, never a different level from the live book.
+        if (visibleRow?.age && (!row || row.price === visibleRow.price)) return visibleRow;
+        return null;
+      }).filter(row => row?.age);
+    }
+    function ageLabel(age) {
+      const parts = reference.ageParts(age);
+      return parts ? `${parts.prefix}${parts.value}${t(parts.unit)}${parts.suffix ? t(parts.suffix) : ""}` : age;
+    }
+    async function tick() {
+      if (destroyed) return;
+      mount();
+      prefetch();
+      if (pending) return;
+      const modal = document.querySelector(selector), started = generation;
+      if (!modal || !modal.querySelector('[class*="MarketplacePanel_priceInputs"]')) { hint.remove(); return; }
+      pending = true;
+      try {
+        const response = await app.marketBridge.request({ action: "listing-form" });
+        if (destroyed || started !== generation || !modal.isConnected || modal !== document.querySelector(selector)) return;
+        const form = response.listingFormState;
+        if (!response.accepted || !form || form.invalid || form.enhancementLevel == null || !["buy", "sell"].includes(form.side) || !(form.price > 0)) {
+          setValue(t("暂无数据")); hint.title = ""; hint.setAttribute("aria-busy", "false"); return;
+        }
+        const container = modal.querySelector('[class*="MarketplacePanel_priceInputs"]')?.closest('[class*="MarketplacePanel_inputContainer"]');
+        if (!container) return;
+        const references = await readReference(modal, form);
+        if (destroyed || started !== generation || !modal.isConnected || modal !== document.querySelector(selector)) return;
+        const rows = references.sort((a, b) => reference.ageParts(a.age).seconds - reference.ageParts(b.age).seconds);
+        const labels = [...new Set(rows.map(row => ageLabel(row.age)))];
+        const age = labels.length === 2 ? t`${labels[0]}到${labels[1]}` : labels[0];
+        setValue(age || t("暂无数据"));
+        hint.setAttribute("aria-busy", "false");
+        hint.title = rows.length ? rows.map(row => t`参考 ${row.price} 档首条订单的已挂时长，不是预计成交时间。`).join("\n") : t("相邻价格档位未提供可读取的挂单时长。");
+        if (hint.parentElement !== container) container.append(hint);
+      } finally {
+        pending = false;
+        if (!destroyed && started !== generation) queue();
+      }
+    }
+    function queue() { root.clearTimeout(timer); timer = root.setTimeout(() => tick().catch(() => {}), 80); }
+    function schedule(event) {
+      if (event && !event.target.closest?.(selector)) return;
+      generation++; mount(); hint.setAttribute("aria-busy", "true"); queue();
+    }
+    const observer = new root.MutationObserver(() => {
+      if (destroyed) return;
+      // A newly mounted form can consume warm data in this microtask, before its first paint.
+      if (mount()) tick().catch(() => {});
+      else prefetch();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("input", schedule); document.addEventListener("change", schedule); document.addEventListener("click", schedule);
+    const interval = root.setInterval(() => tick().catch(() => {}), 750);
+    tick().catch(() => {});
+    return Object.freeze({ destroy() { destroyed = true; anchors.destroy(); root.clearTimeout(timer); root.clearInterval(interval);
+      observer.disconnect(); style.remove();
+      document.removeEventListener("input", schedule); document.removeEventListener("change", schedule); document.removeEventListener("click", schedule); hint.remove(); } });
+  }
+  app.listingAgeHint = Object.freeze({ create });
 })(globalThis);
 
 
@@ -4861,8 +5629,6 @@ SOFTWARE.
     const element = node("section"); element.className = "v3-loot-history"; element.setAttribute("aria-label", t("掉落与经验历史"));
     const heading = node("h2", t("掉落与经验")), status = node("p"), message = node("p"), list = node("div");
     status.setAttribute("role", "status"); message.setAttribute("role", "alert");
-    const help = node("p", t("启用插件后，自动保存当前浏览器收到的记录，不限 20 条。同一活动保留最新累计值。打开游戏原生记录页或点击其刷新按钮可获取最新数据；已被游戏删除且从未采集的记录无法补回。"));
-    const privacy = node("p", t("仅保存在当前浏览器，按服务器和角色隔离。清理网站数据会丢失存档，建议定期导出备份。"));
     let page = 0, ownerKey = "", generation = 0, total = 0, spriteBase = "", names = {}, destroyed = false;
     const size = 50;
     const refresh = button(t("读取本地记录"), () => load());
@@ -4887,7 +5653,7 @@ SOFTWARE.
     const next = button(t("下一页"), () => { page++; load(); });
     const pagination = node("div"), pageLabel = node("span"); pagination.className = "mwi-layu-group-toolbar";
     const toolbar = node("div"); toolbar.className = "mwi-layu-group-toolbar"; toolbar.append(refresh, retry, download);
-    pagination.append(previous, pageLabel, next); element.append(heading, help, privacy, toolbar, status, message, pagination, list);
+    pagination.append(previous, pageLabel, next); element.append(heading, toolbar, status, message, pagination, list);
     const time = value => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(app.i18n?.locale) : t("未知");
     const amount = value => typeof value === "number" ? value.toLocaleString(app.i18n?.locale || "zh-CN", { maximumFractionDigits:2 }) : t("未知");
     function target(row) {
@@ -8697,13 +9463,13 @@ function getPriceTier(price, direction) {
         } catch (_error) { characterReadError = "bridge_unavailable"; }
         if (destroyed) return;
         // Inventory changes update quantities, but are not formula inputs.
-        const nextSignature = JSON.stringify([characterReadError, next && { ...next, inventoryItems: undefined, purchaseListings: undefined,
+        const nextSignature = JSON.stringify([characterReadError, next && { ...next, inventoryItems: undefined, purchaseListings: undefined, productionQueue: undefined, enhancementQueue: undefined,
           experienceBuffs: undefined, characterSkills: next.characterSkills?.map(({experience, ...skill}) => skill) }]);
         const nextExperienceSignature = JSON.stringify([next?.characterId, next?.characterSkills, next?.experienceBuffs]);
         const experienceChanged = nextExperienceSignature !== experienceSignature;
         experienceSignature = nextExperienceSignature;
         if (experienceChanged) experienceRevision += 1;
-        const nextInventorySignature = JSON.stringify([next?.characterId, next?.inventoryItems, next?.purchaseListings]);
+        const nextInventorySignature = JSON.stringify([next?.characterId, next?.inventoryItems, next?.purchaseListings, next?.productionQueue, next?.enhancementQueue]);
         const inventoryChanged = nextInventorySignature !== inventorySignature;
         character = next;
         if (Number.isSafeInteger(next?.characterId) && next.characterId > 0) simulationOwner = next.characterId;
@@ -8870,6 +9636,35 @@ function getPriceTier(price, direction) {
     function inventoryLevels(item) {
       return Array.from({ length: 21 }, (_, enhancementLevel) => ({ enhancementLevel,
         count: inventoryCount(item.itemHrid, enhancementLevel) }));
+    }
+    function productionCount(itemHrid) {
+      const queue = character?.productionQueue;
+      if (!Array.isArray(queue)) return null;
+      let count = 0, continuous = false;
+      for (const task of queue) {
+        const recipe = rules?.actionDetailMap?.[task?.actionHrid];
+        // Without a known action we cannot establish that it makes another item.
+        if (!recipe || typeof recipe.function !== "string") return null;
+        if (recipe.function !== "/action_functions/production") continue;
+        if (!Array.isArray(recipe.outputItems)) return null;
+        const outputs = recipe.outputItems.filter(output => output?.itemHrid === itemHrid);
+        if (!outputs.length) continue;
+        if (outputs.some(output => !Number.isSafeInteger(output.count) || output.count <= 0)) return null;
+        if (task.hasMaxCount === false) { continuous = true; continue; }
+        if (task.hasMaxCount !== true || !Number.isSafeInteger(task.maxCount) || task.maxCount < 0 ||
+            !Number.isSafeInteger(task.currentCount) || task.currentCount < 0 || task.currentCount > task.maxCount) return null;
+        const perAction = outputs.reduce((sum, output) => sum + output.count, 0);
+        count += (task.maxCount - task.currentCount) * perAction;
+        if (!Number.isSafeInteger(count)) return null;
+      }
+      return continuous ? "continuous" : count;
+    }
+    function stockSummary(item) {
+      const level = item.enhancementLevel ?? 0;
+      const lower = inventoryLevels(item).filter(entry => entry.enhancementLevel < level);
+      return { inventory: inventoryCount(item.itemHrid, level),
+        production: productionCount(item.itemHrid),
+        lower: lower.some(entry => entry.count == null) ? null : lower.reduce((sum, entry) => sum + entry.count, 0) };
     }
     const stockChoiceKey = item => `${sourceScope()}:${quantityKey(item)}`;
     function setStockLevel(item, level) {
@@ -9060,6 +9855,82 @@ function getPriceTier(price, direction) {
         mirrorRoute: !preparationRoute && route?.routeType === "philosophersMirror",
         reason: !rules?.itemDetailMap ? t("材料数据尚未就绪，请重新读取角色或刷新游戏。") : reason };
     }
+    // Dedicated ordinary-enhancement demand: no base purchase, recipes, or
+    // mirror/refinement route expansion. Reuse the existing continuation engine.
+    function enhancementRequirements(item, reserved = new Map()) {
+      const inputs = new Map(), used = [], parts = [];
+      let complete = true, reason = "", completed = 0, missingBase = 0, knownTimeHours = 0, timeComplete = true;
+      const fail = message => { complete = false; reason = message; };
+      const take = (level, count) => {
+        const id = `${item.itemHrid}:${level}`, stock = inventoryCount(item.itemHrid, level);
+        if (stock == null) { timeComplete = false; fail(t("装备库存未知，暂不能核算强化计划")); return 0; }
+        const amount = Math.min(count, Math.max(0, Math.floor(stock) - (reserved.get(id) || 0)));
+        if (amount) reserved.set(id, (reserved.get(id) || 0) + amount);
+        return amount;
+      };
+      if (item.planSource === "queue" && (!Number.isInteger(item.startLevel) || item.startLevel < 0 || item.startLevel > 20 ||
+          typeof item.protectionEnabled !== "boolean" || item.protectionEnabled && (!item.protectionItemHrid || !Number.isInteger(item.protectAt) || item.protectAt < Math.min(2, item.enhancementLevel) || item.protectAt > item.enhancementLevel))) {
+        return { inputs:[], complete:false, reason:t("队列强化参数暂不支持核算，已保留原始设置。"), completed:0, missingBase:0, parts:[], knownTimeHours:0, expectedTimeHours:null };
+      }
+      // A queued action targets its specified base, not another owned finished item.
+      completed = item.planSource === "queue" ? (item.startLevel >= item.enhancementLevel ? item.quantity : 0) : take(item.enhancementLevel, item.quantity);
+      let remaining = item.quantity - completed;
+      const levels = item.startLevel == null
+        ? Array.from({ length:item.enhancementLevel }, (_, index) => item.enhancementLevel - index - 1) : [item.startLevel];
+      for (const level of levels) {
+        if (!remaining) break;
+        const count = take(level, remaining);
+        if (count) { used.push({ level, count }); remaining -= count; }
+      }
+      missingBase = remaining;
+      // Missing bases are an explicit prerequisite, not a manufacturing demand.
+      if (remaining) used.push({ level:item.startLevel ?? 0, count:remaining, missing:true });
+      const prefs = settings.preferences;
+      // 暂停逐行倍率覆盖，旧值保留在存储中；采购沿用全局设置。
+      //       const preparation = {
+      //         enhancementMaterialMultiplier:item.enhancementMaterialMultiplier ?? prefs.enhancementMaterialMultiplier,
+      //         protectionMaterialMultiplier:item.protectionMaterialMultiplier ?? prefs.protectionMaterialMultiplier
+      //       };
+      const preparation = prefs;
+      const add = (hrid, level, expected, protection = false) => {
+        if (!hrid || !Number.isFinite(expected) || expected < 0) { fail(t("强化材料数据未知")); return; }
+        if (!expected) return;
+        const id = `${hrid}:${level}`;
+        if (!inputs.has(id)) inputs.set(id, { itemHrid:hrid, enhancementLevel:level, expectedEnhancement:0, expectedProtection:0, demand:0 });
+        const entry = inputs.get(id);
+        entry[protection ? "expectedProtection" : "expectedEnhancement"] += expected;
+        entry.demand += expected * (protection ? preparation.protectionMaterialMultiplier : preparation.enhancementMaterialMultiplier);
+      };
+      if (remaining < item.quantity || used.length) {
+        if (!rules?.itemDetailMap || (!settings.virtual.enabled && !ready())) { if (used.length) timeComplete = false; fail(t("角色或强化材料数据未就绪")); }
+        else for (const source of used) {
+          const result = continuation(item, source.level, item.planSource === "queue" && !item.protectionEnabled ? item.enhancementLevel : item.protectAt);
+          const route = result && item.planSource === "queue" && item.protectionEnabled ? { ...result, protectionItemHrid:item.protectionItemHrid } : result;
+          if (!route || !Number.isFinite(route.expectedActions) || !Number.isFinite(route.expectedProtects)) {
+            timeComplete = false; fail(t("强化路线或材料报价未就绪")); continue;
+          }
+          const hours = route.totalTimeHours * source.count;
+          const expectedTimeHours = Number.isFinite(route.totalTimeHours) && route.totalTimeHours >= 0 && Number.isFinite(hours) ? hours : null;
+          if (expectedTimeHours == null) timeComplete = false; else knownTimeHours += expectedTimeHours;
+          const part = { ...source, protectAt:route.protectAt, protectionItemHrid:route.protectionItemHrid, expectedTimeHours, inputs:[] };
+          parts.push(part);
+          const costs = rules.itemDetailMap[item.itemHrid]?.enhancementCosts;
+          if (!Array.isArray(costs)) fail(t("强化材料数据未知"));
+          for (const cost of costs || []) {
+            const expected = cost.count * route.expectedActions * source.count;
+            part.inputs.push({ itemHrid:cost.itemHrid, enhancementLevel:cost.enhancementLevel ?? 0, expected });
+            add(cost.itemHrid, cost.enhancementLevel ?? 0, expected);
+          }
+          if (route.expectedProtects > 0) {
+            const expected = route.expectedProtects * source.count;
+            part.inputs.push({ itemHrid:route.protectionItemHrid, enhancementLevel:0, expected });
+            add(route.protectionItemHrid, 0, expected, true);
+          }
+        }
+      }
+      return { inputs:[...inputs.values()], complete, reason, completed, missingBase, parts,
+        knownTimeHours, expectedTimeHours:timeComplete && Number.isFinite(knownTimeHours) ? knownTimeHours : null };
+    }
     function isListItemVisible(item) {
       // Hide base equipment only in item lists; material and inventory calculations
       // still need the original +0 item. Unknown categories stay visible.
@@ -9085,10 +9956,804 @@ function getPriceTier(price, direction) {
     return Object.freeze({ parameters() {
       if (!rules?.itemDetailMap || (!settings.virtual.enabled && !ready())) return null;
       ensureEngine(); return { ...engine.params() };
-    }, presetCatalog: () => app.partitionPresets.catalog(rules), save, calculate, craftingRecipe, baseItemSource, setBaseItemSource, inventoryLevels, setStockLevel, createSimulation, materials, materialInfo, isListItemVisible, experiencePlan, targetQuantity, setTargetQuantity, preparation, refreshCharacter, status, settings: () => clone(settings),
+    }, presetCatalog: () => app.partitionPresets.catalog(rules), save, calculate, craftingRecipe, baseItemSource, setBaseItemSource, inventoryLevels, stockSummary, setStockLevel, createSimulation, materials, enhancementRequirements, materialInfo, isListItemVisible, experiencePlan, targetQuantity, setTargetQuantity, preparation, refreshCharacter, enhancementQueue: () => ({ characterId:character?.characterId ?? null, items:character?.enhancementQueue ? clone(character.enhancementQueue) : null }), status, settings: () => clone(settings),
       state: () => ({ revision, calculationRevision, inventoryRevision, experienceRevision, storageError, simulationOwner }), destroy() { destroyed = true; results.clear(); engines.clear(); } });
   }
   app.marketWages = Object.freeze({ create, normalize, collectMaterialReferences, defaults: () => clone(defaults), storageKey, numericVirtual });
+})(globalThis);
+
+
+// ---- src/v3/preparation-probability.js ----
+(function initPreparationProbability(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const validCount = n => Number.isSafeInteger(n) && n >= 1 && n <= 1000000;
+  // Regularized lower incomplete gamma P(n, x). Use a lower-tail series or
+  // upper-tail continued fraction, never factorials or subtraction near zero.
+  function probability(n, multiplier) {
+    if (!validCount(n) || !Number.isFinite(multiplier) || multiplier < 0) return null;
+    if (!multiplier) return 0;
+    if (n === 1) return -Math.expm1(-multiplier);
+    const x = n * multiplier;
+    let logScale;
+    if (n >= 16) {
+      const inv = 1 / n, correction = inv / 12 - inv ** 3 / 360 + inv ** 5 / 1260 - inv ** 7 / 1680;
+      const delta = multiplier - 1;
+      logScale = n * (Math.log1p(delta) - delta) + 0.5 * Math.log(n / (2 * Math.PI)) - correction;
+    } else {
+      let logGamma = 0;
+      for (let k = 2; k < n; k += 1) logGamma += Math.log(k);
+      logScale = n * Math.log(x) - x - logGamma;
+    }
+    if (logScale < -745) return x < n ? 0 : 1;
+    const scale = Math.exp(logScale), epsilon = 2e-14, tiny = 1e-300;
+    if (x < n + 1) {
+      let term = 1 / n, sum = term;
+      for (let k = 1; k <= 50000; k += 1) {
+        term *= x / (n + k); sum += term;
+        if (term <= sum * epsilon) return Math.min(1, sum * scale);
+      }
+    } else {
+      let b = x + 1 - n, c = 1 / tiny, d = 1 / b, h = d;
+      for (let k = 1; k <= 50000; k += 1) {
+        const a = -k * (k - n); b += 2;
+        d = a * d + b; if (Math.abs(d) < tiny) d = tiny;
+        c = b + a / c; if (Math.abs(c) < tiny) c = tiny;
+        d = 1 / d;
+        const delta = d * c; h *= delta;
+        if (Math.abs(delta - 1) <= epsilon) return Math.max(0, Math.min(1, 1 - scale * h));
+      }
+    }
+    return null; // Never present a non-converged estimate as a probability.
+  }
+  function multiplier(n, p) {
+    if (!validCount(n) || !Number.isFinite(p) || p < 0 || p >= 1) return null;
+    if (!p) return 0;
+    if (n === 1) return -Math.log1p(-p);
+    let low = 0, high = 1;
+    while (probability(n, high) < p && high < 100) high *= 2;
+    for (let step = 0; step < 60; step += 1) {
+      const mid = (low + high) / 2, value = probability(n, mid);
+      if (value == null) return null;
+      if (value < p) low = mid; else high = mid;
+    }
+    return high;
+  }
+  // Ceil, not round: the saved two-decimal budget must meet the requested rate.
+  function budgetMultiplier(n, p) {
+    const value = multiplier(n, p);
+    return value == null ? null : Math.ceil(value * 100) / 100;
+  }
+  function basis(project) {
+    const count = project.item.quantity - project.completed;
+    if (!project.complete || project.expectedTimeHours == null || count < 0) return { count, state:"unknown" };
+    if (!count) return { count:0, state:"complete" };
+    const parts = project.parts || [], first = parts[0];
+    if (!first || parts.reduce((sum, part) => sum + part.count, 0) !== count) return { count, state:"unknown" };
+    if (parts.some(part => part.level !== first.level || part.protectAt !== first.protectAt || part.protectionItemHrid !== first.protectionItemHrid)) return { count, state:"mixed" };
+    return { count, state:"ready" };
+  }
+  app.preparationProbability = Object.freeze({ probability, multiplier, budgetMultiplier, basis });
+})(globalThis);
+
+
+// ---- src/v3/enhancement-schedule.js ----
+(function initEnhancementSchedule(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = text => app.i18n ? app.i18n.t(text) : text;
+  const storageKey = "mwi-layu:enhancement-schedule:v1";
+  const preparationKey = "mwi-layu:enhancement-queue-preparation:v1";
+  const preparationFields = ["enhancementMaterialMultiplier", "protectionMaterialMultiplier"];
+  const validPreparation = row => preparationFields.every(field => row[field] === undefined || Number.isFinite(row[field]) && row[field] >= 0 && row[field] <= 100);
+  function validateQueuePreparation(rows) {
+    if (!Array.isArray(rows) || rows.length > 10000 || new Set(rows.map(row => row?.id)).size !== rows.length || rows.some(row =>
+      !row || typeof row.id !== "string" || !/^\/items\/[a-z0-9_]+\|/.test(row.id) || row.id.length > 500 ||
+      Object.keys(row).some(key => !["id", ...preparationFields].includes(key)) || !validPreparation(row))) {
+      throw new Error(t("备料设置数据异常，原数据已保留"));
+    }
+    return rows;
+  }
+  const key = item => `${item.itemHrid}:${item.enhancementLevel}`;
+  const rowKey = item => item.planSource === "queue" ? `queue:${item.queueIndex}` : Number.isSafeInteger(item.addedOrder) ? `row:${item.addedOrder}` : key(item);
+  const valid = value => Number.isFinite(value) && value >= 0;
+  function validate(rows) {
+    if (!Array.isArray(rows) || rows.length > 10000) throw new Error(t("强化计划数据异常，原数据已保留"));
+    const seen = new Set(), unkeyed = new Set(), orders = new Set(), totals = new Map();
+    for (const row of rows) {
+      if (!/^\/items\/[a-z0-9_]+$/.test(row?.itemHrid || "") || !validPreparation(row) || typeof row.name !== "string" || !row.name || row.name.length > 160 ||
+          !Number.isInteger(row.enhancementLevel) || row.enhancementLevel < 1 || row.enhancementLevel > 20 ||
+          !Number.isSafeInteger(row.quantity) || row.quantity < 1 || row.quantity > 1000000 ||
+          !(row.startLevel === null || Number.isInteger(row.startLevel) && row.startLevel >= 0 && row.startLevel < row.enhancementLevel) ||
+          !(row.protectAt === null || Number.isInteger(row.protectAt) && row.protectAt >= Math.min(2, row.enhancementLevel) && row.protectAt <= row.enhancementLevel) ||
+          (row.addedOrder !== undefined && (!Number.isSafeInteger(row.addedOrder) || row.addedOrder < 0 || orders.has(row.addedOrder))) ||
+          (unkeyed.has(key(row)) || row.addedOrder === undefined && seen.has(key(row)))) throw new Error(t("强化计划数据异常，原数据已保留"));
+      if (row.addedOrder !== undefined) orders.add(row.addedOrder);
+      else unkeyed.add(key(row));
+      seen.add(key(row)); totals.set(row.itemHrid, (totals.get(row.itemHrid) || 0) + row.quantity);
+      if (totals.get(row.itemHrid) > 1000000) throw new Error(t("同物品各等级合计最多 1,000,000 件"));
+    }
+    return rows;
+  }
+  function validateQueue(queue) {
+    if (!Array.isArray(queue) || queue.length > 10000 || queue.some(item => !/^\/items\/[a-z0-9_]+$/.test(item?.itemHrid || "") ||
+        !Number.isInteger(item.enhancementLevel) || item.enhancementLevel < 1 || item.enhancementLevel > 20)) {
+      throw new Error(t("当前强化队列尚未读取完整，未修改强化计划。"));
+    }
+    return queue;
+  }
+  // Queue rows are derived, never written into the manual-plan storage key.
+  function snapshot(store, owner, queue, names = {}) {
+    const manual = store.read(owner).map(item => ({ ...item, planSource:"manual" }));
+    // 暂停读取及应用队列逐行倍率；保留原存储和备份兼容。
+    // const preparation = new Map((owner ? store.readQueuePreparation(owner) : []).map(row => [row.id, row]));
+    let queued = [], queueError = "";
+    try {
+      if (!owner || app.materialCart.scope(queue?.characterId) !== owner) throw new Error();
+      validateQueue(queue.items);
+      //       const occurrences = new Map();
+      //       queued = queue.items.map((item, queueIndex) => {
+      //         // Stable across unrelated queue insertions; identical actions have separate occurrences.
+      //         const signature = [item.itemHrid, item.enhancementLevel, item.startLevel, item.protectAt, item.protectionEnabled, item.protectionItemHrid].join("|");
+      //         const occurrence = occurrences.get(signature) || 0; occurrences.set(signature, occurrence + 1);
+      //         const preparationId = `${signature}|${occurrence}`, saved = preparation.get(preparationId);
+      //         return { ...item, ...(saved ? Object.fromEntries(preparationFields.filter(field => saved[field] !== undefined).map(field => [field, saved[field]])) : {}),
+      //           quantity:1, planSource:"queue", queueIndex, preparationId,
+      //           name:names[item.itemHrid] || app.i18n?.itemFallback(item.itemHrid) || item.itemHrid.split("/").pop() };
+      //       });
+      queued = queue.items.map((item, queueIndex) => ({ ...item, quantity:1, planSource:"queue", queueIndex,
+        name:names[item.itemHrid] || app.i18n?.itemFallback(item.itemHrid) || item.itemHrid.split("/").pop() }));
+    } catch (_) { queueError = t("队列尚未读取完整，正在自动重试；手动计划已保留，合计与采购暂不可用。"); }
+    return { items:queued.concat(manual), queueError };
+  }
+  // Consume a separate saved row for every occurrence. Item identity is for matching
+  // materials; addedOrder is the persistent identity of an editable plan row.
+  function orderByQueue(rows, queue, createMissing) {
+    const remaining = [...rows], ordered = [];
+    for (const item of validateQueue(queue)) {
+      const index = remaining.findIndex(row => key(row) === key(item));
+      if (index >= 0) ordered.push(remaining.splice(index, 1)[0]);
+      else if (createMissing) ordered.push(createMissing(item));
+    }
+    return ordered.concat(remaining.sort((a, b) => a.addedOrder - b.addedOrder));
+  }
+  function rowIndex(rows, item) {
+    if (Number.isSafeInteger(item.addedOrder)) return rows.findIndex(row => row.addedOrder === item.addedOrder);
+    const matches = rows.map((row, index) => key(row) === key(item) ? index : -1).filter(index => index >= 0);
+    if (matches.length > 1) throw new Error(t("同物品有多个计划，请选择具体一行。"));
+    return matches[0] ?? -1;
+  }
+  function create(storage = root.localStorage) {
+    const readQueuePreparation = owner => validateQueuePreparation(JSON.parse(storage.getItem(`${preparationKey}:${owner}`) || "[]"));
+    const read = owner => {
+      const rows = owner ? validate(JSON.parse(storage.getItem(`${storageKey}:${owner}`) || "[]")) : [];
+      // Older plans did not retain insertion order. Seed it from their saved order
+      // without writing storage until the next explicit edit.
+      let next = rows.reduce((max, row) => Math.max(max, row.addedOrder ?? -1), -1) + 1;
+      return validate(rows.map(row => ({ ...row, addedOrder:row.addedOrder ?? next++ })));
+    };
+    function save(owner, rows) {
+      if (!owner) throw new Error(t("角色尚未就绪"));
+      storage.setItem(`${storageKey}:${owner}`, JSON.stringify(validate(rows)));
+    }
+    return Object.freeze({ read, readQueuePreparation,
+      setPreparation(owner, item, patch, currentQueue = []) {
+        if (!owner || !validPreparation(patch) || Object.keys(patch).some(key => !preparationFields.includes(key))) throw new Error(t("备料倍率须为 0～100"));
+        if (item.planSource !== "queue") {
+          const rows = read(owner), index = rowIndex(rows, item);
+          if (index < 0) throw new Error(t("项目已移出强化计划"));
+          Object.assign(rows[index], patch); save(owner, rows); return;
+        }
+        const currentIds = new Set(currentQueue.map(row => row.preparationId));
+        if (!currentIds.has(item.preparationId)) throw new Error(t("项目已移出强化计划"));
+        const rows = readQueuePreparation(owner).filter(row => currentIds.has(row.id));
+        let row = rows.find(row => row.id === item.preparationId);
+        if (!row) { row = { id:item.preparationId }; rows.push(row); }
+        Object.assign(row, patch);
+        storage.setItem(`${preparationKey}:${owner}`, JSON.stringify(validateQueuePreparation(rows)));
+      },
+      addMany(owner, items) {
+        const rows = read(owner);
+        let next = rows.reduce((max, row) => Math.max(max, row.addedOrder), -1) + 1;
+        for (const item of items) {
+          const existing = rows.find(row => key(row) === key(item));
+          if (existing) existing.quantity += item.quantity ?? 1;
+          else rows.push({ itemHrid:item.itemHrid, enhancementLevel:item.enhancementLevel, name:item.name,
+            quantity:item.quantity ?? 1, startLevel:null, protectAt:null, addedOrder:next++ });
+        }
+        save(owner, rows);
+      },
+      update(owner, item, patch) {
+        const rows = read(owner), index = rowIndex(rows, item);
+        if (index < 0) throw new Error(t("项目已移出强化计划"));
+        for (const field of ["quantity", "startLevel", "enhancementLevel", "protectAt"]) {
+          if (Object.hasOwn(patch, field)) rows[index][field] = patch[field];
+        }
+        save(owner, rows);
+      },
+      clear(owner) { const previous = read(owner); save(owner, []); return previous; },
+      restoreCleared(owner, previous) {
+        if (read(owner).length) throw new Error(t("强化计划已有新项目，未覆盖当前计划。"));
+        save(owner, previous);
+      },
+      remove(owner, item) {
+        const rows = read(owner), index = rowIndex(rows, item);
+        if (index >= 0) rows.splice(index, 1);
+        save(owner, rows);
+      },
+      sortByQueue(owner, queue) { save(owner, orderByQueue(read(owner), queue)); },
+      addMissing(owner, items) {
+        const rows = read(owner);
+        let next = rows.reduce((max, row) => Math.max(max, row.addedOrder), -1) + 1;
+        for (const item of items) if (!rows.some(row => key(row) === key(item))) {
+          rows.push({ itemHrid:item.itemHrid, enhancementLevel:item.enhancementLevel, name:item.name,
+            quantity:1, startLevel:null, protectAt:null, addedOrder:next++ });
+        }
+        save(owner, rows);
+      },
+      importQueue(owner, queue) {
+        validateQueue(queue);
+        const rows = read(owner);
+        let next = rows.reduce((max, row) => Math.max(max, row.addedOrder), -1) + 1, added = 0;
+        const ordered = orderByQueue(rows, queue, item => {
+          added += 1;
+          return { itemHrid:item.itemHrid, enhancementLevel:item.enhancementLevel, name:item.name,
+            quantity:1, startLevel:null,
+            protectAt:Number.isInteger(item.protectAt) && item.protectAt >= Math.min(2, item.enhancementLevel) && item.protectAt <= item.enhancementLevel ? item.protectAt : null,
+            addedOrder:next++ };
+        });
+        save(owner, ordered);
+        return added;
+      },
+      reorder(owner, order, expectedOrder) {
+        const rows = read(owner), current = rows.map(row => row.addedOrder);
+        if (!Array.isArray(order) || order.length !== rows.length || new Set(order).size !== rows.length ||
+            order.some(id => !current.includes(id)) || expectedOrder && JSON.stringify(current) !== JSON.stringify(expectedOrder)) {
+          throw new Error(t("计划顺序已变化，请重新拖动。"));
+        }
+        const byId = new Map(rows.map(row => [row.addedOrder, row]));
+        save(owner, order.map(id => byId.get(id)));
+      },
+      move(owner, item, offset) {
+        if (![1, -1].includes(offset)) throw new Error(t("无效的强化顺序"));
+        const rows = read(owner), index = rowIndex(rows, item);
+        if (index < 0) throw new Error(t("项目已移出强化计划"));
+        const next = index + offset;
+        if (next < 0 || next >= rows.length) return;
+        [rows[index], rows[next]] = [rows[next], rows[index]]; save(owner, rows);
+      }
+    });
+  }
+  function summarize(items, wages, queueError = "") {
+    const reserved = new Map();
+    const projects = items.map(item => ({ item, ...wages.enhancementRequirements(item, reserved) }));
+    const rows = new Map();
+    const complete = !queueError && projects.every(project => project.complete);
+    for (const project of projects) for (const input of project.inputs) {
+      const id = key(input);
+      if (!rows.has(id)) rows.set(id, { ...wages.materialInfo(input), expectedEnhancement:0, expectedProtection:0, demand:0, sources:[] });
+      const row = rows.get(id);
+      row.expectedEnhancement += input.expectedEnhancement;
+      row.expectedProtection += input.expectedProtection;
+      row.demand += input.demand;
+      row.sources.push({ item:project.item, demand:input.demand });
+    }
+    for (const row of rows.values()) {
+      row.reservedStock = reserved.get(key(row)) || 0;
+      row.availableStock = valid(row.inventoryCount) ? Math.max(0, row.inventoryCount - row.reservedStock) : null;
+      row.availableCount = valid(row.availableStock) && valid(row.pendingPurchaseCount) ? row.availableStock + row.pendingPurchaseCount : null;
+      row.knownRequired = Math.ceil(row.demand);
+      row.required = complete && valid(row.demand) ? row.knownRequired : null;
+      row.shortage = valid(row.required) && valid(row.availableCount) ? Math.ceil(Math.max(0, row.required - row.availableCount)) : null;
+      row.state = row.shortage == null ? "unknown" : row.shortage > 0 ? "shortage" : row.availableStock >= row.required ? "ready" : "pending";
+    }
+    const knownTimeHours = projects.reduce((sum, project) => sum + (valid(project.expectedTimeHours) ? project.expectedTimeHours : 0), 0);
+    const timeComplete = !queueError && projects.every(project => valid(project.expectedTimeHours)) && Number.isFinite(knownTimeHours);
+    return { rows:[...rows.values()], projects, complete, knownTimeHours, expectedTimeHours:timeComplete ? knownTimeHours : null, quantity:items.reduce((sum, item) => sum + item.quantity, 0) };
+  }
+  // Only physical stock supports runtime. Pending deliveries, purchase budgets
+  // and preparation buffers do not extend the time that can run now.
+  function stockCoverage(summary) {
+    const unknown = { available:false, expectedTimeHours:null, projects:summary.projects.map(() => ({ stockTimeHours:null, successProbability:null })), reason:t("库存或强化时长未读取完整，暂不能估算。") };
+    if (!summary.complete || !valid(summary.expectedTimeHours)) return unknown;
+    const stock = new Map(summary.rows.map(row => [key(row), row.availableStock]));
+    const projects = [];
+    let demands = new Map(), expectedTimeHours = 0, insufficient = false, missingBase = false;
+    for (const project of summary.projects) {
+      // Earlier rows reserve at most their expected consumption (or the supplied
+      // fraction). This row's capacity uses the remaining stock, without a 1x cap.
+      // It is conditional on those earlier mean reservations, not a joint queue probability.
+      const remainingInputs = new Map();
+      let hours = 0;
+      for (const part of project.parts) {
+        if (part.missing) continue;
+        if (!valid(part.expectedTimeHours)) return unknown;
+        hours += part.expectedTimeHours;
+        for (const input of part.inputs) {
+          if (!valid(input.expected)) return unknown;
+          if (!input.expected) continue;
+          if (!valid(stock.get(key(input)))) return unknown;
+          remainingInputs.set(key(input), (remainingInputs.get(key(input)) || 0) + input.expected);
+        }
+      }
+      let ratio = Infinity;
+      for (const [id, expected] of remainingInputs) ratio = Math.min(ratio, Math.max(0, Math.floor(stock.get(id)) - (demands.get(id) || 0)) / expected);
+      const stockTimeHours = hours === 0 ? 0 : Number.isFinite(ratio * hours) ? ratio * hours : null;
+      const basis = project.item ? app.preparationProbability.basis(project) : null;
+      const missing = project.parts.some(part => part.missing);
+      const successProbability = basis?.state === "complete" ? 1 : missing ? 0 : basis?.state === "ready" && Number.isFinite(ratio)
+        ? app.preparationProbability.probability(basis.count, ratio) : null;
+      projects.push({ stockTimeHours, successProbability, ratio:Number.isFinite(ratio) ? ratio : null,
+        reason:missing ? "missing-base" : basis?.state === "mixed" ? "mixed" : "", remainingCount:basis?.count ?? null });
+      for (const part of project.parts) {
+        if (part.missing) { insufficient = true; missingBase = true; continue; }
+        const inputs = part.inputs.filter(input => input.expected !== 0);
+        if (!valid(part.expectedTimeHours) || inputs.some(input => !valid(input.expected) || !valid(stock.get(key(input))))) return unknown;
+        const at = fraction => {
+          const next = new Map(demands);
+          for (const input of inputs) next.set(key(input), (next.get(key(input)) || 0) + input.expected * fraction);
+          return next;
+        };
+        const fits = demand => [...demand].every(([id, count]) => Math.ceil(count) <= stock.get(id));
+        let fraction = 1;
+        if (!fits(at(1))) {
+          let low = 0, high = 1;
+          for (let i = 0; i < 64; i++) { const mid = (low + high) / 2; if (fits(at(mid))) low = mid; else high = mid; }
+          fraction = low; insufficient = true;
+        }
+        demands = at(fraction); expectedTimeHours += part.expectedTimeHours * fraction;
+      }
+    }
+    return Number.isFinite(expectedTimeHours) ? { available:true, expectedTimeHours, insufficient, missingBase, projects } : unknown;
+  }
+  // A cumulative demand vector preserves shared stock and rounds each material
+  // once. Fully fund each prefix, then partially fund at most one project.
+  function allocate(summary, prices, coins) {
+    const unavailable = reason => ({ available:false, reason, rows:[], projects:[] });
+    if (!valid(coins)) return unavailable(t("金币库存未知，暂不能分配。"));
+    if (!summary.complete) return unavailable(t("强化方案未算全，暂不能分配。"));
+    if (summary.rows.some(row => !valid(row.availableCount) || !valid(row.demand))) return unavailable(t("材料库存或用量未知，暂不能分配。"));
+    const rows = summary.rows.map(row => ({ ...row, price:row.itemHrid === "/items/coin" ? 1 : prices.quote(row)?.price }));
+    if (rows.some(row => row.itemHrid !== "/items/coin" && row.shortage > 0 && !(valid(row.price) && row.price > 0))) return unavailable(t("缺少材料报价，暂不能分配。"));
+    function cost(demands) {
+      let purchaseCost = 0, reservedCoins = 0;
+      const purchases = rows.map(row => {
+        const required = Math.ceil(demands.get(key(row)) || 0);
+        const coin = row.itemHrid === "/items/coin";
+        const purchaseQuantity = coin ? 0 : Math.max(0, Math.ceil(required - row.availableCount));
+        const amount = purchaseQuantity ? purchaseQuantity * row.price : 0;
+        if (coin) reservedCoins += required; else purchaseCost += amount;
+        return { ...row, required, purchaseQuantity, purchaseCost:amount };
+      });
+      return { rows:purchases.filter(row => row.itemHrid !== "/items/coin"), purchaseCost, reservedCoins, amount:purchaseCost + reservedCoins };
+    }
+    let demands = new Map(), stopped = false;
+    const projects = [];
+    for (const project of summary.projects) {
+      const at = fraction => {
+        const next = new Map(demands);
+        for (const row of project.inputs) next.set(key(row), (next.get(key(row)) || 0) + row.demand * fraction);
+        return next;
+      };
+      let fraction = stopped ? 0 : 1;
+      if (!stopped && cost(at(1)).amount > coins) {
+        let low = 0, high = 1;
+        for (let i = 0; i < 64; i++) {
+          const mid = (low + high) / 2;
+          if (cost(at(mid)).amount <= coins) low = mid; else high = mid;
+        }
+        fraction = low; stopped = true;
+      }
+      demands = at(fraction);
+      projects.push({ item:project.item, fraction, completed:project.completed });
+    }
+    const result = cost(demands);
+    if (!Number.isFinite(result.amount)) return unavailable(t("预算超出可计算范围，暂不能分配。"));
+    return { ...result, projects, available:true, insufficient:stopped, coins, remaining:coins - result.amount };
+  }
+  app.enhancementSchedule = Object.freeze({ storageKey, preparationKey, preparationFields, validateQueuePreparation, key, rowKey, validate, create, snapshot, summarize, allocate, stockCoverage });
+})(globalThis);
+
+
+// ---- src/v3/enhancement-schedule-ui.js ----
+(function initEnhancementScheduleUI(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (values[i] ?? ""), "");
+  function create({ store, onChange, onStatus, onOpen, node, button, table, row }) {
+    let budgetOwner = null, pickerOwner = null, selectedOwner = null, clearedPlan = null, gesture = null, manualDisclosure = null;
+    const selected = new Set(), quantityDrafts = new Map();
+    // const preparationDrafts = new Map(); // 逐行倍率编辑已暂停。
+    const manualSignature = items => JSON.stringify(items.filter(item => item.planSource !== "queue"));
+    function busy(snapshot, tab) {
+      if (!gesture) return false;
+      if (tab === "enhancement" && gesture.panel.isConnected && gesture.owner === snapshot.cartScope &&
+          !snapshot.enhancementError && gesture.signature === manualSignature(snapshot.enhancementItems || [])) return true;
+      gesture.cancel(false); return false;
+    }
+    function bindDrag(handle, tr, body, panel, owner, item, items, change) {
+      const focusKey = `enhancement:${app.enhancementSchedule.rowKey(item)}:drag`;
+      handle.dataset.focusKey = focusKey;
+      handle.title = t("拖动调整顺序；Alt + 上下方向键移动，Esc 取消拖动。");
+      handle.setAttribute("aria-description", handle.title);
+      handle.onkeydown = event => {
+        if (gesture || !event.altKey || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
+        event.preventDefault();
+        change(() => store.move(owner, item, event.key === "ArrowUp" ? -1 : 1));
+      };
+      handle.onpointerdown = event => {
+        if (event.button !== 0 || !event.isPrimary || gesture || items.length < 2) return;
+        event.preventDefault(); handle.focus({preventScroll:true});
+        const original = items.map(row => row.addedOrder), others = [...body.rows].filter(row => row !== tr);
+        const startX = event.clientX, startY = event.clientY;
+        let x = startX, y = startY, active = false, before = null, validDrop = false, frame = 0, finished = false;
+        const scrollers = [];
+        for (let el = body.parentElement; el; el = el.parentElement) {
+          if (/(auto|scroll)/.test(root.getComputedStyle(el).overflowY)) scrollers.push(el);
+        }
+        if (!scrollers.includes(document.scrollingElement)) scrollers.push(document.scrollingElement);
+        const clearMarkers = () => others.forEach(row => row.classList.remove("v3-plan-drop-before", "v3-plan-drop-after"));
+        function target() {
+          clearMarkers();
+          const bounds = body.getBoundingClientRect(), region = body.closest('[role="region"]').getBoundingClientRect();
+          validDrop = x >= Math.max(0, region.left) && x <= Math.min(root.innerWidth, region.right) &&
+            y >= Math.max(0, bounds.top - 16) && y <= Math.min(root.innerHeight, bounds.bottom + 16);
+          if (!validDrop) return;
+          before = others.find(row => { const box = row.getBoundingClientRect(); return y < box.top + box.height / 2; }) || null;
+          (before || others.at(-1))?.classList.add(before ? "v3-plan-drop-before" : "v3-plan-drop-after");
+        }
+        function scroll() {
+          if (!panel.isConnected) { finish(false); return; }
+          if (active) {
+            for (const el of scrollers) {
+              const box = el === document.scrollingElement ? {top:0,bottom:root.innerHeight,left:0,right:root.innerWidth} : el.getBoundingClientRect();
+              const top = Math.max(0, box.top), bottom = Math.min(root.innerHeight, box.bottom);
+              const delta = x < box.left || x > box.right || y < top - 20 || y > bottom + 20 ? 0 : y < top + 28 ? -12 : y > bottom - 28 ? 12 : 0;
+              const old = el.scrollTop;
+              if (delta) el.scrollTop += delta;
+              if (el.scrollTop !== old) break;
+            }
+            target();
+          }
+          frame = root.requestAnimationFrame(scroll);
+        }
+        function finish(commit, notify = true) {
+          if (finished) return; finished = true;
+          document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+          document.removeEventListener("pointercancel", cancel); document.removeEventListener("keydown", escape, true);
+          root.removeEventListener("blur", cancel); root.cancelAnimationFrame(frame);
+          clearMarkers(); tr.classList.remove("v3-plan-dragging"); gesture = null;
+          if (commit && active && validDrop && panel.isConnected && selectedOwner === owner) {
+            const order = original.filter(id => id !== item.addedOrder);
+            const targetId = before ? Number(before.dataset.planOrder) : null;
+            order.splice(before ? order.indexOf(targetId) : order.length, 0, item.addedOrder);
+            if (JSON.stringify(order) !== JSON.stringify(original)) { change(() => store.reorder(owner, order, original)); return; }
+          }
+          if (notify) onChange();
+        }
+        function move(next) {
+          if (next.pointerId !== event.pointerId) return;
+          x = next.clientX; y = next.clientY;
+          if (!active && Math.hypot(x - startX, y - startY) < 5) return;
+          next.preventDefault(); active = true; tr.classList.add("v3-plan-dragging"); target();
+        }
+        function up(next) { if (next.pointerId === event.pointerId) { x = next.clientX; y = next.clientY; if (active) target(); finish(true); } }
+        const cancel = () => finish(false);
+        const escape = next => { if (next.key === "Escape") { next.preventDefault(); next.stopPropagation(); finish(false); } };
+        gesture = { owner, panel, signature:manualSignature(items), cancel:notify => finish(false, notify) };
+        document.addEventListener("pointermove", move, {passive:false}); document.addEventListener("pointerup", up);
+        document.addEventListener("pointercancel", cancel); document.addEventListener("keydown", escape, true);
+        root.addEventListener("blur", cancel); frame = root.requestAnimationFrame(scroll);
+      };
+    }
+    function render({ enhancementItems:items, enhancementError:error, enhancementQueueError:queueError = "", cartScope:owner, wages, prices, names, spriteBase, items:catalog }) {
+      if (selectedOwner !== owner) { selected.clear(); quantityDrafts.clear(); selectedOwner = owner; pickerOwner = null; budgetOwner = null; clearedPlan = null; manualDisclosure = null; }
+      const manualItems = items.filter(item => item.planSource !== "queue");
+      const queuedItems = items.filter(item => item.planSource === "queue");
+      if (manualItems.length) clearedPlan = null;
+      const number = value => Number.isFinite(value) ? value.toLocaleString(app.i18n?.locale, {maximumFractionDigits:2}) : t("未知");
+      const identity = item => app.itemUI.identity(item, spriteBase, `${names[item.itemHrid] || item.name || item.itemHrid.split("/").pop()}${item.enhancementLevel ? ` +${item.enhancementLevel}` : ""}`);
+      function change(action) { try { action(); onStatus(""); onChange(); } catch (e) { onStatus(e.message || t("保存失败，请重试")); onChange(); } }
+      function action(text, item, run) {
+        const control = button(text, () => change(run), `${text}：${names[item.itemHrid] || item.name} +${item.enhancementLevel}`);
+        return control;
+      }
+      const panel = node("div", null, "mwi-layu-cart v3-enhancement-schedule");
+      const heading = node("div", null, "mwi-layu-cart-heading");
+      heading.append(node("h2", t("强化计划")), node("span", t`${items.length} 项 · ${items.reduce((sum, item) => sum + item.quantity, 0)} 件`));
+      panel.append(heading);
+      if (error || !owner) { panel.append(node("p", error || t("角色尚未就绪，读取后即可加入项目。"))); return panel; }
+      const summary = app.enhancementSchedule.summarize(items, wages, queueError);
+      // const prefs = wages.settings().preferences; // 供暂停的倍率编辑使用。
+      const coverage = app.enhancementSchedule.stockCoverage(summary);
+      const duration = hours => hours == null ? t("暂无法计算") : hours > 0 && hours < 0.01 ? t("不足 0.01 小时") : t`${number(hours)} 小时`;
+      const times = node("div", null, "v3-enhancement-budget-tools v3-enhancement-times");
+      times.setAttribute("aria-label", t("强化计划时长"));
+      const total = node("span", null); total.append(t("全部计划期望时长"), " · ", node("strong", summary.expectedTimeHours == null ? t`未算全（已知 ${duration(summary.knownTimeHours)}）` : duration(summary.expectedTimeHours)));
+      total.dataset.expectedHours = summary.expectedTimeHours ?? "unknown";
+      const supported = node("span", null); supported.append(t("库存材料可支撑时长"), " · ", node("strong", duration(coverage.expectedTimeHours)));
+      supported.dataset.stockHours = coverage.expectedTimeHours ?? "unknown";
+      supported.title = t("合计每项最多计入其计划期望时间；行内材料可支撑时间显示剩余库存的容量，不以期望时间封顶。");
+      times.append(total, supported); panel.append(times);
+      //       panel.append(node("p", t("逐行设置：成功率以计划材料备齐为前提，按该行剩余件数共用预算的 Gamma 模型估算；倍率以该行剩余强化的期望消耗为基准。输入成功率后，倍率向上取两位小数，回显对应概率。回车或离开输入框保存。"), "mwi-layu-group-note"));
+      //       panel.append(node("p", t("强化耗材与保护材料分别估算，不代表两类材料同时够用的概率，也不是单次点击成功率。混合起始等级暂不估算概率；缺少底子时以补齐底子为前提，不含底子成本。"), "mwi-layu-group-note"));
+      if (!coverage.available || coverage.missingBase) panel.append(node("p", coverage.reason || t("缺少装备底子的部分不计入可支撑时长，其余项目继续按剩余库存计算。"), "mwi-layu-group-note"));
+      const queueSection = node("section", null, "v3-enhancement-queue");
+      queueSection.setAttribute("aria-label", t("队列计划"));
+      queueSection.append(node("h3", t("队列计划")));
+      if (queueError) { const notice = node("p", queueError, "mwi-layu-shortage"); notice.setAttribute("role", "status"); queueSection.append(notice); }
+      else if (!queuedItems.length) queueSection.append(node("p", t("当前没有强化队列。游戏中加入强化动作后会自动显示。")));
+      const manualSection = node("details", null, "v3-enhancement-manual");
+      manualSection.setAttribute("aria-label", t("队列外计划"));
+      // Read the previous disclosure directly so refreshes also preserve rapid toggles.
+      manualSection.open = manualDisclosure?.open ?? false;
+      manualDisclosure = manualSection;
+      const manualSummary = node("summary");
+      manualSummary.dataset.focusKey = `enhancement:${owner}:manual-disclosure`;
+      manualSummary.append(node("h3", t("队列外计划")));
+      const manualHeading = node("div", null, "mwi-layu-cart-heading");
+      manualSection.append(manualSummary, manualHeading);
+      panel.append(queueSection, manualSection);
+      const add = button(t("批量添加装备"), () => { pickerOwner = pickerOwner === owner ? null : owner; onChange(); });
+      add.setAttribute("aria-expanded", String(pickerOwner === owner)); manualHeading.append(add);
+      const clear = button(t("清空队列外计划"), () => change(() => {
+        const previous = store.clear(owner);
+        clearedPlan = { owner, items:previous }; selected.clear(); quantityDrafts.clear(); budgetOwner = null;
+      }));
+      clear.disabled = !manualItems.length; manualHeading.append(clear);
+      if (clearedPlan?.owner === owner && !manualItems.length) {
+        manualHeading.append(button(t("撤销清空"), () => change(() => {
+          store.restoreCleared(owner, clearedPlan.items); clearedPlan = null;
+        })));
+      }
+      if (pickerOwner === owner || !manualItems.length) {
+        const picker = node("section", null, "v3-enhancement-picker"); picker.setAttribute("aria-label", t("添加强化计划"));
+        const search = node("input"); search.type = "search"; search.placeholder = t("搜索装备"); search.setAttribute("aria-label", t("搜索可添加装备"));
+        const choices = node("div", null, "v3-enhancement-choices");
+        const candidates = [...new Map(catalog.filter(item => item.enhancementLevel > 0 && wages.materialInfo(item).category !== "materials").map(item => [app.enhancementSchedule.key(item), item])).values()];
+        for (const item of candidates) {
+          const label = node("label"), check = node("input"); check.type = "checkbox";
+          const id = app.enhancementSchedule.key(item); check.checked = selected.has(id);
+          check.setAttribute("aria-label", t`选择强化计划：${item.name} +${item.enhancementLevel}`);
+          check.onchange = () => check.checked ? selected.add(id) : selected.delete(id);
+          label.dataset.searchName = `${names[item.itemHrid] || item.name} +${item.enhancementLevel}`.toLowerCase();
+          label.append(check, identity(item)); choices.append(label);
+        }
+        search.oninput = () => { for (const label of choices.children) label.hidden = !label.dataset.searchName.includes(search.value.trim().toLowerCase()); };
+        const selectAll = button(t("选择可见项"), () => { for (const label of choices.children) if (!label.hidden) { const check = label.querySelector("input"); check.checked = true; check.dispatchEvent(new root.Event("change")); } });
+        const submit = button(t("添加所选（每项 1 件）"), () => change(() => {
+          const chosen = candidates.filter(item => selected.has(app.enhancementSchedule.key(item)));
+          if (!chosen.length) throw new Error(t("请先选择装备"));
+          store.addMany(owner, chosen.map(item => ({ ...item, quantity:1 })));
+          selected.clear(); pickerOwner = null;
+        }));
+        picker.append(search, selectAll, submit, choices);
+        if (!candidates.length) picker.append(node("p", t("列表中暂无强化装备，请先在列表或分区中添加目标物品。")));
+        manualSection.append(picker);
+      }
+      if (!items.length) { panel.append(node("p", t("选择装备后，将按计划顺序合并材料和采购缺口。"))); return panel; }
+      const budget = app.materialCart.budget(summary, prices);
+      const coins = wages.materialInfo({ itemHrid:"/items/coin", enhancementLevel:0 }).inventoryCount;
+      const allocation = app.enhancementSchedule.allocate(summary, prices, coins);
+      // const metricHeaders = [t("期望时间（整行）"), t("强化耗材 · 成功率 / 倍率"), t("保护材料 · 覆盖率 / 倍率")];
+      const metricHeaders = [t("期望时间（整行）"), t("期望成功率（近似）"), t("材料可支撑时间")];
+      const queuePlans = table([t("顺序"), t("计划物品"), ...metricHeaders, t("起始等级"), t("目标等级"), t("数量"), t("保护等级"), t("库存与路线")], t("队列计划装备"));
+      queuePlans.region.classList.add("v3-enhancement-projects");
+      const plans = table([t("顺序"), t("计划物品"), ...metricHeaders, t("起始等级"), t("目标等级"), t("数量"), t("保护等级"), t("库存与路线"), t("操作")], t("队列外计划装备"));
+      plans.region.classList.add("v3-enhancement-projects");
+      // 暂停逐行成功率／倍率编辑：保留实现，待用户重新启用。
+      //       function preparationPair(project, field, protection = false) {
+      //         const item = project.item;
+      //         let basis = app.preparationProbability.basis(project);
+      //         const wrapper = node("div", null, "v3-schedule-preparation");
+      //         const hasDemand = project.inputs.some(input => (protection ? input.expectedProtection : input.expectedEnhancement) > 0);
+      //         if (basis.state === "complete" || project.complete && !hasDemand) {
+      //           wrapper.append(node("span", basis.state === "complete" ? t("已完成 · 100%") : t("无需此类材料")));
+      //           return wrapper;
+      //         }
+      //         const draftKey = `${item.planSource === "queue" ? item.preparationId : app.enhancementSchedule.rowKey(item)}:${field}`;
+      //         const multiplier = node("input"), probability = node("input");
+      //         const label = protection ? t("保护材料覆盖率（%）") : t("期望成功率（%）");
+      //         const multiplierLabel = protection ? t("保护材料备料倍率") : t("强化备料倍率");
+      //         for (const [input, text, suffix, max] of [[probability, label, "probability", 99.99], [multiplier, multiplierLabel, "multiplier", 100]]) {
+      //           input.type = "number"; input.min = "0"; input.max = String(max); input.step = "0.01"; input.required = true;
+      //           input.setAttribute("aria-label", `${text}：${item.name} +${item.enhancementLevel}`);
+      //           input.dataset.focusKey = `preparation:${draftKey}:${suffix}`;
+      //           input.dataset.preparationField = field;
+      //           const line = node("label"); line.append(input, suffix === "probability" ? "%" : "×"); wrapper.append(line);
+      //           input.onkeydown = event => {
+      //             if (event.key === "Enter") { event.preventDefault(); input.blur(); }
+      //             if (event.key === "Escape") { preparationDrafts.delete(draftKey); onChange(); }
+      //           };
+      //         }
+      //         multiplier.value = Number(item[field] ?? prefs[field]).toFixed(2);
+      //         const canEstimate = basis.state === "ready";
+      //         probability.disabled = !canEstimate;
+      //         function syncProbability() {
+      //           if (!canEstimate) { probability.value = ""; return; }
+      //           const value = app.preparationProbability.probability(basis.count, Number(multiplier.value));
+      //           probability.value = value == null ? "" : Math.min(99.99, value * 100).toFixed(2);
+      //         }
+      //         syncProbability();
+      //         const savedDraft = preparationDrafts.get(draftKey);
+      //         if (savedDraft) { multiplier.value = savedDraft.multiplier; if (canEstimate) probability.value = savedDraft.probability; }
+      //         for (const input of [multiplier, probability]) if (!input.disabled && !input.checkValidity()) input.setAttribute("aria-invalid", "true");
+      //         const remember = () => preparationDrafts.set(draftKey, {multiplier:multiplier.value, probability:probability.value});
+      //         const commit = input => {
+      //           if (!input.checkValidity() || !multiplier.checkValidity()) { input.setAttribute("aria-invalid", "true"); input.reportValidity(); return; }
+      //           try {
+      //             if (input === probability) {
+      //               // A quantity/inventory edit can be saved before its scheduled repaint.
+      //               // Re-derive n at commit, so an old DOM never saves a single-unit budget for a batch.
+      //               const latest = app.enhancementSchedule.snapshot(store, owner, wages.enhancementQueue(), names);
+      //               const current = app.enhancementSchedule.summarize(latest.items, wages, latest.queueError).projects.find(entry =>
+      //                 item.planSource === "queue" ? entry.item.preparationId === item.preparationId : entry.item.planSource !== "queue" && app.enhancementSchedule.rowKey(entry.item) === app.enhancementSchedule.rowKey(item));
+      //               const currentBasis = current && app.preparationProbability.basis(current);
+      //               if (currentBasis?.state !== "ready") throw new Error(t("计划已变化，请重新输入成功率。"));
+      //               basis = currentBasis;
+      //               const value = app.preparationProbability.budgetMultiplier(basis.count, Number(probability.value) / 100);
+      //               if (value == null || value > 100) throw new Error(t("暂无法计算"));
+      //               multiplier.value = value.toFixed(2);
+      //             }
+      //             store.setPreparation(owner, item, {[field]:Number(multiplier.value)}, queuedItems);
+      //             multiplier.value = Number(multiplier.value).toFixed(2); syncProbability();
+      //             preparationDrafts.delete(draftKey); onStatus(""); onChange();
+      //           } catch (error) { input.setAttribute("aria-invalid", "true"); onStatus(error.message || t("保存失败，请重试")); }
+      //         };
+      //         multiplier.oninput = () => {
+      //           multiplier.removeAttribute("aria-invalid"); probability.setCustomValidity("");
+      //           if (multiplier.checkValidity()) syncProbability(); remember();
+      //         };
+      //         probability.oninput = () => {
+      //           probability.removeAttribute("aria-invalid"); probability.setCustomValidity("");
+      //           if (Number(probability.value) >= 100) probability.setCustomValidity(t("100% 需要无限备料倍率，请输入小于 100% 的成功率。"));
+      //           if (probability.checkValidity()) {
+      //             const value = app.preparationProbability.budgetMultiplier(basis.count, Number(probability.value) / 100);
+      //             if (value == null) probability.setCustomValidity(t("暂无法计算"));
+      //             else multiplier.value = value.toFixed(2);
+      //           }
+      //           remember();
+      //         };
+      //         multiplier.onchange = () => commit(multiplier); probability.onchange = () => commit(probability);
+      //         const hint = node("small", canEstimate ? t`待强化 ${basis.count} 件` : basis.state === "mixed" ? t("混合起点 · 概率未知") : t("数据未齐 · 概率未知"));
+      //         probability.title = canEstimate ? t("近似完成概率；接近 100% 时显示 99.99%。") : hint.textContent;
+      //         wrapper.append(hint);
+      //         return wrapper;
+      //       }
+      function select(item, field, options, label) {
+        const control = node("select"); control.setAttribute("aria-label", `${label}：${item.name} +${item.enhancementLevel}`);
+        control.dataset.focusKey = `enhancement:${app.enhancementSchedule.rowKey(item)}:${field}`;
+        for (const [value, text] of options) { const option = node("option", text); option.value = value; control.append(option); }
+        control.value = item[field] == null ? "auto" : String(item[field]);
+        control.onchange = () => change(() => {
+          const value = control.value === "auto" ? null : Number(control.value), patch = { [field]:value };
+          if (field === "enhancementLevel") {
+            if (item.startLevel >= value) patch.startLevel = null;
+            if (item.protectAt > value) patch.protectAt = null;
+          }
+          store.update(owner, item, patch);
+        });
+        return control;
+      }
+      for (const [index, project] of summary.projects.entries()) {
+        const item = project.item;
+        const queued = item.planSource === "queue";
+        const manualIndex = index - queuedItems.length;
+        const state = node("div", null, "v3-enhancement-route");
+        const time = node("span", duration(project.expectedTimeHours));
+        time.dataset.projectHours = project.expectedTimeHours ?? "unknown";
+        // const metrics = [time, preparationPair(project, "enhancementMaterialMultiplier"), preparationPair(project, "protectionMaterialMultiplier", true)];
+        const estimate = coverage.projects[index];
+        const probability = node("span", estimate.successProbability == null ? t("未知") : estimate.successProbability === 1 && project.completed === item.quantity
+          ? "100%" : `${Math.min(99.99, estimate.successProbability * 100).toFixed(2)}%`);
+        probability.dataset.stockProbability = estimate.successProbability ?? "unknown";
+        probability.title = estimate.reason === "mixed" ? t("混合起始等级，暂不能用同尺度 Gamma 模型估算成功率。") : estimate.reason === "missing-base"
+          ? t("缺少起始底子，当前库存不能完成整行计划。") : t("按本行剩余件数与可用材料容量估算；不是单次强化点击成功率。");
+        const stockTime = node("span", duration(estimate.stockTimeHours));
+        stockTime.dataset.projectStockHours = estimate.stockTimeHours ?? "unknown";
+        if (estimate.stockTimeHours != null && project.expectedTimeHours != null && estimate.stockTimeHours < project.expectedTimeHours) stockTime.classList.add("mwi-layu-shortage");
+        const metrics = [time, probability, stockTime];
+        if (!project.complete) state.append(node("span", project.reason, "mwi-layu-shortage"));
+        if (project.completed) state.append(node("span", t`目标等级已有 ${project.completed} 件`));
+        if (project.missingBase) state.append(node("span", t`缺少起始底子 ${project.missingBase} 件（不计入采购）`, "v3-cart-pending"));
+        for (const part of project.parts) {
+          const line = node("span", `+${part.level} → +${item.enhancementLevel}${part.count === 1 ? "" : ` × ${part.count}`} · ${queued && item.protectionEnabled === false ? t("未启用保护") : `${t("保护")} +${part.protectAt}`}`);
+          if (part.protectionItemHrid) line.append(" ", identity({itemHrid:part.protectionItemHrid, enhancementLevel:0}));
+          state.append(line);
+        }
+        if (queued) {
+          const protection = node("span", item.protectionEnabled === false ? t("未启用保护") : Number.isInteger(item.protectAt) ? `+${item.protectAt}` : t("未知"));
+          if (item.protectionItemHrid) protection.append(" ", identity({itemHrid:item.protectionItemHrid, enhancementLevel:0}));
+          const tr = row(queuePlans.body, [index + 1, identity(item), ...metrics, Number.isInteger(item.startLevel) ? `+${item.startLevel}` : t("未知"), `+${item.enhancementLevel}`, item.quantity, protection, state]);
+          Object.assign(tr.dataset, { planSource:"queue", enhancementKey:app.enhancementSchedule.key(item), enhancementRow:app.enhancementSchedule.rowKey(item) });
+          continue;
+        }
+        const draftKey = app.enhancementSchedule.rowKey(item);
+        const quantity = node("input"); quantity.type = "text"; quantity.inputMode = "numeric"; quantity.value = quantityDrafts.get(draftKey) ?? String(item.quantity);
+        quantity.oninput = () => quantityDrafts.set(draftKey, quantity.value);
+        if (!/^\d+$/.test(quantity.value.trim()) || !Number.isSafeInteger(Number(quantity.value)) || Number(quantity.value) < 1 || Number(quantity.value) > 1000000) quantity.setAttribute("aria-invalid", "true");
+        quantity.setAttribute("aria-label", t`强化数量：${item.name} +${item.enhancementLevel}`);
+        quantity.dataset.focusKey = `enhancement:${app.enhancementSchedule.rowKey(item)}:quantity`;
+        quantity.onchange = () => change(() => {
+          quantity.setAttribute("aria-invalid", "true");
+          if (!/^\d+$/.test(quantity.value.trim())) throw new Error(t("数量须为 1～1,000,000 的整数"));
+          store.update(owner, item, { quantity:Number(quantity.value) });
+          quantityDrafts.delete(draftKey); quantity.removeAttribute("aria-invalid");
+        });
+        quantity.onkeydown = event => { if (event.key === "Enter") quantity.blur(); if (event.key === "Escape") { quantityDrafts.delete(draftKey); quantity.value = String(item.quantity); quantity.removeAttribute("aria-invalid"); quantity.blur(); } };
+        const start = select(item, "startLevel", [["auto", t("自动匹配库存")], ...Array.from({length:item.enhancementLevel}, (_, level) => [String(level), `+${level}`])], t("起始等级"));
+        const target = select(item, "enhancementLevel", Array.from({length:20}, (_, i) => [String(i + 1), `+${i + 1}`]), t("目标等级"));
+        const protection = select(item, "protectAt", [["auto", t("自动最低剩余成本")], ...Array.from({length:item.enhancementLevel - Math.min(2, item.enhancementLevel) + 1}, (_, i) => { const level = i + Math.min(2, item.enhancementLevel); return [String(level), `+${level}`]; })], t("保护等级"));
+        const actions = node("div", null, "v3-enhancement-actions");
+        const remove = action(t("移除"), item, () => { store.remove(owner, item); quantityDrafts.delete(draftKey); });
+        remove.textContent = ""; remove.className = "v3-plan-remove";
+        remove.title = remove.getAttribute("aria-label");
+        remove.dataset.focusKey = `enhancement:${draftKey}:remove`;
+        const trash = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        trash.setAttribute("viewBox", "0 0 24 24"); trash.setAttribute("aria-hidden", "true"); trash.setAttribute("focusable", "false");
+        const trashPath = document.createElementNS(trash.namespaceURI, "path");
+        trashPath.setAttribute("d", "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7");
+        trash.append(trashPath); remove.append(trash); actions.append(remove);
+        const handle = button(null, () => {}, t`调整顺序：${item.name} +${item.enhancementLevel}`);
+        handle.className = "v3-plan-drag-handle"; handle.disabled = manualItems.length < 2;
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 16 20"); svg.setAttribute("aria-hidden", "true"); svg.setAttribute("focusable", "false");
+        for (const cx of [5, 11]) for (const cy of [4, 10, 16]) {
+          const dot = document.createElementNS(svg.namespaceURI, "circle"); dot.setAttribute("cx", cx); dot.setAttribute("cy", cy); dot.setAttribute("r", "1.6"); svg.append(dot);
+        }
+        handle.append(svg);
+        const orderCell = node("div", null, "v3-plan-order"); orderCell.append(handle, node("span", manualIndex + 1));
+        const tr = row(plans.body, [orderCell, identity(item), ...metrics, start, target, quantity, protection, state, actions]);
+        tr.dataset.planOrder = item.addedOrder;
+        bindDrag(handle, tr, plans.body, panel, owner, item, manualItems, change);
+        tr.dataset.planSource = "manual";
+        tr.dataset.enhancementKey = app.enhancementSchedule.key(item);
+        tr.dataset.enhancementRow = app.enhancementSchedule.rowKey(item);
+      }
+      if (queuedItems.length) queueSection.append(queuePlans.region);
+      if (manualItems.length) manualSection.append(plans.region);
+      const tools = node("div", null, "v3-enhancement-budget-tools");
+      const allocate = button(null, () => { budgetOwner = budgetOwner === owner ? null : owner; onChange(); }, t("按当前金币顺序分配"));
+      allocate.append(t("按当前"), identity({itemHrid:"/items/coin", name:t("金币"), enhancementLevel:0}), t("顺序分配"));
+      allocate.disabled = !allocation.available; allocate.setAttribute("aria-expanded", String(budgetOwner === owner));
+      tools.append(allocate, node("span", `${budget.complete ? t("总缺口预算") : t("预算未计全")} ${number(budget.amount)}`)); panel.append(tools);
+      if (!allocation.available) panel.append(node("p", allocation.reason, "mwi-layu-group-note"));
+      const allocated = budgetOwner === owner && allocation.available;
+      if (allocated) {
+        const status = node("p", t`可用 ${number(coins)} · 采购 ${number(allocation.purchaseCost)} · 预留消耗 ${number(allocation.reservedCoins)} · 余额 ${number(allocation.remaining)}`, "v3-enhancement-budget-status");
+        status.setAttribute("role", "status"); panel.append(status);
+        const coverage = node("div", null, "v3-enhancement-coverage");
+        for (const project of allocation.projects) {
+          const line = node("span"); line.append(identity(project.item), ` · ${project.completed === project.item.quantity ? t("目标已备齐") : project.fraction === 1 ? t("本项已分配") : project.fraction > 0 ? `${t("部分备料")} ${(project.fraction * 100).toFixed(1)}%` : t("尚未分配")}`);
+          line.dataset.fraction = project.fraction; coverage.append(line);
+        }
+        panel.append(coverage);
+      }
+      const materials = table([t("材料"), t("期望消耗"), t("计划需备"), t("可用库存"), t("买单未成"), t("成交待领"), t("净缺口"), t("本次采购"), t("参考单价"), t("采购金额"), t("状态"), t("操作")], t("强化计划材料合计"));
+      materials.region.classList.add("v3-enhancement-materials");
+      for (const material of budget.rows) {
+        const purchase = allocated ? allocation.rows.find(entry => app.enhancementSchedule.key(entry) === app.enhancementSchedule.key(material)) : material;
+        const coin = material.itemHrid === "/items/coin", quantity = coin ? 0 : purchase?.purchaseQuantity ?? null;
+        const needsPurchase = quantity > 0;
+        const market = coin ? node("span", t("直接消耗")) : button(null, el => onOpen(material, el, needsPurchase ? {type:"enhancement", budget:allocated} : null), needsPurchase ? t`采购强化材料：${material.name}` : t`打开市场：${material.name}`);
+        if (!coin) {
+          market.append(app.itemUI.icon(material.itemHrid, spriteBase), t("市场预填"));
+          if (!needsPurchase) { market.classList.add("v3-enhancement-market-browse"); market.title = t`打开市场：${material.name}`; }
+        }
+        const name = node("details"); name.dataset.disclosureKey = `enhancement-material:${owner}:${app.enhancementSchedule.key(material)}`; name.append(node("summary")); name.firstChild.dataset.focusKey = name.dataset.disclosureKey; name.firstChild.append(identity(material));
+        for (const source of material.sources) { const line = node("div"); line.append(identity(source.item), ` · ${number(source.demand)}`); name.append(line); }
+        const labels = {unknown:t("待核算"), shortage:t("缺料"), pending:t("待到账"), ready:t("已备齐")};
+        const tr = row(materials.body, [name, number(material.expectedEnhancement + material.expectedProtection), number(material.required), number(material.availableStock),
+          number(material.pendingPurchases?.unfilledCount), number(material.pendingPurchases?.unclaimedCount), number(material.shortage), number(quantity),
+          number(material.quote?.price), number(coin ? (allocated ? allocation.reservedCoins : material.required) : purchase?.purchaseCost), node("span", labels[material.state], `v3-cart-${material.state}`), market]);
+        Object.assign(tr.dataset, {materialHrid:material.itemHrid, required:material.required ?? "", shortage:material.shortage ?? "", purchaseQuantity:quantity ?? "", state:material.state});
+      }
+      panel.append(materials.region);
+      return panel;
+    }
+    return Object.freeze({ render, busy, destroy() { gesture?.cancel(false); } });
+  }
+  app.enhancementScheduleUI = Object.freeze({ create });
 })(globalThis);
 
 
@@ -9099,6 +10764,8 @@ function getPriceTier(price, direction) {
   const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
   const prefix = "mwi-layu:";
   const cartPrefix = `${prefix}material-cart:v1:`;
+  const enhancementPrefix = `${prefix}enhancement-schedule:v1:`;
+  const preparationPrefix = `${prefix}enhancement-queue-preparation:v1:`;
   const labels = Object.freeze({
     get [`${prefix}language:v1`]() { return t("界面语言"); },
     get [`${prefix}market-favorites:v1`]() { return t("收藏与参考售价"); },
@@ -9149,7 +10816,7 @@ function getPriceTier(price, direction) {
     return value.length;
   }
   function partitions(value) {
-    shape(value, ["groups", "assignments", "quantities", "collapsed", "selected", "selectedGroups", "projectWidth", "projectColumnWidths", "clothesInitialized"], ["groups", "assignments", "quantities", "collapsed"]);
+    shape(value, ["groups", "assignments", "levelAssignments", "operationHistory", "historyRetentionDays", "quantities", "collapsed", "selected", "selectedGroups", "projectWidth", "projectColumnWidths", "projectColumnOrder", "clothesInitialized"], ["groups", "assignments", "quantities", "collapsed"]);
     if (own(value, "clothesInitialized")) check(value.clothesInitialized === true);
     const migrated = value.clothesInitialized === true;
     array(value.groups, limits.groups + (migrated && value.groups.some(group => group.id === "clothes") ? 1 : 0));
@@ -9164,14 +10831,36 @@ function getPriceTier(price, direction) {
     }
     const validIds = entries => Array.isArray(entries) && entries.length <= ids.size && new Set(entries).size === entries.length && entries.every(id => ids.has(id));
     record(value.assignments, hrid, entry => typeof entry === "string" ? ids.has(entry) : validIds(entry));
+    if (own(value, "levelAssignments")) record(value.levelAssignments, itemKey, validIds);
+    if (own(value, "historyRetentionDays")) check(integer(value.historyRetentionDays, 1, 3650));
+    if (own(value, "operationHistory")) {
+      array(value.operationHistory, limits.items);
+      const seen = new Set();
+      const groupId = id => typeof id === "string" && ["materials", "unassigned", "clothes"].includes(id) || typeof id === "string" && /^custom-[a-z0-9-]+$/.test(id) && id.length <= 100;
+      const historicalIds = entries => Array.isArray(entries) && entries.length <= limits.groups + 3 && new Set(entries).size === entries.length && entries.every(groupId);
+      for (const entry of value.operationHistory) {
+        shape(entry, ["id", "at", "itemHrid", "enhancementLevel", "name", "before", "previous", "after", "groupNames", "undoneAt"],
+          ["id", "at", "itemHrid", "enhancementLevel", "name", "before", "previous", "after", "groupNames"]);
+        check(text(entry.id, 100) && /^op-[a-z0-9-]+$/.test(entry.id) && !seen.has(entry.id)); seen.add(entry.id);
+        check(integer(entry.at, 0, 8640000000000000) && hrid(entry.itemHrid) && integer(entry.enhancementLevel, 0, 20) && text(entry.name, 160));
+        check(historicalIds(entry.before) && historicalIds(entry.after) && (entry.previous === null || historicalIds(entry.previous)));
+        record(entry.groupNames, groupId, name => text(name, 40));
+        if (own(entry, "undoneAt")) check(integer(entry.undoneAt, entry.at, 8640000000000000));
+      }
+    }
     record(value.quantities, hrid, entry => integer(entry, 1, 1000000));
     record(value.collapsed, hrid, entry => typeof entry === "boolean");
     if (own(value, "selected")) check(value.selected === "all" || ids.has(value.selected));
     if (own(value, "selectedGroups")) check(validIds(value.selectedGroups));
     // Accept backups from the former whole-table slider; the UI ignores this legacy field.
     if (own(value, "projectWidth")) check(integer(value.projectWidth, 880, 1800));
+    if (own(value, "projectColumnOrder")) {
+      const keys = ["name", "market", "reference", "profit", "wage", "margin", "own", "prepare", "stock", "enhancement"];
+      array(value.projectColumnOrder, keys.length);
+      check(new Set(value.projectColumnOrder).size === value.projectColumnOrder.length && value.projectColumnOrder.every(key => keys.includes(key)));
+    }
     if (own(value, "projectColumnWidths")) {
-      const minimums = { name: 112, market: 80, bid: 80, profit: 80, wage: 80, margin: 80, own: 100, reference: 80, prepare: 90 };
+      const minimums = { name: 112, market: 80, bid: 80, profit: 80, wage: 80, margin: 80, own: 100, reference: 80, prepare: 90, stock: 110, enhancement: 130 };
       check(object(value.projectColumnWidths));
       for (const [key, width] of Object.entries(value.projectColumnWidths)) check(own(minimums, key) && integer(width, minimums[key], 640));
     }
@@ -9233,9 +10922,9 @@ function getPriceTier(price, direction) {
     if (own(value, "sortDirection")) check([1, -1, "asc", "desc"].includes(value.sortDirection));
     return 1;
   }
-  function cartOwner(key, host) {
-    if (!key.startsWith(`${cartPrefix}${host}:`)) return null;
-    const id = key.slice(`${cartPrefix}${host}:`.length);
+  function cartOwner(key, host, storagePrefix = cartPrefix) {
+    if (!key.startsWith(`${storagePrefix}${host}:`)) return null;
+    const id = key.slice(`${storagePrefix}${host}:`.length);
     return /^[1-9][0-9]{0,15}$/.test(id) && integer(Number(id), 1, Number.MAX_SAFE_INTEGER) ? id : null;
   }
   function validateEntry(key, value, host) {
@@ -9248,7 +10937,7 @@ function getPriceTier(price, direction) {
     if (key === `${prefix}view-preferences:v1`) { check(app.viewPreferences.valid(value)); return 1; }
     if (key === `${prefix}workspace:v1`) {
       shape(value, ["workspaceTab", "managementTab", "drawerOpen", "drawerHeight", "partitionOrder", "salePriceSide", "referenceFallbackSide"], ["workspaceTab", "managementTab", "drawerOpen"]);
-      check(["projects", "materials", "cart", "manage", "settings"].includes(value.workspaceTab) && ["presets", "partitions", "favorites"].includes(value.managementTab) && typeof value.drawerOpen === "boolean");
+      check(["projects", "materials", "cart", "enhancement", "manage", "settings"].includes(value.workspaceTab) && ["presets", "partitions", "favorites"].includes(value.managementTab) && typeof value.drawerOpen === "boolean");
       if (own(value, "salePriceSide")) check(["ask", "bid", "ask-minus", "bid-plus", "reference"].includes(value.salePriceSide));
       if (own(value, "referenceFallbackSide")) check(["ask", "bid", "ask-minus", "bid-plus"].includes(value.referenceFallbackSide));
       if (own(value, "drawerHeight")) check(integer(value.drawerHeight, 180, 10000));
@@ -9257,6 +10946,12 @@ function getPriceTier(price, direction) {
           ["clothes", "materials", "unassigned"].includes(id) || typeof id === "string" && /^custom-[a-z0-9-]+$/.test(id)));
       return 1;
     }
+    if (cartOwner(key, host, enhancementPrefix)) {
+      array(value, limits.items);
+      for (const item of value) shape(item, ["itemHrid", "enhancementLevel", "name", "quantity", "startLevel", "protectAt", "addedOrder", ...app.enhancementSchedule.preparationFields], ["itemHrid", "enhancementLevel", "name", "quantity", "startLevel", "protectAt"]);
+      app.enhancementSchedule.validate(value); return value.length;
+    }
+    if (cartOwner(key, host, preparationPrefix)) { app.enhancementSchedule.validateQueuePreparation(value); return value.length; }
     if (cartOwner(key, host)) return rows(value, true);
     fail(t("备份包含不支持的存储键或其他站点的备料车，未修改本地数据。"));
   }
@@ -9265,8 +10960,10 @@ function getPriceTier(price, direction) {
     const previews = new WeakMap();
     function describe(key, value) {
       const count = validateEntry(key, value, hostname);
-      const owner = cartOwner(key, hostname);
-      return { key, label: owner ? t`备料车 · 角色 ${owner}` : labels[key], count,
+      const enhancementOwner = cartOwner(key, hostname, enhancementPrefix);
+      const preparationOwner = cartOwner(key, hostname, preparationPrefix);
+      const owner = enhancementOwner || preparationOwner || cartOwner(key, hostname);
+      return { key, label: preparationOwner ? t`队列备料设置 · 角色 ${owner}` : enhancementOwner ? t`强化计划 · 角色 ${owner}` : owner ? t`备料车 · 角色 ${owner}` : labels[key], count,
         empty: Array.isArray(value) ? value.length === 0 : Object.keys(value).length === 0,
         willOverwrite: storage.getItem(key) !== null, ...(owner ? { characterId: Number(owner) } : {}) };
     }
@@ -9287,7 +10984,7 @@ function getPriceTier(price, direction) {
       for (let index = 0; index < storage.length; index += 1) {
         const key = storage.key(index);
         // Enumerate names, but never read unrelated values (including credentials and game data).
-        if (!own(labels, key) && !cartOwner(key, hostname)) continue;
+        if (!own(labels, key) && !cartOwner(key, hostname) && !cartOwner(key, hostname, enhancementPrefix) && !cartOwner(key, hostname, preparationPrefix)) continue;
         const raw = storage.getItem(key);
         if (raw === null) continue;
         let value;
@@ -9450,14 +11147,69 @@ function getPriceTier(price, direction) {
   const t = text => app.i18n?.t(text) ?? text;
   const sections = [
   {
+    "title": "强化计划",
+    "paragraphs": [
+      "按计划顺序扣除共用库存，缺料项计入可支撑的部分时间，再继续计算后续项目。仅计已到账材料与金币，不计待到账、采购或备料倍率，不含制造及等待时间。强化有随机性，实际时长会有差异。",
+      "行内成功率和材料可支撑时间按当前已到账库存估算：前项按期望消耗预留，不足时预留可支撑部分；本项按剩余库存中最先耗尽的材料反推。成功率采用指数／Gamma 近似，不是队列整体成功率，保护材料的实际随机消耗可能有偏差。",
+      "自动同步游戏中的强化动作，每条动作单独显示并按 1 件核算。顺序、起始等级、目标与保护设置以队列为准；重复次数不是装备件数。",
+      "手动添加和填写，可调整数量、等级与顺序。旧版已保存的计划保留在此；如与队列重复且不需额外强化，请手动移除。",
+      "合计按队列计划在前、队列外计划在后的顺序核算，共用库存只扣除一次。",
+      "仅核算普通强化耗材与保护材料，不含底子制造或镜子、精炼路线。与备料车分别核算，共用的库存不能视为已被两个清单同时预留。",
+      "待到账只抵扣采购缺口，不表示已备齐。采购前重新核算库存、买单与余额；仅预填，由你确认交易。倍率备料不保证全部强化成功。",
+      "按顺序先备齐前项；不足时仅为当前项按比例备料，停止向后分配。备料比例不代表强化成功率。"
+    ]
+  },
+  {
+    "title": "备料与库存",
+    "paragraphs": [
+      "需求仅按备料车累计，制造与强化共用材料统一扣减库存。",
+      "按备料车顺序分配共享库存；待到账不算备齐。底子就绪不代表强化耗材齐全，请查看备料车材料表。",
+      "强化备料 = 单件路线期望消耗 × 目标数量 × 倍率，按材料汇总后向上取整。包含实际保护物和贤者之镜；默认 1.2，期望值不保证实际够用。",
+      "按当前左一估算路线的期望消耗备料，非保证用量；不同等级独立对照库存。",
+      "备料车将同装备各目标等级的件数合并，统一抵扣未强化（+0）库存，只为不足的件数计算制造用量；已有强化装备不抵扣。项目明细仍显示新增制作的配方用量，未加入备料车时按 1 件预览。",
+      "制造按直接配方和整批次数计算，保留小数用量；详情按物品合并制造与强化用量，需备显示合计，还缺统一扣除一次库存。制造与强化初始计价相同时共用调价控件，不同时在同一行分别显示；已显示的调价控件在本次模拟中保持可见。镜子路线的组成装备需另行备齐，制造用量仍为目标装备的直接配方。",
+      "没有目标售价时，备料和准备强化按最低成本路线计算，利润与工时费仍保持售价未知；有售价时恢复所选路线目标。材料、底子或保护物价格缺失时仍可能无法计算。",
+      "备料车中某个项目方案未就绪时，已算出的材料仍会保留；数量中的「+ 未知」表示还有未计入部分，不是完整需求。库存足够覆盖已算部分也不代表整车备齐。",
+      "启用工匠茶时按角色饮料浓度估算制造减耗，可在设置关闭；升级底子不减耗。"
+    ]
+  },
+  {
     "title": "收藏与分区",
     "paragraphs": [
+      "按物品和强化等级独立归属；全部取消后退回未分区。",
       "点击刷新价格与库存即可更新全市场买卖一价；本人挂单在打开游戏我的挂单时自动保存。",
       "收藏中的资源材料默认归入此区，同时汇集备料车及收藏项目的直接制造、强化和保护材料；相同物品和等级合并。未加入备料车的项目不计入需备数量。",
       "点击物品旁的收藏按钮保存物品与等级；参考售价可以单独填写。收藏已有挂单商品可导入现有挂单，以后新挂单会自动收藏。",
-      "物品可同时属于多个分区，分区归属适用于全部收藏等级。全部取消则归入未分区；删除分区保留其他归属。管理列表按游戏编号升序排列。",
+      "物品可同时属于多个分区，分区归属按物品和强化等级独立保存。全部取消则归入未分区；删除分区保留其他归属。管理列表按游戏编号升序排列。",
       "点击表头切换升降序，未知值始终置底；我的挂单按本人最低挂单价排序。",
       "拖动调节列宽；双击或 Enter 恢复默认；方向键调节，Esc 取消拖动。"
+    ]
+  },
+  {
+    "title": "行情与挂单",
+    "paragraphs": [
+      "同价订单越靠下越早；先后未知的订单单独列出。仅显示已读取订单。",
+      "左一／右一价格可对照买卖挂单；同价只表示价格相同，不代表同价队列第一。完整订单可在项目明细查看。",
+      "区间外按报价估算，低于下限的卖单实际按区间下限执行。左一非现档时保留原价参考。"
+    ]
+  },
+  {
+    "title": "预设与收藏管理",
+    "paragraphs": [
+      "隐藏 1–65 级生活工具、基础奶酪与木材系列装备，以及粗糙、爬行动物、哥布林、野兽、暗影皮革系列装备；另隐藏 40 级哥布林装备及棉、亚麻、竹、丝绸、光辉基础布料装备，以及指定的 12 件低中阶装备及小、中、大、巨大四种袋子。保留高阶皮革装备、80/90 级工具及所有精制版。开启时取消被隐藏物品的本次勾选，关闭后不恢复勾选；已有收藏不变。",
+      "等级可多选；不可强化物品仅加入 +0。",
+      "两个按钮使用相同物品与强化等级条件：仅删预设新增，或删除全部匹配。删除同时移除参考价，可撤销；分区、备料车及游戏挂单保持原状。",
+      "仅添加所选物品；保留已有分区归属、收藏与参考价。",
+      "组合筛选物品、等级与来源，支持撤销最近一次删除。",
+      "筛选条件同时生效；改变条件会清空勾选。删除同时移除参考价，可撤销最近一次删除。分区、备料车及游戏挂单保持原状。",
+      "一键清理覆盖全部分区与强化等级，仅删除明确由预设新增的收藏；旧收藏及预设复用的已有收藏保留。"
+    ]
+  },
+  {
+    "title": "掉落与经验",
+    "paragraphs": [
+      "启用插件后，自动保存当前浏览器收到的记录，不限 20 条。同一活动保留最新累计值。打开游戏原生记录页或点击其刷新按钮可获取最新数据；已被游戏删除且从未采集的记录无法补回。",
+      "仅保存在当前浏览器，按服务器和角色隔离。清理网站数据会丢失存档，建议定期导出备份。"
     ]
   },
   {
@@ -9471,19 +11223,8 @@ function getPriceTier(price, direction) {
       "项目明细的材料名称下显示当前模拟单价。左右按钮按该材料 +0 的价格档位减一档、加一档，悬停可看下一档报价；点击后立即更新展开区的利润、利润率、工时费及模拟路线备料。不同收藏等级独立模拟；收藏主行、展开摘要、售价档位和卖单工时费同步标注模拟收益。备料车仍按真实行情计算。",
       "首次打开项目明细截取行情、成品售价和角色参数。材料行可点击“恢复当前左一价格”，将该计价使用的报价恢复为插件最新已读取的 +0 左一价格，仅影响当前材料；缺少有效左一价时按钮不可用。强化与保护按实际单价显示，自制材料按直接配方采用的计价显示；报价与计价可能因自制比较而不同，复杂组合配方无法逐项分摊时显示未知。引擎按原有报价顺位、制造/购买比较和路线目标重新选择方案，候选材料调价可能不影响最终成本。",
       "模拟仅计算单件期望值，不使用备料倍率或向上取整的备料数量。变化含重新选择路线的影响。零价不表示免费，缺价显示未知。金币等固定成本沿用原公式。",
-      "模拟不会修改真实行情、参考售价、库存或挂单；输入仅保留在当前页面，刷新游戏或确认切换角色后清空。自动刷新角色参数、库存、行情不会清空当前模拟；新角色参数在刷新页面后重新截取。恢复左一只更新对应材料报价，保留其他材料调整、成品售价与基准参数。缺价或达到档位边界时，对应换档按钮不可用。"
-    ]
-  },
-  {
-    "title": "备料与库存",
-    "paragraphs": [
-      "强化备料 = 单件路线期望消耗 × 目标数量 × 倍率，按材料汇总后向上取整。包含实际保护物和贤者之镜；默认 1.2，期望值不保证实际够用。",
-      "按当前左一估算路线的期望消耗备料，非保证用量；不同等级独立对照库存。",
-      "备料车将同装备各目标等级的件数合并，统一抵扣未强化（+0）库存，只为不足的件数计算制造用量；已有强化装备不抵扣。项目明细仍显示新增制作的配方用量，未加入备料车时按 1 件预览。",
-      "制造按直接配方和整批次数计算，保留小数用量；详情按物品合并制造与强化用量，需备显示合计，还缺统一扣除一次库存。制造与强化初始计价相同时共用调价控件，不同时在同一行分别显示；已显示的调价控件在本次模拟中保持可见。镜子路线的组成装备需另行备齐，制造用量仍为目标装备的直接配方。",
-      "没有目标售价时，备料和准备强化按最低成本路线计算，利润与工时费仍保持售价未知；有售价时恢复所选路线目标。材料、底子或保护物价格缺失时仍可能无法计算。",
-      "备料车中某个项目方案未就绪时，已算出的材料仍会保留；数量中的「+ 未知」表示还有未计入部分，不是完整需求。库存足够覆盖已算部分也不代表整车备齐。",
-      "启用工匠茶时按角色饮料浓度估算制造减耗，可在设置关闭；升级底子不减耗。"
+      "模拟不会修改真实行情、参考售价、库存或挂单；输入仅保留在当前页面，刷新游戏或确认切换角色后清空。自动刷新角色参数、库存、行情不会清空当前模拟；新角色参数在刷新页面后重新截取。恢复左一只更新对应材料报价，保留其他材料调整、成品售价与基准参数。缺价或达到档位边界时，对应换档按钮不可用。",
+      "强化预填按当前行情方案执行；模拟方案仅用于比较。"
     ]
   },
   {
@@ -9496,20 +11237,16 @@ function getPriceTier(price, direction) {
       "从预算采购清单点击材料进入市场，两分钟内打开该物品同等级的购买表单，会一次性预填本次建议数量并保留制造、强化消耗金币；从合计材料进入，则预填全部剩余缺口，金币不够时按表单当前价格填最大可负担数量。卖单不预填，填写后仍需自行确认购买。",
       "挂单成功后，未成交买单和已成交未领取材料计入待收货，与当前库存共同抵扣采购缺口；已扣金币不会再次计作可用余额。部分成交、领取和撤单后自动更新，避免对已下单材料重复分配。待收货不代表已经可以用于制造或强化。",
       "项目和材料按市场左一单价降序排列；金币按 1，未知价格置底。只看缺料会同时保留未知项。",
-      "数量减至 1 后，再次点击减号进入移除确认，再点一次移除；也可直接使用移除按钮。"
+      "数量减至 1 后，再次点击减号进入移除确认，再点一次移除；也可直接使用移除按钮。",
+      "净缺口已扣库存和买单待收；已占用作底子的装备不会重复抵扣。",
+      "买单未成仍需等待成交；成交待领需在游戏中领取。",
+      "数量按备料方案计算，采购数量向上取整。"
     ]
   },
   {
     "title": "市场制作与强化",
     "paragraphs": [
       "打开市场查看当前物品及等级；打开制作进入该物品的直接配方。开始强化会选择背包中低于目标等级的最高等级同物品，并按当前展示路线填写目标等级、保护物和保护起始等级，仍需手动确认开始。缺少物品或保护材料时会提示；多段路线按明细手动准备。制造请自行核对材料与游戏茶槽。"
-    ]
-  },
-  {
-    "title": "行情与挂单",
-    "paragraphs": [
-      "左一／右一价格可对照买卖挂单；同价只表示价格相同，不代表同价队列第一。完整订单可在项目明细查看。",
-      "旧报价保留来源和时间；旧订单簿位置需要重新打开物品市场更新。区间外按报价估算，低于下限的卖单实际按区间下限执行。左一非现档时保留原价参考。"
     ]
   },
   {
@@ -9630,6 +11367,10 @@ function getPriceTier(price, direction) {
       catch (_) { languageStatus.textContent = t("保存失败，请检查浏览器存储设置后重试。"); }
     };
     languageGroup.append(applyLanguage, languageHint, languageStatus);
+    const usageSettings = document.createElement("div");
+    usageSettings.setAttribute("data-layu-usage-settings", "mwi_enhancement");
+    usageSettings.lang = app.i18n?.language || "zh";
+    form.append(usageSettings);
     const basic = group(t("计算与显示"));
     field(basic, "features.autoFavoriteListings", t("自动收藏挂单"), { type: "checkbox" });
     const autoFavoriteHint = document.createElement("p");
@@ -9777,10 +11518,6 @@ function getPriceTier(price, direction) {
       retry.disabled = true;
       try { await wages.refreshCharacter(); status.textContent = wages.status(); } finally { retry.disabled = false; }
     });
-    const usageSettings = document.createElement("div");
-    usageSettings.setAttribute("data-layu-usage-settings", "mwi_enhancement");
-    usageSettings.lang = app.i18n?.language || "zh";
-    form.append(usageSettings);
     return container;
   }
   app.v3Settings = Object.freeze({createSettings});
@@ -9944,7 +11681,7 @@ function getPriceTier(price, direction) {
         const observed = currentQuote();
         restore.disabled = !snapshot || !(observed?.price > 0) || !Number.isFinite(observed.price) || observed.price > 1e12;
         restore.title = restore.disabled ? t("暂无有效左一价格，请先读取该材料行情")
-          : t`${observed.cached ? t("缓存 · ") : ""}${observed.stale ? t("旧报价 · ") : ""}${observed.source || t("已有行情")}左一：${number(observed.price)}`;
+          : t`左一：${number(observed.price)}`;
         bid.disabled = !snapshot || !(observed?.bid > 0) || !Number.isFinite(observed.bid) || observed.bid > 1e12;
         bid.title = bid.disabled ? t("暂无有效右一价格") : t`用当前右一 ${number(observed.bid)} 模拟本项成本`;
         restore.setAttribute("aria-pressed", String(!restore.disabled && quote === observed.price));
@@ -10067,9 +11804,7 @@ function getPriceTier(price, direction) {
       const count = value.catalog.groups.reduce((n, group) => n + group.items.length, 0) - catalog.groups.reduce((n, group) => n + group.items.length, 0);
       const filterStatus = node("span", hideOrdinary ? t`已开启 · 隐藏 ${count} 件普通装备` : t("未开启 · 显示全部装备"), "mwi-layu-group-note");
       filterStatus.setAttribute("aria-live", "polite");
-      const help = node("details", null, "mwi-layu-preset-filter-help");
-      help.append(node("summary", t("隐藏范围")), node("p", t("隐藏 1–65 级生活工具、基础奶酪与木材系列装备，以及粗糙、爬行动物、哥布林、野兽、暗影皮革系列装备；另隐藏 40 级哥布林装备及棉、亚麻、竹、丝绸、光辉基础布料装备，以及指定的 12 件低中阶装备及小、中、大、巨大四种袋子。保留高阶皮革装备、80/90 级工具及所有精制版。开启时取消被隐藏物品的本次勾选，关闭后不恢复勾选；已有收藏不变。"), "mwi-layu-group-note"));
-      modes.append(filter); filter.append(node("span", " · "), filterStatus); element.append(help);
+      modes.append(filter); filter.append(node("span", " · "), filterStatus);
       // A refreshed catalog may remove/reclassify items. Never silently select replacement items.
       for (const [id, hrids] of selected) {
         const tier = catalog.presets.find(entry => entry.id === id);
@@ -10197,7 +11932,7 @@ function getPriceTier(price, direction) {
         preferences.update({presetLevels:[...levels]}); render(snapshot);
       }));
       for (let level = 0; level <= 20; level++) levelRow.append(addLevel(level));
-      aside.append(shortcuts, levelRow, node("p", t("等级可多选；不可强化物品仅加入 +0。"), "mwi-layu-group-note")); element.append(aside);
+      aside.append(shortcuts, levelRow); element.append(aside);
       const footer = node("div", null, "mwi-layu-preset-footer"), preview = node("div", null, "mwi-layu-preset-preview"); preview.setAttribute("aria-live", "polite");
       const apply = button(deleting ? t("删除所有匹配收藏") : t("添加所选分区与物品"), "preset-apply", () => {
         apply.disabled = true;
@@ -10236,7 +11971,7 @@ function getPriceTier(price, direction) {
       const matches = node("details", null, "mwi-layu-preset-matches"); matches.hidden = !deleting;
       const matchSummary = node("summary"), matchList = node("div", null, "mwi-layu-delete-preview");
       matches.append(matchSummary, matchList);
-      element.append(node("p", deleting ? t("两个按钮使用相同物品与强化等级条件：仅删预设新增，或删除全部匹配。删除同时移除参考价，可撤销；分区、备料车及游戏挂单保持原状。") : t("仅添加所选物品；保留已有分区归属、收藏与参考价。"), "mwi-layu-preset-preserve mwi-layu-group-note"), matches, footer);
+      element.append(matches, footer);
       function activeItems() {
         return Object.fromEntries(catalog.presets.filter(tier => choices(tier).size).map(tier => [tier.id, [...choices(tier)]]));
       }
@@ -10355,7 +12090,7 @@ function getPriceTier(price, direction) {
       const query = filters.search.trim().toLocaleLowerCase();
       return visibleItems().filter(item => (!query || `${snapshot.names[item.itemHrid] || item.name} ${item.itemHrid}`.toLocaleLowerCase().includes(query)) &&
         (!filters.category || snapshot.wages.materialInfo(item).category === filters.category) &&
-        (!filters.group || partitions.groupsOf(item.itemHrid).includes(filters.group)) &&
+        (!filters.group || partitions.groupsOf(item.itemHrid, item.enhancementLevel).includes(filters.group)) &&
         (filters.min === "" || item.enhancementLevel >= Number(filters.min)) &&
         (filters.max === "" || item.enhancementLevel <= Number(filters.max)) &&
         (!filters.source || (filters.source === "preset" ? item.presetAdded === true : item.presetAdded !== true)));
@@ -10383,13 +12118,10 @@ function getPriceTier(price, direction) {
     presetPreview.append(presetSummary, presetList);
     actions.append(selectAll, clear, deleteSelected, deleteFilteredPresets, deleteFiltered, deletePresets, undo);
     const heading = node("header", null, "v3-section-heading");
-    const headingText = node("div"); headingText.append(node("h2", t("管理现有收藏与批量清理")), node("p", t("组合筛选物品、等级与来源，支持撤销最近一次删除。")));
+    const headingText = node("div"); headingText.append(node("h2", t("管理现有收藏与批量清理")));
     heading.append(headingText, undo);
     const operations = node("div", null, "v3-favorite-operation-bar"); operations.append(summary, actions);
-    const help = node("details", null, "v3-favorite-help"); help.append(node("summary", t("删除范围与撤销说明")),
-      node("p", t("筛选条件同时生效；改变条件会清空勾选。删除同时移除参考价，可撤销最近一次删除。分区、备料车及游戏挂单保持原状。")),
-      node("p", t("一键清理覆盖全部分区与强化等级，仅删除明确由预设新增的收藏；旧收藏及预设复用的已有收藏保留。")), presetPreview);
-    element.append(heading, bar, operations, help, list);
+    element.append(heading, bar, operations, presetPreview, list);
     if (!createStatus) element.prepend(status);
     function identity(item) { return app.itemUI.identity(item, snapshot.spriteBase, `${snapshot.names[item.itemHrid] || item.name} +${item.enhancementLevel}`); }
     function draw() {
@@ -10410,7 +12142,7 @@ function getPriceTier(price, direction) {
           summary.textContent = t`共 ${visibleItems().length} 条收藏 · 筛选命中 ${rows.length} 条 · 已勾选 ${selected.size} 条`;
           deleteSelected.disabled = !selected.size; clear.disabled = !selected.size;
         };
-        const groups = partitions.groups().filter(group => partitions.groupsOf(item.itemHrid).includes(group.id));
+        const groups = partitions.groups().filter(group => partitions.groupsOf(item.itemHrid, item.enhancementLevel).includes(group.id));
         const badges = node("div", null, "v3-tags"); for (const group of groups) badges.append(node("span", group.name, "v3-tag"));
         const remove = button(t("删除"), () => mutate(() => removeRows([item]))); remove.setAttribute("aria-label", t`删除收藏：${snapshot.names[item.itemHrid] || item.name} +${item.enhancementLevel}`); remove.className = "v3-danger";
         for (const value of [input, identity(item), badges, item.presetAdded ? t("预设新增") : t("手动 / 未记录"), item.customPrice == null ? t("未设置") : String(item.customPrice), remove]) { const cell = node("td"); if (value?.nodeType) cell.append(value); else cell.textContent = value; label.append(cell); }
@@ -10454,7 +12186,7 @@ function getPriceTier(price, direction) {
   const drawerHeight = Object.freeze({ min:180, max:10000, initial:380 });
   const defaults = Object.freeze({ workspaceTab:"projects", managementTab:"presets", drawerOpen:false, drawerHeight:drawerHeight.initial, salePriceSide:"ask", referenceFallbackSide:"ask" });
   function normalize(value) {
-    return { partitionOrder:Array.isArray(value?.partitionOrder) ? [...new Set(value.partitionOrder.filter(id => typeof id === "string" && id !== "all"))] : [], workspaceTab:["projects", "materials", "cart", "manage", "settings", "loot"].includes(value?.workspaceTab) ? value.workspaceTab : defaults.workspaceTab,
+    return { partitionOrder:Array.isArray(value?.partitionOrder) ? [...new Set(value.partitionOrder.filter(id => typeof id === "string" && id !== "all"))] : [], workspaceTab:["projects", "materials", "cart", "enhancement", "manage", "settings", "loot"].includes(value?.workspaceTab) ? value.workspaceTab : defaults.workspaceTab,
       managementTab:["presets", "partitions", "favorites"].includes(value?.managementTab) ? value.managementTab : defaults.managementTab,
       salePriceSide:["bid", "ask-minus", "bid-plus", "reference"].includes(value?.salePriceSide) ? value.salePriceSide : "ask",
       referenceFallbackSide:["bid", "ask-minus", "bid-plus"].includes(value?.salePriceSide) ? value.salePriceSide
@@ -10482,6 +12214,14 @@ function getPriceTier(price, direction) {
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   // The approved V3 sketch is the visual authority. Adapt to the game panel, independently of browser viewport width.
   const css = `
+.mwi-layu-panel .v3-project-stock-cell {border-left:1px solid var(--v3-line);}
+.mwi-layu-panel .v3-project-stock {display:flex;gap:12px;align-items:center;white-space:nowrap;overflow-x:auto;font-size:12px;font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-project-stock-metric {display:inline-flex;align-items:baseline;gap:4px;color:var(--v3-muted);flex:none;}
+.mwi-layu-panel .v3-project-stock-metric strong {font-size:14px;color:var(--v3-text);}
+.mwi-layu-panel .v3-project-stock-metric[data-state=zero] strong,
+.mwi-layu-panel .v3-project-stock-metric[data-state=unknown] strong {color:var(--v3-muted);}
+.mwi-layu-panel .v3-project-stock[data-highlighted=true] .v3-project-stock-metric,
+.mwi-layu-panel .v3-project-stock[data-highlighted=true] .v3-project-stock-metric strong {color:#34d399;}
 .mwi-layu-panel .v3-language-settings {grid-column:1/-1;}
 .mwi-layu-panel .v3-language-settings p {grid-column:1/-1;}
 .mwi-layu-panel[lang=en-US] .v3-strategy {height:auto;min-height:60px;grid-template-rows:auto auto;}
@@ -10524,8 +12264,11 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel p {margin:6px 0;color:var(--v3-muted);}
 .mwi-layu-panel p:empty,.mwi-layu-panel div[role=status]:empty {display:none;}
 .mwi-layu-panel summary {cursor:pointer;}
-.mwi-layu-panel .v3-notifications {flex:0 1 auto;min-height:0;max-height:25%;overflow:auto;border-bottom:1px solid var(--v3-line);}
-.mwi-layu-panel .v3-market-notifications {position:absolute;top:52px;right:12px;width:360px;max-width:calc(100% - 24px);z-index:9;background:var(--v3-surface);border:1px solid var(--v3-line);border-radius:6px;}
+.mwi-layu-panel .v3-notifications {min-width:0;}
+.mwi-layu-panel .v3-settings-notifications {margin-bottom:16px;}
+.mwi-layu-panel .v3-settings-notifications h3 {margin:0 0 8px;font-size:14px;}
+.mwi-layu-panel .v3-notifications-empty {color:var(--v3-muted);margin:0;}
+.mwi-layu-panel .v3-settings-notifications:has(.v3-notifications:not([hidden])) .v3-notifications-empty {display:none;}
 .mwi-layu-panel .v3-notification {display:flex;align-items:flex-start;gap:12px;padding:6px 14px;color:#fbbf24;}
 .mwi-layu-panel .v3-notification + .v3-notification {border-top:1px solid var(--v3-line);}
 .mwi-layu-panel .v3-notification > :first-child {flex:1;min-width:0;overflow-wrap:anywhere;align-self:center;}
@@ -10569,29 +12312,92 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-item-name {overflow-wrap:anywhere;}
 .mwi-layu-panel .mwi-layu-item-icon {width:20px;height:20px;flex:0 0 20px;vertical-align:middle;}
 .mwi-layu-panel .mwi-layu-item-choice {display:inline-flex;align-items:center;gap:5px;}
+.mwi-layu-panel .mwi-layu-project-identity {cursor:grab;user-select:none;}
+.mwi-layu-panel .mwi-layu-disclosure-sign {cursor:pointer;}
+.mwi-layu-panel .v3-transfer-source > td[data-project-column=name] {opacity:.45;}
+.mwi-layu-panel .v3-transfer-tray {position:absolute;left:0;right:0;z-index:40;box-sizing:border-box;padding:8px 12px;background:#151e2b;border:1px solid #3c6a87;overflow:auto;overscroll-behavior:contain;}
+.mwi-layu-panel .v3-transfer-tray p {margin:4px 0;color:#f1f5f9;}
+.mwi-layu-panel .v3-transfer-options,.mwi-layu-panel .v3-transfer-actions,.mwi-layu-panel .v3-transfer-removals {display:flex;gap:8px;flex-wrap:wrap;}
+.mwi-layu-panel .v3-transfer-options label {display:inline-flex;align-items:center;gap:4px;padding:6px;max-width:100%;overflow-wrap:anywhere;}
+.mwi-layu-panel .v3-transfer-actions {margin-top:8px;}
+.mwi-layu-panel .v3-transfer-removals > div {padding:8px 12px;border:1px dashed #a0aec2;border-radius:4px;overflow-wrap:anywhere;}
+.mwi-layu-panel .v3-item-transferring .v3-controls > .mwi-layu-group-toolbar,.mwi-layu-panel .v3-item-transferring .v3-partition-add {display:none;}
+.mwi-layu-panel .v3-item-transferring .v3-controls {box-sizing:border-box;}
+.mwi-layu-panel .v3-item-transferring [data-partition-id] {outline:1px dashed #7dd3fc;outline-offset:-1px;}
+.mwi-layu-panel .v3-item-transferring [data-partition-id] .mwi-layu-partition-choice {min-height:32px;}
+.mwi-layu-panel .v3-transfer-over {background:#183349!important;outline:2px solid #38bdf8!important;outline-offset:-2px;}
+.mwi-layu-panel .v3-operation-history {min-width:0;grid-column:1 / -1;padding:12px;background:#151e2b;border:1px solid #2b3a52;border-radius:4px;}
+.mwi-layu-panel .v3-history-toolbar {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.mwi-layu-panel .v3-history-toolbar label {display:flex;align-items:center;gap:6px;}
+.mwi-layu-panel .v3-history-toolbar input {width:85px;}
+.mwi-layu-panel .v3-history-list {list-style:none;padding:0;margin:12px 0 0;max-height:420px;overflow:auto;}
+.mwi-layu-panel .v3-history-entry {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #2b3a52;}
+.mwi-layu-panel .v3-history-detail {min-width:0;overflow-wrap:anywhere;}
+.mwi-layu-panel .v3-history-detail p {margin:4px 0;}
+.mwi-layu-panel .v3-history-detail time {color:#a0aec2;font-size:11px;}
+.mwi-layu-panel .v3-history-identity {display:flex;align-items:center;gap:5px;}
+.mwi-layu-panel .v3-history-identity strong {color:#7dd3fc;white-space:nowrap;}
+.mwi-layu-panel .v3-history-entry-actions {display:flex;align-items:flex-end;flex-direction:column;gap:4px;max-width:40%;flex-shrink:0;}
+.mwi-layu-panel .v3-history-entry-actions button {white-space:nowrap;}
+.mwi-layu-panel .v3-history-entry-actions span {font-size:11px;color:#a0aec2;overflow-wrap:anywhere;}
+.v3-transfer-identity {display:inline-flex;align-items:center;gap:4px;min-width:0;overflow-wrap:anywhere;}
+.v3-transfer-identity strong {color:#7dd3fc;white-space:nowrap;}
+.v3-transfer-ghost {position:fixed;z-index:2147483646;pointer-events:none;padding:6px 10px;max-width:min(320px,calc(100vw - 16px));box-sizing:border-box;background:#182130;color:#f1f5f9;border:1px solid #a0aec2;border-radius:4px;font:12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.v3-transfer-ghost[data-valid="true"] {border-color:#38bdf8;}
+.v3-transfer-ghost .mwi-layu-item-label {display:inline-flex;align-items:center;gap:4px;}
+.v3-transfer-ghost svg {width:24px;height:24px;flex:none;}
 .mwi-layu-panel .mwi-layu-project-level {color:#7dd3fc;font-weight:700;white-space:nowrap;}
 .mwi-layu-panel .mwi-layu-disclosure-sign {color:#94a3b8;flex-shrink:0;}
-.mwi-layu-panel .v3-sale-price-group {display:flex;flex-direction:column;gap:5px;font-size:11px;}
-.mwi-layu-panel .v3-sale-price-options {display:flex;gap:4px;}
-.mwi-layu-panel .v3-sale-price-choice {display:flex;flex:1;flex-direction:column;align-items:center;gap:3px;min-width:0;text-align:center;padding:3px 4px;color:var(--v3-muted);font-size:11px;}
+.mwi-layu-panel .v3-sale-price-group {display:flex;flex-direction:column;gap:4px;font-size:11px;}
+.mwi-layu-panel .v3-sale-price-options {display:flex;gap:3px;}
+.mwi-layu-panel .v3-sale-price-choice {display:flex;flex:1;flex-direction:column;align-items:center;gap:3px;min-width:0;min-height:25px;text-align:center;padding:2px 3px;color:var(--v3-muted);font-size:11px;}
 .mwi-layu-panel .v3-sale-price-choice small {font-size:10px;font-weight:400;white-space:normal;}
 .mwi-layu-panel .v3-sale-price-choice[aria-pressed=true] {color:#7dd3fc;border-color:#7dd3fc;background:rgba(56,189,248,.12);}
 .mwi-layu-panel th[data-sale-price-selected=true] {box-shadow:inset 0 -2px #7dd3fc;}
 .mwi-layu-panel td[data-sale-price-selected=true] {background:rgba(56,189,248,.06);}
+/* One visual market region with two data columns and one outer resize control. */
+.mwi-layu-panel .mwi-layu-project-table > thead > tr > th,
+.mwi-layu-panel .mwi-layu-project-row > td {padding:4px 6px;}
+/* Enlarge list rows by 10%, including controls and secondary text; keep column widths. */
+.mwi-layu-panel .mwi-layu-project-row > td {padding-block:4.4px;font-size:13.2px;}
+.mwi-layu-panel .mwi-layu-project-row button {min-height:30.8px;}
+.mwi-layu-panel .mwi-layu-project-row .mwi-layu-item-icon {width:22px;height:22px;flex-basis:22px;}
+.mwi-layu-panel .mwi-layu-project-row .v3-project-stock {font-size:13.2px;}
+.mwi-layu-panel .mwi-layu-project-row .v3-project-stock-metric strong {font-size:15.4px;}
+.mwi-layu-panel .mwi-layu-project-row :is(.mwi-layu-quote-source,.mwi-layu-order-state) {font-size:11px;}
+.mwi-layu-panel .mwi-layu-project-row .mwi-layu-listing-comparison {font-size:12.1px;}
+.mwi-layu-panel .mwi-layu-project-row .v3-project-quantity :is(button,input) {min-height:26.4px;}
+.mwi-layu-panel .mwi-layu-project-row .v3-project-quantity button {font-size:15.4px;}
+.mwi-layu-panel .mwi-layu-project-row .v3-project-quantity .v3-project-add {font-size:13.2px;}
+.mwi-layu-panel .mwi-layu-project-table [data-market-price-column] {background:#192231;box-shadow:none;}
+.mwi-layu-panel .mwi-layu-project-table > thead > tr > th[data-market-price-column] {padding-inline:4px;}
+.mwi-layu-panel [data-market-price-column] .v3-sale-price-choice {padding-inline:1px;}
+.mwi-layu-panel [data-market-price-column=ask] {border-left:1px solid var(--v3-line);border-right:0;}
+.mwi-layu-panel [data-market-price-column=bid] {border-left:0;border-right:1px solid var(--v3-line);}
+.mwi-layu-panel .mwi-layu-project-row:hover > [data-market-price-column] {background:#202d3f;}
+.mwi-layu-panel .mwi-layu-project-selected > [data-market-price-column] {background:#1c2c40;}
+.mwi-layu-panel .v3-market-quote {display:block;text-align:right;white-space:nowrap;}
+.mwi-layu-panel .mwi-layu-project-row .mwi-layu-compact-price {min-height:27.5px;padding:2.2px 4px;}
 .mwi-layu-panel .v3-sale-basis-note {color:var(--v3-muted);font-size:11px;}
 .mwi-layu-panel .mwi-layu-column-sort {border:0;background:transparent;padding:0;font-size:11px;color:#a0aec2;}
 .mwi-layu-panel .mwi-layu-column-sort[data-direction=ascending]::after {content:" ↑";color:#38bdf8;}
 .mwi-layu-panel .mwi-layu-column-sort[data-direction=descending]::after {content:" ↓";color:#38bdf8;}
 .mwi-layu-panel .mwi-layu-column-resizer {position:absolute;right:0;top:0;bottom:0;width:7px;cursor:col-resize;touch-action:none;border-right:1px solid #3b4966;}
+.mwi-layu-panel th[data-project-column] {user-select:none;}
+.mwi-layu-panel th.v3-column-dragging {opacity:.55;cursor:grabbing;}
+.mwi-layu-panel th.v3-column-drop-before::before,.mwi-layu-panel th.v3-column-drop-after::after {content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--v3-accent);pointer-events:none;z-index:2;}
+.mwi-layu-panel th.v3-column-drop-before::before {left:0;}
+.mwi-layu-panel th.v3-column-drop-after::after {right:0;}
 .mwi-layu-panel .mwi-layu-compact-price {width:100%;font-variant-numeric:tabular-nums;text-align:right;}
 .mwi-layu-panel .mwi-layu-quote-source,.mwi-layu-panel .mwi-layu-order-state {display:block;font-size:10px;color:var(--v3-muted);}
 .mwi-layu-panel .mwi-layu-listing-comparison {display:block;font-size:11px;}
 .mwi-layu-panel .v3-own-market-cell {position:relative;}
-.mwi-layu-panel .v3-own-market-link {display:block;width:100%;padding:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;text-align:left;}
-.mwi-layu-panel .v3-own-market-link::after {content:"";position:absolute;inset:0;}
-.mwi-layu-panel .v3-own-market-link:hover::after {background:rgba(56,189,248,.06);}
-.mwi-layu-panel .v3-own-market-link:focus-visible {outline:none;}
-.mwi-layu-panel .v3-own-market-link:focus-visible::after {outline:2px solid #38bdf8;outline-offset:-2px;}
+.mwi-layu-panel :is(.v3-own-market-link,.v3-market-quote-link) {display:block;width:100%;padding:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;text-align:left;}
+.mwi-layu-panel .v3-market-quote-link {text-align:right;}
+.mwi-layu-panel :is(.v3-own-market-link,.v3-market-quote-link)::after {content:"";position:absolute;inset:0;}
+.mwi-layu-panel :is(.v3-own-market-link,.v3-market-quote-link):hover::after {background:rgba(56,189,248,.06);}
+.mwi-layu-panel :is(.v3-own-market-link,.v3-market-quote-link):focus-visible {outline:none;}
+.mwi-layu-panel :is(.v3-own-market-link,.v3-market-quote-link):focus-visible::after {outline:2px solid #38bdf8;outline-offset:-2px;}
 .mwi-layu-panel .mwi-layu-order-behind,.mwi-layu-panel .mwi-layu-shortage {color:#f87171;}
 .mwi-layu-panel .mwi-layu-profit,.mwi-layu-panel .mwi-layu-order-leading {color:#34d399;}
 .mwi-layu-panel .mwi-layu-project-detail-row > td {padding:10px 12px 14px;background:#121824;}
@@ -10668,6 +12474,53 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-tabs button {display:inline-flex;align-items:center;gap:6px;background:transparent;border-color:transparent;}
 .mwi-layu-panel .v3-tabs button[aria-current=page] {color:#7dd3fc;background:#1c3447;border-color:#355c74;}
 .mwi-layu-panel .v3-cart-badge {font-size:11px;padding:0 4px;background:#263348;border-radius:3px;font-variant-numeric:tabular-nums;}
+/* Independent enhancement schedule: full-width tables, local scrolling. */
+.mwi-layu-panel .v3-enhancement-schedule {font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-enhancement-manual > summary {padding:10px 0;cursor:pointer;}
+.mwi-layu-panel .v3-enhancement-manual > summary h3 {display:inline;margin:0;}
+.mwi-layu-panel .v3-enhancement-manual > summary:focus-visible {outline:2px solid var(--v3-accent);outline-offset:2px;}
+.mwi-layu-panel .v3-enhancement-market-browse {opacity:.48;}
+.mwi-layu-panel .v3-enhancement-schedule .mwi-layu-group-scroll {margin:10px 0;max-width:100%;}
+.mwi-layu-panel .v3-enhancement-projects table {min-width:1200px;table-layout:auto;}
+.mwi-layu-panel .v3-enhancement-materials table {min-width:1050px;table-layout:auto;}
+.mwi-layu-panel .v3-enhancement-schedule th,.mwi-layu-panel .v3-enhancement-schedule td {padding:6px 8px;white-space:nowrap;}
+.mwi-layu-panel .v3-enhancement-schedule th {background:#111a27;}
+.mwi-layu-panel .v3-enhancement-materials td:first-child {position:sticky;left:0;z-index:1;background:#182130;box-shadow:1px 0 #34445c;}
+.mwi-layu-panel .v3-enhancement-materials th:first-child {position:sticky;left:0;z-index:2;background:#111a27;}
+.mwi-layu-panel .v3-enhancement-projects input {width:64px;min-width:0;text-align:center;}
+/* 暂停逐行倍率控件样式，保留备用。
+.mwi-layu-panel .v3-schedule-preparation {display:grid;grid-template-columns:auto auto;gap:4px 6px;}
+.mwi-layu-panel .v3-schedule-preparation label {display:flex;align-items:center;gap:3px;}
+.mwi-layu-panel .v3-schedule-preparation input {width:72px;}
+.mwi-layu-panel .v3-schedule-preparation small {grid-column:1 / -1;color:#a0aec2;}
+.mwi-layu-panel .v3-schedule-preparation input[aria-invalid="true"] {border-color:#f87171;}
+*/
+.mwi-layu-panel .v3-enhancement-route {display:flex;flex-direction:column;gap:3px;font-size:11px;}
+.mwi-layu-panel .v3-enhancement-actions {display:flex;justify-content:center;}
+.mwi-layu-panel .v3-enhancement-manual .v3-enhancement-projects th:last-child,.mwi-layu-panel .v3-enhancement-manual .v3-enhancement-projects td:last-child {width:1%;text-align:center;}
+.mwi-layu-panel .v3-plan-remove {display:inline-flex;align-items:center;justify-content:center;width:28px;min-width:28px;height:28px;padding:0;background:transparent;border-color:transparent;color:#a0aec2;}
+.mwi-layu-panel .v3-plan-remove svg {width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;}
+.mwi-layu-panel .v3-plan-remove:hover,.mwi-layu-panel .v3-plan-remove:focus-visible {color:#f87171;background:#202d3f;}
+.mwi-layu-panel .v3-plan-remove:focus-visible {outline:2px solid #38bdf8;outline-offset:2px;}
+.mwi-layu-panel .v3-plan-order {display:flex;align-items:center;gap:4px;}
+.mwi-layu-panel .v3-plan-drag-handle {display:inline-flex;align-items:center;justify-content:center;width:28px;min-width:28px;height:30px;padding:0;background:transparent;border-color:transparent;color:#a0aec2;cursor:grab;touch-action:none;user-select:none;}
+.mwi-layu-panel .v3-plan-drag-handle svg {width:16px;height:20px;fill:currentColor;pointer-events:none;}
+.mwi-layu-panel .v3-plan-drag-handle:hover:not(:disabled),.mwi-layu-panel .v3-plan-drag-handle:focus-visible {color:#f1f5f9;background:#202d3f;}
+.mwi-layu-panel .v3-plan-drag-handle:focus-visible {outline:2px solid #38bdf8;outline-offset:2px;}
+.mwi-layu-panel .v3-plan-drag-handle:disabled {opacity:.4;cursor:default;}
+.mwi-layu-panel .v3-plan-dragging {opacity:.6;}
+.mwi-layu-panel .v3-plan-dragging .v3-plan-drag-handle {cursor:grabbing;}
+.mwi-layu-panel .v3-plan-drop-before td {box-shadow:inset 0 2px #38bdf8;}
+.mwi-layu-panel .v3-plan-drop-after td {box-shadow:inset 0 -2px #38bdf8;}
+.mwi-layu-panel .v3-enhancement-budget-tools {display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px;}
+.mwi-layu-panel .v3-enhancement-budget-tools button {display:inline-flex;gap:4px;align-items:center;}
+.mwi-layu-panel .v3-enhancement-budget-status {padding:8px;background:#1a283a;}
+.mwi-layu-panel .v3-enhancement-coverage {display:flex;flex-wrap:wrap;gap:8px 18px;}
+.mwi-layu-panel .v3-enhancement-picker {padding:10px;background:#1a283a;display:flex;flex-wrap:wrap;gap:8px;}
+.mwi-layu-panel .v3-enhancement-choices {flex-basis:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px;max-height:220px;overflow:auto;}
+.mwi-layu-panel .v3-enhancement-choices label {display:flex;align-items:center;gap:6px;min-width:0;}
+.mwi-layu-panel .v3-enhancement-choices label[hidden] {display:none;}
+.mwi-layu-panel .v3-enhancement-materials details > div {display:flex;gap:6px;padding:4px 0;}
 .mwi-layu-panel .v3-cart-page {flex:1;min-height:0;overflow:auto;background:#151d2b;}
 .mwi-layu-panel .mwi-layu-cart {padding:8px 12px 12px;min-width:0;}
 .mwi-layu-panel .mwi-layu-cart-heading {display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;}
@@ -10726,6 +12579,16 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-project-quantity {display:inline-flex;align-items:center;max-width:100%;background:#1b2638;border:1px solid #30415b;border-radius:4px;}
 .mwi-layu-panel .v3-project-quantity button {background:transparent;border:0;min-height:24px;padding:0 5px;font-size:14px;}
 .mwi-layu-panel .v3-project-quantity input {width:40px;min-width:0;min-height:24px;padding:0 2px;text-align:center;background:transparent;border:0;font-variant-numeric:tabular-nums;}
+.mwi-layu-panel .v3-project-quantity:not([data-emphasis]) input[data-nonzero=true] {color:#34d399;}
+.mwi-layu-panel .v3-project-quantity[data-emphasis=quiet] button,
+.mwi-layu-panel .v3-project-quantity[data-emphasis=quiet] input {color:#becbdf;}
+.mwi-layu-panel .v3-project-quantity[data-empty=true] {background:transparent;border-color:#59677e;}
+.mwi-layu-panel .v3-project-quantity .v3-project-add {min-width:76px;padding:0 6px;font-size:12px;font-weight:650;color:#b6c4d7;}
+.mwi-layu-panel .v3-project-quantity[data-emphasis=new][data-empty=true] {background:#64e1ad;border-color:#64e1ad;}
+.mwi-layu-panel .v3-project-quantity[data-emphasis=new] .v3-project-add {color:#092b20;}
+.mwi-layu-panel .v3-project-quantity[data-emphasis=new][data-empty=false] {border-color:#34d399;}
+.mwi-layu-panel .v3-project-quantity[data-emphasis=new][data-empty=false] button,
+.mwi-layu-panel .v3-project-quantity[data-emphasis=new][data-empty=false] input[data-nonzero=true] {color:#34d399;}
 .mwi-layu-panel .mwi-layu-quantity-arrow svg {width:12px;height:12px;fill:currentColor;}
 .mwi-layu-panel .mwi-layu-quantity-remove-pending {color:#f87171;border-color:#f87171;}
 .mwi-layu-panel .mwi-layu-cart-warning {color:#fbbf24;}
@@ -10774,9 +12637,16 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-settings-help {padding:10px 0;}
 .mwi-layu-panel .mwi-layu-settings-help p {line-height:1.7;}
 .mwi-layu-panel .mwi-layu-undo {padding:6px 14px;background:#192333;}
-.mwi-layu-market-favorite-host {position:relative;}
-.mwi-layu-favorite-toggle {position:absolute;left:-5px;bottom:-4px;background:#151d2b;border:1px solid #3b4966;border-radius:3px;color:#94a3b8;cursor:pointer;padding:2px;width:20px;height:20px;z-index:3;}
-.mwi-layu-favorite-toggle svg {width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;}
+/* Reserve space in native layout as well as moving the button outside the icon. */
+.mwi-layu-market-favorite-host {position:relative;margin-inline-end:26px;flex-shrink:0;}
+.mwi-layu-market-favorite-host:has(> .mwi-layu-market-row-favorite) {margin-inline-end:32px;}
+.mwi-layu-favorite-toggle {position:absolute;left:calc(100% + 2px);right:auto;bottom:0;display:grid;place-items:center;box-sizing:border-box;background:#151d2b;border:1px solid #3b4966;border-radius:4px;color:#a0aec2;cursor:pointer;padding:3px;width:24px;height:24px;z-index:3;}
+.mwi-layu-favorite-toggle svg {width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;pointer-events:none;}
+.mwi-layu-favorite-toggle:hover {background:#263348;border-color:#7dd3fc;}
+.mwi-layu-favorite-toggle:focus-visible {outline:2px solid #38bdf8;outline-offset:2px;}
+/* Dense marketplace rows retain their compact footprint. */
+.mwi-layu-market-row-favorite {left:calc(100% + 8px);}
+.mwi-layu-market-row-favorite svg {width:16px;height:16px;}
 .mwi-layu-favorite-toggle[aria-pressed=true] {color:#fbbf24;}
 .mwi-layu-favorite-toggle[aria-pressed=true] svg {fill:currentColor;}
 
@@ -10787,6 +12657,14 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-controls > .mwi-layu-group-toolbar {padding:4px 0;border:0;flex-wrap:nowrap;}
 .mwi-layu-panel .v3-controls .mwi-layu-listing-filters button {font-size:10px;padding:3px 5px;}
 .mwi-layu-panel .v3-controls .mwi-layu-group-toolbar input {order:2;}
+.mwi-layu-panel .v3-partition-choice-wrap {display:flex;align-items:center;flex-shrink:0;}
+.mwi-layu-panel .v3-partition-add {flex-shrink:0;min-height:32px;margin-inline:5px;white-space:nowrap;}
+.mwi-layu-panel .v3-partition-quick-edit {display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#18202d;border-bottom:1px solid #263348;flex-shrink:0;}
+.mwi-layu-panel .v3-partition-quick-edit label {display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;}
+.mwi-layu-panel .v3-partition-quick-edit input {width:200px;min-width:0;max-width:100%;}
+.mwi-layu-panel .v3-partition-quick-edit button {min-height:32px;}
+.mwi-layu-panel .v3-partition-edit-message {color:#a0aec2;overflow-wrap:anywhere;}
+.mwi-layu-panel .v3-partition-delete {color:#fca5a5;}
 .mwi-layu-panel .v3-back {align-self:flex-start;margin:6px 12px;}
 .mwi-layu-panel .v3-strategy {color:#7dd3fc;font-size:11px;padding:6px;background:#111722;}
 .mwi-layu-panel .v3-ladder-label {position:sticky!important;left:0;z-index:2;font-size:10px!important;}
@@ -11002,7 +12880,7 @@ function getPriceTier(price, direction) {
 /* Wide browser windows can still host narrow game panels. Never hide data columns. */
 .mwi-layu-panel .v3-header > .mwi-layu-group-toolbar {flex-wrap:wrap;}
 .mwi-layu-panel .v3-controls {flex-wrap:wrap;}
-.mwi-layu-panel .v3-controls .mwi-layu-group-nav {min-width:0;flex-basis:350px;}
+.mwi-layu-panel .v3-controls .mwi-layu-group-nav {min-width:0;flex-basis:240px;}
 .mwi-layu-panel .v3-controls > .mwi-layu-group-toolbar {flex-wrap:wrap;}
 @container v3-workspace (max-width: 760px) {
  .mwi-layu-panel .v3-preset-layout,
@@ -11031,6 +12909,314 @@ function getPriceTier(price, direction) {
 })(globalThis);
 
 
+// ---- src/v3/partition-transfer.js ----
+(function initPartitionTransfer(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
+  function create({ element, partitions, onChange, onStatus }) {
+    const document = root.document;
+    const node = (tag, text, className) => {
+      const el = document.createElement(tag);
+      if (text != null) el.textContent = text;
+      if (className) el.className = className;
+      return el;
+    };
+    const button = (text, action) => {
+      const el = node("button", text); el.type = "button"; el.onclick = action; return el;
+    };
+    const tray = node("section", null, "v3-transfer-tray"); tray.hidden = true;
+    let nav, controls, spriteBase, names = {}, gesture = null, editor = null, scope;
+    let focusKey = null, destroyed = false, releaseClickSuppression = null;
+    const groupsOf = item => partitions.groupsOf(item.itemHrid, item.enhancementLevel);
+    const customGroups = () => partitions.groups().filter(group => group.id !== "materials" && group.id !== "unassigned");
+    function identity(item) {
+      const el = node("span", null, "v3-transfer-identity");
+      el.append(app.itemUI.identity(item, spriteBase, names[item.itemHrid] || item.name), node("strong", `+${item.enhancementLevel}`));
+      return el;
+    }
+    function message(_item, text, error = false) { if (error) onStatus(text); }
+    function save(item, ids) {
+      const current = groupsOf(item), next = ids.filter(id => id !== "unassigned");
+      const actual = next.length ? next : ["unassigned"];
+      if (current.length === actual.length && current.every(id => actual.includes(id))) { message(item, t("分区归属未变化。")); return true; }
+      try {
+        partitions.setGroups(item.itemHrid, actual, item.enhancementLevel, { name:names[item.itemHrid] || item.name });
+        return true;
+      } catch (_) { message(item, t("未能保存分区，原归属已保留，请重试。"), true); return false; }
+    }
+    function placeTray() {
+      const parent = element.getBoundingClientRect(), bar = controls.getBoundingClientRect();
+      tray.style.top = `${bar.bottom - parent.top + element.scrollTop}px`;
+      tray.style.maxHeight = `${Math.max(100, Math.min(260, root.innerHeight - bar.bottom - 12))}px`;
+    }
+    function closeEditor(restoreFocus = true) {
+      if (!editor) return;
+      if (restoreFocus) { focusKey = editor.trigger.dataset.focusKey; editor.trigger.focus({ preventScroll:true }); }
+      editor = null; tray.hidden = true; tray.replaceChildren();
+      document.removeEventListener("pointerdown", outsideEditor, true);
+      onChange();
+    }
+    function outsideEditor(event) {
+      if (editor && !tray.contains(event.target) && !editor.trigger.contains(event.target)) closeEditor(false);
+    }
+    function openEditor(item, trigger) {
+      if (gesture) return;
+      if (editor) { closeEditor(); return; }
+      const before = groupsOf(item), chosen = new Set(before.filter(id => id !== "unassigned"));
+      editor = { trigger, item };
+      tray.replaceChildren(identity(item), node("p", t("仅调整当前强化等级；可同时属于多个分区。")));
+      tray.setAttribute("aria-label", t("调整分区"));
+      const options = node("div", null, "v3-transfer-options");
+      const groups = customGroups();
+      for (const group of groups) {
+        const label = node("label"), input = node("input"); input.type = "checkbox"; input.checked = chosen.has(group.id);
+        input.onchange = () => { if (input.checked) chosen.add(group.id); else chosen.delete(group.id); };
+        label.append(input, node("span", group.name)); options.append(label);
+      }
+      if (!groups.length) options.append(node("p", t("暂无自定义分区，请先在分区栏新增分区。")));
+      const hint = node("p"); hint.setAttribute("role", "status");
+      const apply = button(t("保存归属"), () => {
+        try {
+          if (JSON.stringify(groupsOf(item)) !== JSON.stringify(before)) {
+            hint.textContent = t("此等级的分区已变化，请关闭后重新调整。"); return;
+          }
+          if (save(item, [...chosen])) closeEditor();
+          else hint.textContent = t("未能保存分区，原归属已保留，请重试。");
+        } catch (_) { hint.textContent = t("未能读取分区，请关闭后重试。"); }
+      });
+      const clear = button(t("移出全部分区"), () => {
+        chosen.clear(); for (const input of options.querySelectorAll("input")) input.checked = false;
+        hint.textContent = t("保存后回到未分区。");
+      });
+      const actions = node("div", null, "v3-transfer-actions"); actions.append(apply, clear, button(t("取消"), () => closeEditor()));
+      tray.append(options, hint, actions); tray.hidden = false; placeTray(); app.itemUI.decorate(tray, spriteBase, names);
+      tray.onkeydown = event => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeEditor(); } };
+      document.addEventListener("pointerdown", outsideEditor, true);
+      (options.querySelector("input") || apply).focus({ preventScroll:true });
+    }
+    function dropTarget(item, el) {
+      if (!el) return null;
+      const id = el.dataset.transferRemove || el.dataset.partitionId;
+      const current = groupsOf(item);
+      if (id === "all" || id === "unassigned") return { el, ids:[], text:t("移出全部分区，回到未分区") };
+      const group = customGroups().find(group => group.id === id);
+      if (!group) return null;
+      if (el.dataset.transferRemove) return { el, ids:current.filter(value => value !== id), text:t`移出「${group.name}」` };
+      if (current.includes(id)) return { el, ids:current, text:t("已在此分区"), unchanged:true };
+      return { el, ids:[...current.filter(value => value !== "unassigned"), id], text:t`加入「${group.name}」` };
+    }
+    function begin(event, item, source) {
+      if (event.button !== 0 || !event.isPrimary || event.pointerType === "touch" || gesture || editor ||
+          event.target.closest(".mwi-layu-disclosure-sign")) return;
+      const startX = event.clientX, startY = event.clientY;
+      let active = false, pointerHeld = true, ghost, target = null, frame, lastX = startX, lastY = startY, hint;
+      const row = source.closest("tr"), previousHeight = controls.style.minHeight;
+      function highlight(next) {
+        target?.el.classList.remove("v3-transfer-over"); target = next;
+        target?.el.classList.add("v3-transfer-over");
+        const text = target?.text || t("拖到分区标签加入；松手到空白处取消");
+        if (hint && hint.textContent !== text) hint.textContent = text;
+        if (ghost) ghost.dataset.valid = String(Boolean(target));
+      }
+      function hit() {
+        const el = document.elementFromPoint(lastX, lastY);
+        const candidate = el?.closest("[data-transfer-remove], [data-partition-id]");
+        try { highlight(candidate && (nav.contains(candidate) || tray.contains(candidate)) ? dropTarget(item, candidate) : null); }
+        catch (_) { finish(false); }
+      }
+      function scroll() {
+        if (!active) return;
+        const bounds = nav.getBoundingClientRect();
+        if (lastY >= bounds.top && lastY <= bounds.bottom && lastX >= bounds.left && lastX <= bounds.right) {
+          if (lastX < bounds.left + 28) nav.scrollLeft -= 12;
+          else if (lastX > bounds.right - 28) nav.scrollLeft += 12;
+          hit();
+        }
+        frame = root.requestAnimationFrame(scroll);
+      }
+      function activate() {
+        controls.style.minHeight = `${controls.offsetHeight}px`;
+        active = true; row.classList.add("v3-transfer-source"); element.classList.add("v3-item-transferring");
+        ghost = node("div", null, "v3-transfer-ghost"); ghost.setAttribute("aria-hidden", "true"); ghost.append(identity(item)); document.body.append(ghost);
+        tray.replaceChildren(); tray.onkeydown = null;
+        hint = node("p", t("拖到分区标签加入；松手到空白处取消")); hint.setAttribute("role", "status");
+        tray.append(hint);
+        const current = groupsOf(item), removable = customGroups().filter(group => current.includes(group.id));
+        if (removable.length) {
+          const removals = node("div", null, "v3-transfer-removals");
+          for (const group of [...removable, { id:"all", name:null }]) {
+            const target = node("div", group.name ? t`移出「${group.name}」` : t("移出全部分区"));
+            target.dataset.transferRemove = group.id; removals.append(target);
+          }
+          tray.append(removals);
+        }
+        if (!customGroups().length) tray.append(node("p", t("暂无自定义分区，请先在分区栏新增分区。")));
+        tray.hidden = false; placeTray(); app.itemUI.decorate(ghost, spriteBase, names); scroll();
+      }
+      function move(e) {
+        if (e.pointerId !== event.pointerId) return;
+        lastX = e.clientX; lastY = e.clientY;
+        if (!active && Math.hypot(lastX - startX, lastY - startY) < 6) return;
+        e.preventDefault();
+        try { if (!active) activate(); } catch (_) { finish(false); return; }
+        ghost.style.left = `${Math.max(4, Math.min(lastX + 14, root.innerWidth - ghost.offsetWidth - 4))}px`;
+        ghost.style.top = `${Math.max(4, Math.min(lastY + 14, root.innerHeight - ghost.offsetHeight - 4))}px`;
+        hit();
+      }
+      const suppressClick = e => { if (e.detail > 0) { e.preventDefault(); e.stopImmediatePropagation(); } };
+      function blockReleaseClick() {
+        releaseClickSuppression?.();
+        const clear = () => {
+          document.removeEventListener("click", suppressClick, true);
+          document.removeEventListener("pointerup", released, true);
+          document.removeEventListener("pointerdown", clear, true);
+          if (releaseClickSuppression === clear) releaseClickSuppression = null;
+        };
+        const released = () => root.setTimeout(clear, 0);
+        releaseClickSuppression = clear;
+        document.addEventListener("click", suppressClick, true);
+        // Escape/blur may cancel before the user releases the mouse. Keep blocking
+        // that gesture's click, but never swallow a fresh mouse or keyboard action.
+        if (pointerHeld) {
+          document.addEventListener("pointerup", released, true);
+          document.addEventListener("pointerdown", clear, true);
+        } else released();
+      }
+      function finish(commit) {
+        if (!gesture) return;
+        const destination = target;
+        document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+        document.removeEventListener("pointercancel", cancel); document.removeEventListener("keydown", escape, true);
+        root.removeEventListener("blur", cancel); root.cancelAnimationFrame(frame);
+        gesture = null; active = false;
+        highlight(null); ghost?.remove(); row.classList.remove("v3-transfer-source"); element.classList.remove("v3-item-transferring");
+        controls.style.minHeight = previousHeight;
+        tray.hidden = true; tray.replaceChildren();
+        if (ghost) {
+          blockReleaseClick();
+          if (commit && destination) {
+            try { const latest = dropTarget(item, destination.el); if (latest) save(item, latest.ids); }
+            catch (_) { message(item, t("目标分区已变化，请重新拖动。"), true); }
+          }
+        }
+        root.setTimeout(() => { if (!destroyed) onChange(); }, 0);
+      }
+      function up(e) { if (e.pointerId === event.pointerId) { pointerHeld = false; if (active) { lastX = e.clientX; lastY = e.clientY; hit(); } finish(true); } }
+      function cancel(e) { if (!e || e.pointerId == null || e.pointerId === event.pointerId) finish(false); }
+      function escape(e) { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(false); } }
+      gesture = { cancel };
+      document.addEventListener("pointermove", move, { passive:false }); document.addEventListener("pointerup", up);
+      document.addEventListener("pointercancel", cancel); document.addEventListener("keydown", escape, true); root.addEventListener("blur", cancel);
+    }
+    function restore() {
+      if (!focusKey) return;
+      const target = [...element.querySelectorAll("[data-focus-key]")].find(el => el.dataset.focusKey === focusKey);
+      (target || nav?.querySelector("input"))?.focus({ preventScroll:true }); focusKey = null;
+    }
+    return Object.freeze({
+      busy: () => Boolean(gesture || editor),
+      syncScope(value) { if (scope !== value) { gesture?.cancel(); closeEditor(false); scope = value; } },
+      mount(bar, navigation, assets) {
+        controls = bar; nav = navigation; ({ spriteBase, names } = assets);
+        element.append(tray);
+      },
+      bind(source, item) {
+        source.title = t("单击展开；拖动调整分区；右键或 Shift+F10 打开分区设置"); source.draggable = false;
+        source.addEventListener("dragstart", event => event.preventDefault());
+        source.addEventListener("pointerdown", event => begin(event, item, source));
+        source.dataset.focusKey = `item-partition:${app.materialCart.key(item)}`;
+        source.setAttribute("aria-keyshortcuts", "Shift+F10");
+        source.addEventListener("keydown", event => {
+          if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") {
+            event.preventDefault(); event.stopPropagation(); openEditor(item, source);
+          }
+        });
+        source.addEventListener("contextmenu", event => {
+          event.preventDefault(); if (!gesture) openEditor(item, source);
+        });
+        return source;
+      },
+      restore,
+      destroy() { destroyed = true; gesture?.cancel(); releaseClickSuppression?.(); closeEditor(false); tray.remove(); }
+    });
+  }
+  app.v3PartitionTransfer = Object.freeze({ create });
+})(globalThis);
+
+
+// ---- src/v3/operation-history.js ----
+(function initOperationHistory(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (i < values.length ? values[i] : ""), "");
+  function create({ partitions, onChange }) {
+    const document = root.document;
+    const node = (tag, text, className) => {
+      const el = document.createElement(tag); if (text != null) el.textContent = text; if (className) el.className = className; return el;
+    };
+    const button = (text, action) => { const el = node("button", text); el.type = "button"; el.onclick = action; return el; };
+    const element = node("section", null, "v3-operation-history"); element.setAttribute("aria-label", t("操作记录"));
+    const toolbar = node("div", null, "v3-history-toolbar"), label = node("label", t("保存天数")), days = node("input");
+    days.type = "number"; days.min = "1"; days.max = "3650"; days.step = "1"; days.required = true;
+    days.setAttribute("aria-label", t("操作记录保存天数")); days.value = String(partitions.historyRetentionDays());
+    days.dataset.focusKey = "history-retention";
+    let dirty = false, limit = 50, assets = {}, signature = "";
+    days.oninput = () => { dirty = true; };
+    const status = node("p"); status.setAttribute("role", "status");
+    const save = button(t("保存天数"), () => {
+      if (!days.reportValidity()) return;
+      try {
+        partitions.setHistoryRetentionDays(Number(days.value)); dirty = false;
+        status.textContent = t`已设置保存 ${Number(days.value)} 天，已清理到期记录。`;
+        render(assets); onChange();
+      } catch (error) { status.textContent = error.message || t("保存失败，请重试"); }
+    });
+    label.append(days); toolbar.append(label, save);
+    const list = node("ol", null, "v3-history-list");
+    const more = button(t("显示更多记录"), () => { limit += 50; signature = ""; render(assets); }); more.hidden = true;
+    element.append(node("h3", t("操作记录")), node("p", t("记录分区归属调整，包含拖动、分区设置和预设添加；只影响对应物品的强化等级。")), toolbar,
+      node("p", t("默认保存 7 天，可设为 1–3650 天。缩短期限会立即清理到期记录，清理后无法撤销。")), status, list, more);
+    function render(nextAssets) {
+      assets = nextAssets;
+      if (!dirty && document.activeElement !== days) days.value = String(partitions.historyRetentionDays());
+      const entries = partitions.operationHistory();
+      const reasons = entries.map(entry => partitions.operationStatus(entry));
+      const next = JSON.stringify([entries, reasons, limit, assets.names, assets.spriteBase]);
+      if (next === signature) return;
+      const scrollTop = list.scrollTop;
+      const focused = list.contains(document.activeElement) ? document.activeElement.closest("[data-operation-id]")?.dataset.operationId : null;
+      signature = next; list.replaceChildren();
+      if (!entries.length) list.append(node("li", t("暂无操作记录。拖动物品调整分区后，可在这里查看和撤销。"), "v3-history-empty"));
+      for (const [index, entry] of entries.slice(0, limit).entries()) {
+        const row = node("li", null, "v3-history-entry"); row.dataset.operationId = entry.id; row.tabIndex = -1; row.dataset.focusKey = `operation:${entry.id}`;
+        const heading = node("div", null, "v3-history-identity");
+        heading.append(app.itemUI.identity(entry, assets.spriteBase, assets.names[entry.itemHrid] || entry.name), node("strong", `+${entry.enhancementLevel}`));
+        const timestamp = node("time", new Date(entry.at).toLocaleString(app.i18n?.locale)); timestamp.dateTime = new Date(entry.at).toISOString();
+        const describe = ids => ids.map(id => id === "unassigned" ? t("未分区") : entry.groupNames[id] || id).join("、");
+        const detail = node("div", null, "v3-history-detail");
+        detail.append(heading, node("p", t`分区：${describe(entry.before)} → ${describe(entry.after)}`), timestamp);
+        const action = button(t("撤销此操作"), () => {
+          try { partitions.undoOperation(entry.id); status.textContent = t("已撤销此条分区调整。"); render(assets); onChange(); }
+          catch (error) { status.textContent = error.message || t("无法撤销，请重新调整分区。"); signature = ""; render(assets); }
+        });
+        action.dataset.focusKey = `undo-operation:${entry.id}`;
+        const reason = reasons[index]; action.disabled = Boolean(reason);
+        const controls = node("div", null, "v3-history-entry-actions");
+        controls.append(action); if (reason) controls.append(node("span", reason));
+        row.append(detail, controls); list.append(row);
+      }
+      list.scrollTop = scrollTop;
+      if (focused) [...list.children].find(row => row.dataset.operationId === focused)?.focus({ preventScroll:true });
+      more.hidden = entries.length <= limit;
+      app.itemUI.decorate(list, assets.spriteBase, assets.names);
+    }
+    return Object.freeze({ element, render });
+  }
+  app.v3OperationHistory = Object.freeze({ create });
+})(globalThis);
+
+
 // ---- src/v3/workspace.js ----
 (function initV3Workspace(root) {
   "use strict";
@@ -11043,6 +13229,9 @@ function getPriceTier(price, direction) {
     return (value / unit[0]).toFixed(2).replace(/\.?0+$/, "") + unit[1];
   };
   const time = (value) => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(app.i18n?.locale) : t("未知");
+  const compactMoney = value => Number.isFinite(value)
+    ? (value < 0 ? "-" : "") + app.priceSimulationUI.formatPrice(Math.abs(value)).toUpperCase() : "—";
+  const exactMoney = value => value.toLocaleString(app.i18n?.locale || "zh-CN", { maximumFractionDigits: 20 });
   // Fixed-size layers animate only clipping, never width/left or surrounding layout.
   const planMotion = new WeakMap();
   const motionClip = (left, width) => `inset(0% ${Math.max(0, 100 - left - width)}% 0% ${left}%)`;
@@ -11136,7 +13325,7 @@ function getPriceTier(price, direction) {
     return "≤ " + [days && t`${days}天`, hours && t`${hours}小时`, minutes && t`${minutes}分`,
       (rest || seconds === 0) && t`${rest}秒`].filter(Boolean).join(" ");
   };
-  function create({ partitions, cart, presets, onChange, onOpen, onCraft, onEnhance, onPrice, onStatus, createStatus }) {
+  function create({ partitions, cart, enhancementSchedule, presets, onChange, onOpen, onCraft, onEnhance, onPrice, onStatus, createStatus, notifications }) {
     const document = root.document;
     function node(tag, text, className) {
       const el = document.createElement(tag); if (text != null) el.textContent = text;
@@ -11175,21 +13364,6 @@ function getPriceTier(price, direction) {
       return el;
     }
     const element = node("div", null, "mwi-layu-partitions");
-    // Update only the elapsed labels, preserving focus and table scroll positions.
-    function marketAgeText(at) {
-      const seconds = Math.max(0, Math.floor((Date.now() - at) / 1000));
-      const days = Math.floor(seconds / 86400), hours = Math.floor(seconds % 86400 / 3600);
-      const minutes = Math.floor(seconds % 3600 / 60), rest = seconds % 60;
-      const elapsed = [days && t`${days}天`, hours && t`${hours}小时`, minutes && t`${minutes}分`,
-        !days && !hours && t`${rest}秒`].filter(Boolean).join(" ");
-      return t`市场页面刷新于 ${elapsed}前`;
-    }
-    function updateMarketAges() {
-      for (const label of element.querySelectorAll("[data-market-refreshed-at]")) {
-        label.textContent = marketAgeText(Number(label.dataset.marketRefreshedAt));
-      }
-    }
-    const marketAgeTimer = root.setInterval(updateMarketAges, 1000);
     const pageState = app.v3ViewState.create(root.localStorage, onStatus);
     let { workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide, referenceFallbackSide } = pageState.read();
     // Old open drawers resume in the new peer page; keep archived height for backups.
@@ -11198,7 +13372,7 @@ function getPriceTier(price, direction) {
     let renderedPage = null;
     const pageViews = new Map();
     let lootPage = null;
-    let settingsPage = null, matrixQuery = "";
+    let settingsPage = null, operationHistoryUI = null, matrixQuery = "";
     const savePage = () => pageState.save({ workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide, referenceFallbackSide });
     // Persistent simulation callbacks must read the latest per-level reference price.
     let referencePrices = new Map();
@@ -11221,9 +13395,64 @@ function getPriceTier(price, direction) {
       "ask-minus":t("未设 · 用左−"), "bid-plus":t("未设 · 用右+") })[referenceFallbackSide];
     const favoriteManager = app.v3FavoriteManagement.create({ store: app.marketFavoritesStore.createStore(root.localStorage), partitions, onChange, createStatus });
     const presetView = presets ? app.partitionPresetUI.create({ presets, onChange, preferences, onOpen, createStatus }) : null;
-    let partitionGesture = null;
+    const partitionTransfer = app.v3PartitionTransfer.create({ element, partitions, onChange, onStatus });
+    let partitionGesture = null, partitionPressCleanup = null;
     const partitionEdits = new Map();
-    function bindPartitionSorting(nav) {
+    let quickPartition = null, partitionFocus = null;
+    function openPartitionEditor(group = null) {
+      quickPartition = { id:group?.id || null, value:group?.name || "", deleting:false };
+      partitionFocus = "quick-partition-name"; onChange();
+    }
+    function closePartitionEditor() {
+      partitionFocus = quickPartition?.id ? `partition-edit:${quickPartition.id}` : "partition-add";
+      quickPartition = null; document.activeElement?.blur(); onChange();
+    }
+    function partitionEditor(groups) {
+      const draft = quickPartition;
+      const group = groups.find(group => group.id === draft.id);
+      const form = node("form", null, "v3-partition-quick-edit");
+      form.setAttribute("aria-label", draft.id ? t("编辑分区") : t("添加分区"));
+      const caption = node("label", draft.id ? t("分区名称") : t("新分区名称"));
+      const input = node("input"); input.value = draft.value; input.maxLength = 40;
+      input.setAttribute("aria-label", t("分区名称")); input.dataset.focusKey = "quick-partition-name";
+      const message = node("span", null, "v3-partition-edit-message"); message.setAttribute("role", "status");
+      const save = button(draft.id ? t("保存名称") : t("添加分区"), () => commit(false));
+      const remove = button(t("删除分区"), () => {
+        draft.deleting = true; update(); confirm.focus();
+      });
+      const confirm = button(t("删除此分区"), () => commit(true)); confirm.className = "v3-partition-delete";
+      const cancel = button(t("取消"), () => {
+        if (draft.deleting) { draft.deleting = false; update(); input.focus(); }
+        else closePartitionEditor();
+      });
+      function update() {
+        save.disabled = !draft.value.trim() || Boolean(draft.id && !group);
+        input.hidden = save.hidden = draft.deleting;
+        caption.hidden = draft.deleting;
+        remove.hidden = !draft.id || draft.deleting || !group;
+        confirm.hidden = !draft.deleting || !group;
+        message.textContent = draft.id && !group ? t("分区已不存在，请关闭后重试。") : draft.deleting
+          ? t`删除「${group.name}」？保留收藏及其他分区归属；无其他归属的物品回到未分区。` : "";
+      }
+      function commit(deleting) {
+        try {
+          if (deleting) partitions.remove(draft.id);
+          else if (draft.id) partitions.rename(draft.id, draft.value);
+          else partitions.add(draft.value);
+          if (deleting) draft.id = null;
+          closePartitionEditor();
+          onStatus(deleting ? t("已删除分区，收藏已保留。") : t("分区已保存。"));
+        } catch (error) { message.textContent = error.message || t("保存失败，请重试"); }
+      }
+      input.oninput = () => { draft.value = input.value; update(); };
+      form.onsubmit = event => { event.preventDefault(); if (!draft.deleting && !save.disabled) commit(false); };
+      form.onkeydown = event => {
+        if (event.key === "Escape" && !event.isComposing) { event.preventDefault(); closePartitionEditor(); }
+        if (event.key === "Enter" && event.isComposing) event.preventDefault();
+      };
+      caption.append(input); form.append(caption, save, remove, confirm, cancel, message); update(); return form;
+    }
+    function bindPartitionSorting(nav, editableGroups, groups) {
       const choices = () => [...nav.querySelectorAll("[data-partition-id]")];
       const saveOrder = () => { partitionOrder = choices().map(el => el.dataset.partitionId); savePage(); };
       let suppressClick = false;
@@ -11231,8 +13460,14 @@ function getPriceTier(price, direction) {
         if (suppressClick) { event.preventDefault(); event.stopImmediatePropagation(); }
       }, true);
       for (const label of choices()) {
-        label.title = t("拖动改变分区顺序（触屏长按）；Alt + 左右方向键排序");
+        const editable = editableGroups.has(label.dataset.partitionId);
+        const edit = () => openPartitionEditor(groups.find(group => group.id === label.dataset.partitionId));
+        label.title = editable ? t("长按编辑分区；F2 编辑；拖动或 Alt + 左右方向键排序") : t("拖动或 Alt + 左右方向键排序");
+        label.querySelector("input").title = label.title;
         label.addEventListener("keydown", event => {
+          if (editable && event.key === "F2" && !event.repeat && !event.isComposing) {
+            event.preventDefault(); edit(); return;
+          }
           if (!event.altKey || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
           event.preventDefault();
           const list = choices(), index = list.indexOf(label), other = list[index + (event.key === "ArrowLeft" ? -1 : 1)];
@@ -11243,16 +13478,36 @@ function getPriceTier(price, direction) {
         label.addEventListener("click", event => {
           if (suppressClick) { event.preventDefault(); event.stopImmediatePropagation(); }
         }, true);
-        label.addEventListener("contextmenu", event => { if (partitionGesture) event.preventDefault(); });
+        label.addEventListener("contextmenu", event => { if (partitionGesture || editable) event.preventDefault(); });
         label.addEventListener("pointerdown", event => {
-          if (event.button !== 0 || !event.isPrimary || partitionGesture) return;
+          if (event.target.closest("button") || event.button !== 0 || !event.isPrimary || partitionGesture) return;
           const initial = choices(), startX = event.clientX, startY = event.clientY;
           let active = false;
           function activate() {
             active = true; suppressClick = true;
             label.classList.add("v3-partition-dragging");
           }
-          const timer = root.setTimeout(activate, 400);
+          const timer = root.setTimeout(() => {
+            if (!editable) { activate(); return; }
+            finish(false);
+            // The editor replaces the pressed node: consume the release click even on its replacement.
+            partitionPressCleanup?.();
+            const blockClick = e => { e.preventDefault(); e.stopImmediatePropagation(); cleanup(); };
+            const released = () => root.setTimeout(cleanup, 0);
+            function cleanup() {
+              document.removeEventListener("click", blockClick, true);
+              document.removeEventListener("pointerup", released, true);
+              document.removeEventListener("pointercancel", cleanup, true);
+              root.removeEventListener("blur", cleanup);
+              partitionPressCleanup = null;
+            }
+            partitionPressCleanup = cleanup;
+            document.addEventListener("click", blockClick, true);
+            document.addEventListener("pointerup", released, true);
+            document.addEventListener("pointercancel", cleanup, true);
+            root.addEventListener("blur", cleanup);
+            edit();
+          }, 500);
           function finish(commit) {
             root.clearTimeout(timer);
             document.removeEventListener("pointermove", move);
@@ -11323,6 +13578,9 @@ function getPriceTier(price, direction) {
     const expanded = new Set(savedPreferences.expanded);
     let projectOrderScope = null;
     let projectOrder = [];
+    let columnGesture = null, columnRenderPending = false, retainOrderOnce = false;
+    let salePriceOrderHeld = false;
+    function releaseProjectOrder() { salePriceOrderHeld = false; projectOrderScope = null; }
     // These regions are rebuilt on market/character refresh. Keep offsets in memory
     // for the current render only; do not persist them into another page/session.
     const scrollRegionSelector = [
@@ -11577,12 +13835,23 @@ function getPriceTier(price, direction) {
       const columns = app.marketPartitions.projectColumns;
       const widths = partitions.columnWidths();
       const colgroup = node("colgroup");
-      const cols = columns.map(column => { const col = node("col"); col.style.width = `${widths[column.key]}px`; colgroup.append(col); return col; });
+      const cols = columns.map(column => { const col = node("col"); col.dataset.projectColumn = column.key; col.style.width = `${widths[column.key]}px`; colgroup.append(col); return col; });
       table.prepend(colgroup);
       const updateTableWidth = () => { table.style.width = `max(100%, ${syncProjectWidth(widths)})`; };
       updateTableWidth();
-      [...table.tHead.rows[0].cells].forEach((th, index) => {
-        const column = columns[index], key = column.key, label = th.textContent;
+      const headers = [...table.tHead.rows[0].cells];
+      headers.forEach((th, index) => { th.dataset.projectColumn = columns[index].key; });
+      headers.forEach((th, index) => {
+        // Keep the two data columns, but expose only the group's outer resize edge.
+        if (columns[index].key === "market") return;
+        const grouped = columns[index].key === "bid";
+        const indices = grouped ? [columns.findIndex(column => column.key === "market"), index] : [index];
+        const members = indices.map(i => columns[i]);
+        const column = grouped ? { key: "market-prices", min: members.reduce((sum, col) => sum + col.min, 0),
+          max: members.reduce((sum, col) => sum + col.max, 0), width: members.reduce((sum, col) => sum + col.width, 0) } : members[0];
+        const key = column.key, label = grouped ? `${t("市场左价")} / ${t("市场右价")}` : th.textContent;
+        const currentWidth = () => members.reduce((sum, col) => sum + widths[col.key], 0);
+        const ratio = widths[members[0].key] / currentWidth();
         const grip = node("span", null, "mwi-layu-column-resizer"); grip.tabIndex = 0;
         grip.setAttribute("role", "separator"); grip.setAttribute("aria-orientation", "vertical");
         grip.setAttribute("aria-label", t`调整列宽：${label}`);
@@ -11591,18 +13860,24 @@ function getPriceTier(price, direction) {
         grip.title = t`调整列宽：${label}`;
         function apply(value) {
           const width = Math.max(column.min, Math.min(column.max, Math.round(value)));
-          widths[key] = width; cols[index].style.width = `${width}px`; updateTableWidth();
+          const first = grouped ? Math.max(members[0].min, width - members[1].max,
+            Math.min(members[0].max, width - members[1].min, Math.round(width * ratio))) : width;
+          indices.forEach((i, part) => {
+            const amount = part === 0 ? first : width - first;
+            widths[columns[i].key] = amount; cols[i].style.width = `${amount}px`;
+          });
+          updateTableWidth();
           grip.setAttribute("aria-valuenow", width); grip.setAttribute("aria-valuetext", t`${width} 像素`);
         }
         function save(previous) {
-          if (widths[key] === previous) return;
-          try { partitions.setColumnWidth(key, widths[key]); onStatus(""); }
+          if (currentWidth() === previous) return;
+          try { partitions.setColumnWidths(Object.fromEntries(members.map(col => [col.key, widths[col.key]]))); onStatus(""); }
           catch (_error) { apply(previous); onStatus(t("列宽保存失败，已恢复原宽度，请重试。")); }
         }
         function finish(cancel) {
           if (resizeSession?.grip !== grip) return;
           const session = resizeSession; resizeSession = null;
-          const changed = widths[key] !== session.width;
+          const changed = currentWidth() !== session.width;
           if (cancel) apply(session.width); else save(session.width);
           grip.classList.remove("mwi-layu-column-resizing");
           if (grip.hasPointerCapture(session.pointerId)) grip.releasePointerCapture(session.pointerId);
@@ -11611,8 +13886,8 @@ function getPriceTier(price, direction) {
         grip.addEventListener("pointerdown", event => {
           if (event.button !== 0 || !event.isPrimary || resizeSession) return;
           event.preventDefault(); event.stopPropagation(); grip.focus({ preventScroll: true });
-          resizeSession = { grip, pointerId: event.pointerId, x: event.clientX, width: widths[key],
-            scale: th.getBoundingClientRect().width / widths[key], cancel: () => finish(true) };
+          resizeSession = { grip, pointerId: event.pointerId, x: event.clientX, width: currentWidth(),
+            scale: indices.reduce((sum, i) => sum + headers[i].getBoundingClientRect().width, 0) / currentWidth(), cancel: () => finish(true) };
           grip.setPointerCapture(event.pointerId); grip.classList.add("mwi-layu-column-resizing");
         });
         grip.addEventListener("pointermove", event => {
@@ -11625,20 +13900,114 @@ function getPriceTier(price, direction) {
         grip.addEventListener("lostpointercapture", event => { if (resizeSession?.pointerId === event.pointerId) finish(true); });
         grip.addEventListener("click", event => event.stopPropagation());
         grip.addEventListener("dblclick", event => {
-          event.preventDefault(); event.stopPropagation(); const previous = widths[key]; apply(column.width); save(previous);
+          event.preventDefault(); event.stopPropagation(); const previous = currentWidth(); apply(column.width); save(previous);
         });
         grip.addEventListener("keydown", event => {
           if (event.key === "Escape" && resizeSession?.grip === grip) { event.preventDefault(); finish(true); return; }
           if (resizeSession) return;
           const step = event.shiftKey ? 20 : 5;
-          const next = { ArrowLeft: widths[key] - step, ArrowRight: widths[key] + step, Home: column.min, End: column.max, Enter: column.width }[event.key];
+          const next = { ArrowLeft: currentWidth() - step, ArrowRight: currentWidth() + step, Home: column.min, End: column.max, Enter: column.width }[event.key];
           if (next == null) return;
-          event.preventDefault(); event.stopPropagation(); const previous = widths[key]; apply(next); save(previous);
+          event.preventDefault(); event.stopPropagation(); const previous = currentWidth(); apply(next); save(previous);
         });
-        apply(widths[key]); th.append(grip);
+        apply(currentWidth()); th.append(grip);
       });
     }
+    function projectCell(tr, key) { return [...tr.cells].find(cell => cell.dataset.projectColumn === key); }
+    function arrangeProjectColumns(table, order = partitions.columnOrder()) {
+      const keys = order.flatMap(key => key === "market" ? ["market", "bid"] : [key]);
+      for (const container of [table.querySelector("colgroup"), table.tHead.rows[0], ...table.querySelectorAll(".mwi-layu-project-row")]) {
+        const cells = new Map([...container.children].map(cell => [cell.dataset.projectColumn, cell]));
+        for (const key of keys) if (cells.has(key)) container.append(cells.get(key));
+      }
+    }
+    function bindColumnSorting(listing) {
+      const table = listing.body.parentElement, head = table.tHead, region = listing.region;
+      const headers = [...head.rows[0].cells];
+      const groupKey = th => th.dataset.projectColumn === "bid" ? "market" : th.dataset.projectColumn;
+      const groupHeaders = key => headers.filter(th => groupKey(th) === key);
+      let suppressClick = false;
+      for (const type of ["click", "dblclick"]) head.addEventListener(type, event => {
+        if (suppressClick) { event.preventDefault(); event.stopImmediatePropagation(); }
+      }, true);
+      function commit(order) {
+        if (order.join() === partitions.columnOrder().join()) return;
+        try { partitions.setColumnOrder(order); retainOrderOnce = true; onStatus(""); }
+        catch (_error) { onStatus(t("列顺序保存失败，已保留原顺序，请重试。")); }
+        onChange();
+      }
+      for (const th of headers) {
+        const key = groupKey(th);
+        if (th.dataset.projectColumn !== "bid") {
+          th.tabIndex = 0;
+          th.dataset.focusKey = `column-order:${key}`;
+          th.setAttribute("aria-description", t("拖动调整列顺序；Alt + 左右方向键移动"));
+        }
+        th.addEventListener("keydown", event => {
+          if (!event.altKey || !["ArrowLeft", "ArrowRight"].includes(event.key) || event.target.closest("[role=separator]")) return;
+          event.preventDefault(); event.stopPropagation();
+          const order = partitions.columnOrder(), index = order.indexOf(key), target = index + (event.key === "ArrowLeft" ? -1 : 1);
+          if (target < 0 || target >= order.length) return;
+          [order[index], order[target]] = [order[target], order[index]]; commit(order);
+        });
+        th.addEventListener("pointerdown", event => {
+          if (event.button !== 0 || !event.isPrimary || columnGesture || resizeSession ||
+              event.target.closest('[role=separator],input,select,textarea')) return;
+          const original = partitions.columnOrder(), startX = event.clientX, startY = event.clientY;
+          let active = false, x = startX, before = null, frame = 0;
+          const clearMarkers = () => headers.forEach(cell => cell.classList.remove("v3-column-drop-before", "v3-column-drop-after"));
+          function target() {
+            const others = original.filter(id => id !== key);
+            before = others.find(id => {
+              const cells = groupHeaders(id), left = cells[0].getBoundingClientRect().left, right = cells.at(-1).getBoundingClientRect().right;
+              return x < (left + right) / 2;
+            }) || null;
+            clearMarkers();
+            const cells = groupHeaders(before || others.at(-1));
+            (before ? cells[0] : cells.at(-1)).classList.add(before ? "v3-column-drop-before" : "v3-column-drop-after");
+          }
+          function scroll() {
+            if (!active) return;
+            const bounds = region.getBoundingClientRect();
+            const delta = x < bounds.left + 28 ? -16 : x > bounds.right - 28 ? 16 : 0;
+            if (delta) { region.scrollLeft += delta; target(); }
+            frame = root.requestAnimationFrame(scroll);
+          }
+          function finish(save) {
+            document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+            document.removeEventListener("pointercancel", cancel); document.removeEventListener("keydown", escape); root.removeEventListener("blur", cancel);
+            root.cancelAnimationFrame(frame); clearMarkers();
+            groupHeaders(key).forEach(cell => cell.classList.remove("v3-column-dragging"));
+            columnGesture = null;
+            if (active && save) {
+              const order = original.filter(id => id !== key); order.splice(before ? order.indexOf(before) : order.length, 0, key); commit(order);
+            }
+            if (columnRenderPending) { columnRenderPending = false; onChange(); }
+            if (active) root.setTimeout(() => { suppressClick = false; }, 0);
+          }
+          function move(next) {
+            if (next.pointerId !== event.pointerId) return;
+            x = next.clientX;
+            if (!active && Math.hypot(x - startX, next.clientY - startY) < 6) return;
+            if (!active) {
+              active = true; suppressClick = true;
+              groupHeaders(key).forEach(cell => cell.classList.add("v3-column-dragging"));
+              frame = root.requestAnimationFrame(scroll);
+            }
+            next.preventDefault(); target();
+          }
+          const up = next => { if (next.pointerId === event.pointerId) finish(true); };
+          const cancel = () => finish(false);
+          const escape = next => { if (next.key === "Escape") { next.preventDefault(); finish(false); } };
+          columnGesture = { cancel };
+          document.addEventListener("pointermove", move, { passive:false }); document.addEventListener("pointerup", up);
+          document.addEventListener("pointercancel", cancel); document.addEventListener("keydown", escape); root.addEventListener("blur", cancel);
+        });
+      }
+    }
     let structureSignature = "", refreshLive = null, renderRevision = 0;
+    const enhancementUI = app.enhancementScheduleUI.create({ store:enhancementSchedule,
+      onChange() { structureSignature = ""; onChange(); }, onStatus, onOpen, node, button, table, row });
     // Keep loaded SVG instances when a changed detail/cart region needs new controls.
     // New controls retain their own closures; no generic DOM morphing of event handlers.
     function replaceRegion(previous, next) {
@@ -11658,12 +14027,16 @@ function getPriceTier(price, direction) {
       resumePlanMotion(next, motion);
     }
     function render(snapshot) {
+      if (enhancementUI.busy(snapshot, workspaceTab)) return;
+      if (columnGesture) { columnRenderPending = true; return; }
+      partitionTransfer.syncScope(`${snapshot.cartScope}|${snapshot.wages.state().simulationOwner}`);
+      if (partitionTransfer.busy()) return;
       if (partitionGesture) return;
       if (resizeSession) { resizePending = true; return; }
       if (composingSearch) return;
       // Keep the workspace stable even when filters leave no project table.
       syncProjectWidth(partitions.columnWidths());
-      let { items, wages, prices, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError } = snapshot;
+      let { items, wages, prices, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError, enhancementItems = [], enhancementError = "" } = snapshot;
       salePriceWages = wages;
       referencePrices = new Map(items.map(item => [app.materialCart.key(item), item.customPrice]));
       if (cartError || !cartItems.some(item => item.quantity === 1 && `${cartScope}|${app.materialCart.key(item)}` === pendingRemoval)) clearPendingRemoval();
@@ -11679,7 +14052,7 @@ function getPriceTier(price, direction) {
       const materialItems = items.map(item => wages.materialInfo(item)).filter(item => item.category === "materials");
       partitions.setMaterialHrids([...materialItems, ...catalog.rows.filter(item => wages.materialInfo(item).category !== "equipment")].map(item => item.itemHrid));
       const materialRows = new Map(catalog.rows.map(item => [app.materialCart.key(item), item]));
-      for (const item of items.filter(item => partitions.groupsOf(item.itemHrid).includes("materials"))) {
+      for (const item of items.filter(item => partitions.groupsOf(item.itemHrid, item.enhancementLevel).includes("materials"))) {
         if (!materialRows.has(app.materialCart.key(item))) materialRows.set(app.materialCart.key(item), {
           ...wages.materialInfo(item), sources: [], manufacturing: 0, enhancement: 0, required: 0, shortage: 0
         });
@@ -11687,10 +14060,10 @@ function getPriceTier(price, direction) {
       catalog.rows = [...materialRows.values()];
       const showMaterials = workspaceTab === "materials";
       const showProjects = workspaceTab === "projects";
-      const all = [...new Map(items.map(item => [item.itemHrid, { item, sortIndex: wages.materialInfo(item).sortIndex }])).values()]
+      const all = [...new Map(items.map(item => [app.materialCart.key(item), { item, sortIndex: wages.materialInfo(item).sortIndex }])).values()]
         .sort((a, b) => app.marketPartitions.compare(a.sortIndex, b.sortIndex, 1));
       const matchesSearch = item => !search.trim() || `${names[item.itemHrid] || item.name} +${item.enhancementLevel} ${item.itemHrid}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase());
-      let chosen = items.filter(item => matchesSearch(item) && partitions.groupsOf(item.itemHrid).some(id => selected.includes(id) && id !== "materials") &&
+      let chosen = items.filter(item => matchesSearch(item) && partitions.groupsOf(item.itemHrid, item.enhancementLevel).some(id => selected.includes(id) && id !== "materials") &&
         !(showMaterials && materialRows.has(app.materialCart.key(item)))).map(item => {
         const quote = prices.quote(item);
         const simulation = simulationPanels.get(app.materialCart.key(item));
@@ -11713,24 +14086,26 @@ function getPriceTier(price, direction) {
         (sort === "name" ? compare(a.item.enhancementLevel, b.item.enhancementLevel, direction) : 0));
       const active = document.activeElement;
       if (element.contains(active) && active.tagName === "INPUT" && !["checkbox", "search", "radio"].includes(active.type)) return;
-      // Keep open comparisons in place while their live/simulated profits change.
-      // Explicit navigation/sorting and closing the last visible detail apply the
-      // current ranking again. This order belongs only to this mounted workspace.
+      // Keep comparisons and basis switches in place until an explicit sort.
+      // A basis switch also holds closed rows through subsequent quote refreshes.
       const nextOrderScope = JSON.stringify([cartScope, owner, workspaceTab, selected, search, listingFilter, sort, direction]);
-      if (nextOrderScope === projectOrderScope && chosen.some(plan => expanded.has(app.materialCart.key(plan.item)))) {
+      if (nextOrderScope !== projectOrderScope) salePriceOrderHeld = false;
+      if (nextOrderScope === projectOrderScope && (retainOrderOnce || salePriceOrderHeld || chosen.some(plan => expanded.has(app.materialCart.key(plan.item))))) {
         const ranks = new Map(projectOrder.map((key, index) => [key, index]));
         chosen.sort((a, b) => (ranks.get(app.materialCart.key(a.item)) ?? ranks.size) -
           (ranks.get(app.materialCart.key(b.item)) ?? ranks.size));
       }
       projectOrderScope = nextOrderScope;
+      retainOrderOnce = false;
       projectOrder = chosen.map(plan => app.materialCart.key(plan.item));
-      const nextStructure = JSON.stringify([items, cartItems, cartScope, cartError, partitions.read(), names, spriteBase, skillSpriteBase,
-        workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide, referenceFallbackSide, search, listingFilter, sort, direction,
+      const nextStructure = JSON.stringify([items, cartItems, enhancementItems, enhancementError, cartScope, cartError, partitions.read(), names, spriteBase, skillSpriteBase,
+        workspaceTab, managementTab, drawerOpen, drawerHeight, partitionOrder, salePriceSide, referenceFallbackSide, salePriceOrderHeld, search, listingFilter, sort, direction,
         materialSort, materialDirection, shortagesOnly, [...expanded], [...historyExpanded], [...simulationEnabled],
-        [...quantityDrafts], [...priceDrafts], pendingRemoval, allocationOwner, cartSort, [...cartDetails],
+        [...quantityDrafts], [...priceDrafts], pendingRemoval, allocationOwner, cartSort, [...cartDetails], quickPartition,
         chosen.map(plan => app.materialCart.key(plan.item)).sort(), catalog.rows.map(app.materialCart.key).sort(), wages.settings()]);
       if (nextStructure === structureSignature && refreshLive) {
         refreshLive(snapshot, chosen, catalog);
+        partitionTransfer.restore();
         element.dataset.renderRevision = String(++renderRevision);
         return;
       }
@@ -11748,17 +14123,31 @@ function getPriceTier(price, direction) {
       const previousPlanMotion = capturePlanMotion(element);
       element.replaceChildren();
       const pages = node("nav", null, "v3-tabs"); pages.setAttribute("aria-label", t("工作区页面"));
-      for (const [id, label] of [["projects", t("列表")], ["manage", t("分区")], ["cart", t("备料车")], ["settings", t("设置")]]) {
+      for (const [id, label] of [["projects", t("列表")], ["manage", t("分区")], ["cart", t("备料车")], ["enhancement", t("强化计划")], ["settings", t("设置")]]) {
         const tab = button(label, () => { workspaceTab = id; drawerOpen = false; savePage(); onChange(); });
         tab.dataset.view = id;
         tab.setAttribute("aria-current", workspaceTab === id || id === "projects" && showMaterials ? "page" : "false");
-        if (id === "cart") tab.append(node("span", String(cartItems.length), "v3-cart-badge"));
+        if (id === "cart" || id === "enhancement") tab.append(node("span", String(id === "cart" ? cartItems.length : enhancementItems.length), "v3-cart-badge"));
         pages.append(tab);
       }
       element.append(pages);
       if (workspaceTab === "loot") {
         const back = button(t("返回强化项目"), () => { workspaceTab = "projects"; savePage(); onChange(); });
         back.className = "v3-back"; element.append(back);
+      }
+      if (workspaceTab === "enhancement") {
+        const page = node("section", null, "v3-cart-page"); page.setAttribute("aria-label", t("强化计划与采购"));
+        page.append(enhancementUI.render(snapshot)); element.append(page);
+        app.itemUI.decorate(page, spriteBase, names); restoreView(savedView);
+        let revision = JSON.stringify([wages.state(), prices.state()]);
+        refreshLive = next => {
+          const nextRevision = JSON.stringify([next.wages.state(), next.prices.state()]);
+          if (nextRevision === revision) return;
+          const saved = rememberView(), panel = enhancementUI.render(next);
+          app.itemUI.decorate(panel, next.spriteBase, next.names); page.replaceChildren(panel);
+          revision = nextRevision; restoreView(saved);
+        };
+        return;
       }
       if (workspaceTab === "cart") {
         const page = node("section", null, "v3-cart-page"); page.setAttribute("aria-label", t("备料与采购"));
@@ -11787,56 +14176,61 @@ function getPriceTier(price, direction) {
           settingsPage.setAttribute("aria-label", t("设置与备份"));
           const content = node("div", null, "v3-settings-body");
           const settings = app.v3Settings.createSettings(wages, createStatus); settings.open = true;
-          content.append(settings, app.backupUI.create(createStatus));
+          operationHistoryUI = app.v3OperationHistory.create({ partitions, onChange });
+          const notices = node("section", null, "v3-settings-notifications");
+          notices.append(node("h3", t("操作提示")), node("p", t("暂无提示"), "v3-notifications-empty"));
+          if (notifications) notices.append(notifications);
+          content.append(notices, operationHistoryUI.element, settings, app.backupUI.create(createStatus));
           settingsPage.append(node("h2", t("设置与备份")), content);
         }
+        operationHistoryUI.render({ spriteBase, names });
         element.append(settingsPage);
         app.itemUI.decorate(element, spriteBase, names);
         restoreView(savedView);
-        refreshLive = () => {};
+        refreshLive = next => operationHistoryUI.render({ spriteBase:next.spriteBase, names:next.names });
         return;
       }
       const controlsRow = node("div", null, "v3-controls");
       const toolbar = node("div", null, "mwi-layu-group-toolbar");
       const nav = node("div", null, "mwi-layu-group-nav mwi-layu-partition-checkboxes"); nav.setAttribute("role", "group"); nav.setAttribute("aria-label", t("分区筛选"));
-      const orderedGroups = [...groups].sort((a, b) => {
+      const visibleGroups = groups.filter(group => group.id !== "materials");
+      const editableGroups = new Set(partitions.read().groups.map(group => group.id));
+      const orderedGroups = [...visibleGroups].sort((a, b) => {
         const rank = id => partitionOrder.includes(id) ? partitionOrder.indexOf(id) : partitionOrder.length + groups.findIndex(group => group.id === id);
         return rank(a.id) - rank(b.id);
       });
       for (const group of [{ id: "all", name: t("全部") }, ...orderedGroups]) {
-        const count = group.id === "all" ? new Set([...items, ...catalog.rows].map(app.materialCart.key)).size : group.id === "materials" ? catalog.rows.length : items.filter(item => partitions.groupsOf(item.itemHrid).includes(group.id)).length;
+        const count = items.filter(item => partitions.groupsOf(item.itemHrid, item.enhancementLevel).some(id => group.id === "all" ? id !== "materials" : id === group.id)).length;
         const label = node("label", null, "mwi-layu-partition-choice");
         const input = node("input"); input.type = "checkbox"; input.setAttribute("aria-label", `${group.name} (${count})`);
-        input.checked = group.id === "materials" ? workspaceTab === "materials" : group.id === "all" ? selected.length === groups.length : selected.includes(group.id);
-        if (group.id === "materials") input.dataset.view = "materials";
-        if (group.id === "all") input.indeterminate = selected.length > 0 && selected.length < groups.length;
+        input.checked = group.id === "all" ? visibleGroups.every(group => selected.includes(group.id)) : selected.includes(group.id);
+        if (group.id === "all") input.indeterminate = visibleGroups.some(group => selected.includes(group.id)) && !input.checked;
         input.onchange = () => attempt(() => {
-          if (group.id === "materials") { workspaceTab = "materials"; drawerOpen = false; savePage(); return; }
           const current = partitions.selectedGroups();
           partitions.setSelectedGroups(group.id === "all" ? input.checked ? groups.map(group => group.id) : [] :
             input.checked ? [...current, group.id] : current.filter(id => id !== group.id));
         });
-        if (group.id !== "all") label.dataset.partitionId = group.id;
-        label.append(input, node("span", `${group.name} (${count})`)); nav.append(label);
-      }
-      bindPartitionSorting(nav);
-      const sortSelect = node("select"); sortSelect.setAttribute("aria-label", t("分区内物品排序"));
-      for (const [key, label] of [["wage", t("工时费")], ["profit", t("利润")], ["margin", t("利润率")], ["name", t("物品名称 / 等级")], ["market", t("市场左一")], ["own", t("我的挂单价格")], ["reference", t("参考售价")]]) {
-        for (const [value, suffix] of [[-1, t("降序")], [1, t("升序")]]) {
-          const opt = node("option", `${label} · ${suffix}`); opt.value = `${key}:${value}`; sortSelect.append(opt);
+        label.append(input, node("span", `${group.name} (${count})`));
+        const choice = node("div", null, "v3-partition-choice-wrap"); choice.append(label);
+        if (group.id !== "all") choice.dataset.partitionId = group.id;
+        if (editableGroups.has(group.id)) {
+          input.dataset.focusKey = `partition-edit:${group.id}`;
+          input.setAttribute("aria-keyshortcuts", "F2");
         }
+        nav.append(choice);
       }
-      const savedOption = node("option", t("收藏顺序")); savedOption.value = "saved:1"; sortSelect.append(savedOption);
-      sortSelect.value = `${sort}:${direction}`;
-      sortSelect.onchange = () => { const value = sortSelect.value.split(":"); sort = value[0]; direction = Number(value[1]); saveView(); onChange(); };
-      if (showProjects) controlsRow.append(nav);
+      bindPartitionSorting(nav, editableGroups, groups);
+      if (showProjects) {
+        const add = button(t("添加分区"), () => openPartitionEditor()); add.dataset.focusKey = "partition-add";
+        add.className = "v3-partition-add"; add.setAttribute("aria-expanded", String(Boolean(quickPartition && !quickPartition.id)));
+        controlsRow.append(nav, add);
+      }
       const searchInput = node("input"); searchInput.type = "search"; searchInput.placeholder = t("搜索物品或等级");
       searchInput.maxLength = 200; searchInput.setAttribute("aria-label", t("搜索收藏与原材料")); searchInput.value = search;
       searchInput.addEventListener("compositionstart", () => { composingSearch = true; });
       searchInput.addEventListener("compositionend", () => { composingSearch = false; search = searchInput.value; saveView(); onChange(); });
       searchInput.oninput = () => { search = searchInput.value; if (!composingSearch) { saveView(); onChange(); } };
       toolbar.append(searchInput);
-      if (showProjects) toolbar.append(sortSelect);
       if (search) toolbar.append(button(t("清除搜索"), () => { search = ""; saveView(); onChange(); }));
       if (showProjects) {
         const filters = node("div", null, "mwi-layu-listing-filters"); filters.setAttribute("aria-label", t("挂单快速筛选"));
@@ -11848,6 +14242,8 @@ function getPriceTier(price, direction) {
       }
 
       if (showProjects || showMaterials) { controlsRow.append(toolbar); element.append(controlsRow); }
+      if (showProjects) partitionTransfer.mount(controlsRow, nav, { spriteBase, names });
+      if (showProjects && quickPartition) element.append(partitionEditor(groups));
       if (workspaceTab === "manage") {
         drawerOpen = false;
         const suite = node("section", null, "v3-management");
@@ -11869,7 +14265,7 @@ function getPriceTier(price, direction) {
       }
       const projectRows = new Map();
       let projectBody = null;
-      const fingerprint = plan => JSON.stringify([plan, own?.cached, Boolean(own),
+      const fingerprint = plan => JSON.stringify([plan, own?.cached, Boolean(own), stockDisplay(plan.item),
         plan.quote?.at && Date.now() - plan.quote.at >= 5 * 60000,
         expanded.has(app.materialCart.key(plan.item)) ? [
           wages.state().experienceRevision,
@@ -11887,21 +14283,23 @@ function getPriceTier(price, direction) {
           node("span", t`${chosen.length} 个项目`, "mwi-layu-group-note")); main.append(title);
         if (!chosen.length) main.append(node("p", search || listingFilter !== "all" ? t("没有符合搜索或挂单筛选的项目。") : t("所选分区暂无项目。"), "mwi-layu-group-empty"));
         else {
-          const listing = table([t("物品 / 等级"), t("市场左一"), t("市场右一"), t("参考售价"), t("利润"), t("工时费 / h"), t("利润率"), t("我的挂单"), t("备料")], t("收藏项目列表"));
+          const listing = table([t("物品 / 等级"), t("市场左一"), t("市场右一"), t("参考售价"), t("利润"), t("工时费 / h"), t("利润率"), t("我的挂单"), t("备料"), t("库存概况"), t("强化计划")], t("收藏项目列表"));
           listing.region.classList.add("mwi-layu-project-scroll"); listing.body.parentElement.classList.add("mwi-layu-project-table");
           sortableHeaders(listing, ["name", null, null, null, "profit", "wage", "margin", "own", null], false);
           for (const [index, label, options] of [
             [1, t("市场左价"), [["ask", t("左"), t("使用市场左一计算整表收益")], ["ask-minus", t("左−"), t("使用市场左一降一档计算整表收益")]]],
-            [2, t("市场右价"), [["bid", t("右"), t("使用市场右一计算整表收益")], ["bid-plus", t("右+"), t("使用市场右一升一档计算整表收益")]]],
+            [2, t("市场右价"), [["bid-plus", t("右+"), t("使用市场右一升一档计算整表收益")], ["bid", t("右"), t("使用市场右一计算整表收益")]]],
             [3, t("参考售价"), [["reference", t("参考售价"), t("使用参考售价计算整表收益")]]]
           ]) {
             const th = listing.body.parentElement.tHead.rows[0].cells[index];
+            if (index < 3) th.dataset.marketPriceColumn = index === 1 ? "ask" : "bid";
             const group = node("div", null, "v3-sale-price-group");
             if (index !== 3) group.append(node("span", label));
             const controls = node("div", null, "v3-sale-price-options");
             for (const [side, text, description] of options) {
               const choice = button(null, () => {
                 if (salePriceSide === side) return;
+                salePriceOrderHeld = true;
                 salePriceSide = side;
                 if (side !== "reference") referenceFallbackSide = side;
                 savePage();
@@ -11911,9 +14309,24 @@ function getPriceTier(price, direction) {
               choice.className = "v3-sale-price-choice"; choice.dataset.salePriceSide = side;
               choice.dataset.focusKey = `sale-price-side:${side}`;
               choice.setAttribute("aria-pressed", String(salePriceSide === side));
+              const sortAgain = () => {
+                if (salePriceSide !== side) return;
+                releaseProjectOrder(); onChange();
+              };
+              choice.addEventListener("dblclick", sortAgain);
+              choice.addEventListener("keydown", event => {
+                if (event.key !== "Enter" || !event.shiftKey || salePriceSide !== side) return;
+                event.preventDefault(); sortAgain();
+              });
               choice.append(node("span", (salePriceSide === side ? "✓ " : "") + text));
-              if (side === "reference" && salePriceSide === side) choice.append(node("small", fallbackLabel()));
-              choice.title = description;
+              if (side === "reference" && salePriceSide === side) {
+                const hint = referenceFallbackSide === "ask" ? t("未设 · 用左")
+                  : referenceFallbackSide === "bid" ? t("未设 · 用右") : fallbackLabel();
+                choice.append(node("small", hint));
+              }
+              const interactionHint = t("单击切换基准并保留顺序；双击当前选项按原规则重新排序（键盘：Shift+Enter）。");
+              choice.title = `${description}；${interactionHint}`;
+              choice.setAttribute("aria-description", interactionHint);
               controls.append(choice);
             }
             group.append(controls); th.replaceChildren(group);
@@ -11925,6 +14338,8 @@ function getPriceTier(price, direction) {
             const nodes = projectRow(listing.body, plan);
             projectRows.set(app.materialCart.key(plan.item), { ...nodes, signature: fingerprint(plan) });
           }
+          arrangeProjectColumns(listing.body.parentElement);
+          bindColumnSorting(listing);
           main.append(listing.region);
         }
       }
@@ -11938,6 +14353,11 @@ function getPriceTier(price, direction) {
       // Restore only after icons and final layout content exist.
       app.itemUI.decorate(element, spriteBase, names);
       restoreView(savedView);
+      if (showProjects) partitionTransfer.restore();
+      if (showProjects && partitionFocus) {
+        const target = [...element.querySelectorAll("[data-focus-key]")].find(el => el.dataset.focusKey === partitionFocus);
+        target?.focus({ preventScroll:true }); partitionFocus = null;
+      }
       resumePlanMotion(element, previousPlanMotion);
       let catalogSignature = JSON.stringify([catalog, catalog.rows.map(item => prices.quote(item))]);
       refreshLive = (next, plans, nextCatalog) => {
@@ -11951,13 +14371,16 @@ function getPriceTier(price, direction) {
           if (!entry || entry.signature === signature) continue;
           const buffer = node("tbody");
           const fresh = projectRow(buffer, plan, entry.tr);
-          // Identity, inputs, row and table stay connected. Only quote/order cells change.
+          // Identity, inputs, row and table stay connected. Only live display cells change.
           // Moving a cell changes the source row's live HTMLCollection indices.
           // Keep named references so the reference-price input cannot become the own-order cell.
-          for (const key of ["market", "bid", "own"]) {
+          for (const key of ["market", "bid", "own", "stock"]) {
             entry.liveCells[key].replaceWith(fresh.liveCells[key]);
             entry.liveCells[key] = fresh.liveCells[key];
           }
+          // Refresh emphasis in place so quantity drafts and keyboard focus survive.
+          entry.tr.querySelector(".v3-project-quantity").dataset.emphasis =
+            fresh.tr.querySelector(".v3-project-quantity").dataset.emphasis;
           if (entry.detail && fresh.detail) {
             app.itemUI.decorate(fresh.detail, spriteBase, names);
             replaceRegion(entry.detail, fresh.detail); entry.detail = fresh.detail;
@@ -11988,10 +14411,10 @@ function getPriceTier(price, direction) {
         [...listing.body.parentElement.tHead.rows[0].cells].forEach((th, index) => {
           const key = keys[index]; if (!key) return;
           const label = th.textContent;
-          const next = current === key ? -order : key === "name" ? 1 : -1;
+          const next = current === key ? (!isMaterial && salePriceOrderHeld ? order : -order) : key === "name" ? 1 : -1;
           const b = button(label, () => {
             if (isMaterial) { materialSort = key; materialDirection = next; }
-            else { sort = key; direction = next; }
+            else { sort = key; direction = next; releaseProjectOrder(); }
             saveView(); onChange();
           }, t`${label}：点击${next === 1 ? t("升序") : t("降序")}排列`);
           b.className = "mwi-layu-column-sort";
@@ -12004,7 +14427,7 @@ function getPriceTier(price, direction) {
       function materialCatalog() {
         const section = node("section", null, "mwi-layu-material-catalog");
         const header = node("header", null, "v3-section-heading"), copy = node("div");
-        copy.append(node("h2", t("原材料统一核算看板")), node("p", t("需求仅按备料车累计，制造与强化共用材料统一扣减库存。"), "mwi-layu-group-note"));
+        copy.append(node("h2", t("原材料统一核算看板")));
         header.append(copy, button(t("查看采购清单"), () => {workspaceTab = "cart"; drawerOpen = false; savePage(); onChange();})); section.append(header);
         if (cartError || !cartScope) section.append(node("p", cartError || t("角色尚未就绪，备料需求未知。"), "mwi-layu-cart-warning"));
         if (!catalog.rows.length) { section.append(node("p", t("暂无可显示的材料，请添加收藏并读取角色与配方。"), "mwi-layu-group-empty")); return section; }
@@ -12031,17 +14454,17 @@ function getPriceTier(price, direction) {
         return section;
       }
       function wage(result) {
-        const el = node("span", Number.isFinite(result?.hourlyWage) ? number(result.hourlyWage) : "—");
+        const el = node("span", compactMoney(result?.hourlyWage));
         el.style.color = result?.evaluation?.hourlyColor || "inherit";
-        el.title = Number.isFinite(result?.hourlyWage) ? "" : result?.reason || t("等待计算");
+        el.title = Number.isFinite(result?.hourlyWage) ? exactMoney(result.hourlyWage) : result?.reason || t("等待计算");
         return el;
       }
       function profit(result) {
         const value = result?.evaluation?.profit;
         const known = Number.isFinite(value);
-        const el = node("span", known ? number(value) : "—");
+        const el = node("span", compactMoney(value));
         el.style.color = result?.evaluation?.marginColor || "inherit";
-        el.title = known ? "" : result?.reason || t("暂无利润");
+        el.title = known ? exactMoney(value) : result?.reason || t("暂无利润");
         return el;
       }
       function profitMargin(result) {
@@ -12054,11 +14477,12 @@ function getPriceTier(price, direction) {
       }
       function priceInput(item) {
         const key = app.marketFavoritesStore.key(item); const label = `${item.name} +${item.enhancementLevel}`;
-        const input = node("input"); input.className = "mwi-layu-compact-price"; input.type = "text"; input.inputMode = "text"; input.placeholder = t("未设置");
+        const input = node("input"); input.className = "mwi-layu-compact-price"; input.type = "text"; input.inputMode = "text";
         let savedPrice = item.customPrice ?? null;
         const display = () => app.priceSimulationUI.formatPrice(savedPrice).toUpperCase();
         input.setAttribute("aria-label", t`自定义价格：${label}`); input.value = priceDrafts.get(key) ?? display();
-        input.title = t("支持 K / M / B（大小写均可），例如 500K、170m、1.2B；清空表示未设置。");
+        input.title = (item.referenceDefaultPrice != null ? t("默认使用最近记录到的本人已成交卖单原挂单价，并非实际成交单价。") + "\n" : "")
+          + t("支持 K / M / B（大小写均可）；清空恢复成交记录默认价，无记录则留空。");
         input.onfocus = () => {
           if (!priceDrafts.has(key)) input.value = savedPrice == null ? "" : String(savedPrice);
           input.select();
@@ -12083,10 +14507,22 @@ function getPriceTier(price, direction) {
         const maximum = rows => 1000000 - rows.filter(entry => entry.itemHrid === item.itemHrid && app.materialCart.key(entry) !== key).reduce((sum, entry) => sum + entry.quantity, 0);
         const disabled = !cartScope || Boolean(cartError);
         const stepper = node("div", null, "v3-project-quantity");
+        if (!inPlanAction) {
+          const stock = stockDisplay(item);
+          const orders = app.marketPartitions.compareListings(own?.listings || [], item, prices.quote(item));
+          const unheld = own && !own.cached && Array.isArray(own.listings) && orders.length === 0 &&
+            stock.inventory === 0 && stock.lower === 0;
+          stepper.dataset.emphasis = unheld ? "new" : "quiet";
+        }
         const input = node("input"); input.type = "text"; input.inputMode = "numeric";
         input.setAttribute("aria-label", inPlanAction ? t`当前计划数量：${label}` : t`计划备料数量：${label}`);
         input.value = quantityDrafts.get(draftKey) ?? String(count(cartItems)); input.disabled = disabled;
         input.title = disabled ? cartError || t("角色尚未就绪") : t("输入整数数量，0 表示移出备料计划");
+        function updateQuantityColor() {
+          const value = Number(input.value.trim());
+          input.dataset.nonzero = String(/^\d+$/.test(input.value.trim()) && Number.isSafeInteger(value) && value > 0);
+        }
+        updateQuantityColor();
         function readDraft(rows) {
           const text = quantityDrafts.get(draftKey);
           if (text == null) return count(rows);
@@ -12107,16 +14543,18 @@ function getPriceTier(price, direction) {
           }
           quantityDrafts.delete(draftKey); quantityDrafts.delete(`${cartScope}|${key}`);
           clearPendingRemoval(); input.removeAttribute("aria-invalid"); input.value = String(value);
+          updateQuantityColor();
           lower.disabled = disabled || value === 0; higher.disabled = disabled || value >= maximum(rows);
+          updateQuantityMode(value, rows);
         }
-        input.oninput = () => quantityDrafts.set(draftKey, input.value);
+        input.oninput = () => { quantityDrafts.set(draftKey, input.value); updateQuantityColor(); };
         input.onchange = () => attempt(() => { const rows = cart.read(cartScope); save(readDraft(rows), rows); });
         input.onblur = onChange;
         input.onkeydown = event => {
           if (event.key === "Enter") { event.preventDefault(); input.onchange(); input.blur(); }
           if (event.key === "Escape") {
             event.preventDefault(); quantityDrafts.delete(draftKey); input.removeAttribute("aria-invalid");
-            input.value = String(count(cart.read(cartScope))); onStatus(""); input.blur();
+            input.value = String(count(cart.read(cartScope))); updateQuantityColor(); onStatus(""); input.blur();
           }
         };
         const step = delta => attempt(() => {
@@ -12125,29 +14563,79 @@ function getPriceTier(price, direction) {
         });
         const lower = button("−", () => step(-1), inPlanAction ? t`减少当前计划数量：${label}` : t`减少计划备料数量：${label}`);
         const higher = button("+", () => step(1), inPlanAction ? t`增加当前计划数量：${label}` : t`增加计划备料数量：${label}`);
+        const add = button(t("加入计划"), () => attempt(() => {
+          const rows = cart.read(cartScope);
+          save(Math.max(1, count(rows)), rows);
+        }), t`加入计划：${label}`);
+        add.className = "v3-project-add";
+        function updateQuantityMode(value, rows) {
+          const empty = !inPlanAction && value === 0 && !quantityDrafts.has(draftKey);
+          const focused = stepper.contains(document.activeElement);
+          stepper.dataset.empty = String(empty);
+          add.hidden = !empty;
+          add.disabled = disabled || maximum(rows) < 1;
+          add.title = disabled ? cartError || t("角色尚未就绪") : maximum(rows) < 1
+            ? t("同物品各等级合计最多 1,000,000 件") : t("加入 1 件备料计划");
+          for (const control of [lower, input, higher]) control.hidden = empty;
+          if (focused && document.activeElement.hidden) (empty ? add : input).focus({ preventScroll:true });
+        }
         lower.title = t("减少 1 件，减到 0 移出计划"); higher.title = t("增加 1 件");
         lower.disabled = disabled || count(cartItems) === 0;
         higher.disabled = disabled || count(cartItems) >= maximum(cartItems);
         if (quantityDrafts.has(draftKey)) { try { readDraft(cartItems); } catch (_) { /* Keep validation visible after a redraw. */ } }
-        stepper.append(lower, input, higher); return stepper;
+        stepper.append(add, lower, input, higher);
+        updateQuantityMode(count(cartItems), cartItems);
+        return stepper;
+      }
+      function stockDisplay(item) {
+        const { inventory, lower } = wages.stockSummary(item);
+        return { inventory, lower };
+      }
+      function projectStock(item) {
+        const summary = stockDisplay(item);
+        const strip = node("div", null, "v3-project-stock");
+        strip.setAttribute("aria-label", t("库存概况"));
+        strip.dataset.highlighted = String(Object.values(summary).some(value => Number.isFinite(value) && value >= 1));
+        for (const [key, label, description] of [
+          ["inventory", t("库存"), t`当前 +${item.enhancementLevel ?? 0} 等级的库存数量`],
+          ["lower", t("低等级"), t`低于 +${item.enhancementLevel ?? 0} 的同款库存总数（含 +0，不含制作中）`]
+        ]) {
+          const value = summary[key];
+          const text = value == null ? "—" : value.toLocaleString(app.i18n?.locale);
+          const metric = node("span", null, "v3-project-stock-metric");
+          metric.dataset.stockMetric = key; metric.dataset.value = value ?? "unknown";
+          metric.dataset.state = value == null ? "unknown" : value === 0 ? "zero" : "known";
+          metric.title = description + (value == null ? t("；数据尚未读取，请等待游戏同步") : "");
+          metric.setAttribute("aria-label", `${label} ${value == null ? t("未读取") : text}；${description}`);
+          metric.append(node("span", label), node("strong", text)); strip.append(metric);
+        }
+        return strip;
+      }
+      function projectEnhancement(item) {
+        const included = enhancementItems.some(entry => entry.planSource !== "queue" && app.enhancementSchedule.key(entry) === app.enhancementSchedule.key(item));
+        const control = button(included ? t("已加入") : t("加入强化计划"), () => attempt(() => {
+          enhancementSchedule.addMissing(cartScope, [item]);
+        }), `${t(included ? "已加入强化计划" : "加入强化计划")}：${item.name} +${item.enhancementLevel}`);
+        control.disabled = included || !cartScope || Boolean(enhancementError) || !(item.enhancementLevel > 0);
+        control.title = enhancementError || (!cartScope ? t("角色尚未就绪") : included ? t("已加入强化计划，可在强化计划页调整数量") : t("加入 1 件强化计划"));
+        control.className = "v3-project-enhancement";
+        return control;
       }
       function projectRow(body, plan, retainedRow = null) {
         const { item, quote, result, quantity } = plan; const key = app.materialCart.key(item); const label = `${item.name} +${item.enhancementLevel}`;
         const identity = button(null, () => { if (expanded.has(key)) expanded.delete(key); else expanded.add(key); saveView(); onChange(); }, t`项目明细：${label}`);
         identity.className = "mwi-layu-project-identity"; identity.setAttribute("aria-expanded", String(expanded.has(key)));
         identity.append(node("span", expanded.has(key) ? "▼" : "▶", "mwi-layu-disclosure-sign"), app.itemUI.identity(item, spriteBase), node("span", `+${item.enhancementLevel}`, "mwi-layu-project-level"));
-        function quoteCell(value) {
-          const price = node("span", value == null ? "—" : number(value));
-          price.title = quote ? `${quote.cached ? t("本地缓存 · ") : ""}${quote.source} · ${time(new Date(quote.at).toISOString())}` : t("等待行情");
-          if (quote) {
-            const stale = Date.now() - quote.at >= 5 * 60000;
-            price.append(node("small", stale ? t("旧") : quote.cached ? t("缓存") : quote.source === t("市场快照") ? t("快照") : t("订单簿"), "mwi-layu-quote-source"));
-            if (stale) price.title += t("；报价超过 5 分钟，请打开市场复核");
-          }
+        function quoteCell(value, side) {
+          const price = button(compactMoney(value), b => onOpen(item, b), `${t(side === "ask" ? "市场左价" : "市场右价")} · ${t`打开市场：${label}`}`);
+          price.className = "v3-market-quote v3-market-quote-link";
+          price.dataset.focusKey = `market-quote:${side}:${key}`;
+          price.title = quote?.at ? time(new Date(quote.at).toISOString()) : t("等待行情");
+          if (Number.isFinite(value)) price.title = `${exactMoney(value)} · ${price.title}`;
           if (value == null) price.append(node("small", t("暂无报价"), "mwi-layu-quote-source"));
           return price;
         }
-        const price = quoteCell(quote?.price), bid = quoteCell(quote?.bid);
+        const price = quoteCell(quote?.price, "ask"), bid = quoteCell(quote?.bid, "bid");
         const { orders } = plan;
         const mine = button(!own ? t("未读取") : orders.length ? "" : "—", b => onOpen(item, b), t`打开市场：${label}`);
         mine.className = "v3-own-market-link";
@@ -12159,35 +14647,36 @@ function getPriceTier(price, direction) {
           const bestOwn = sidePrices.length ? (isSell ? Math.min(...sidePrices) : Math.max(...sidePrices)) : null;
           const representative = sideOrders.find(order => order.price === bestOwn) || sideOrders[0];
           const line = node("span", t`${isSell ? t("卖") : t("买")} ${number(bestOwn)} · ${sideOrders.length}单`, "mwi-layu-listing-comparison");
-          const behindCount = sideOrders.filter(order => order.standing === "behind").length;
-          const text = `${own.cached || representative.stale ? t("旧 · ") : ""}${representative.label}`;
-          line.append(node("small", `${isSell ? t("左一") : t("右一")} ${number(representative.best)} · ${text}${behindCount && representative.standing !== "behind" ? t` · 另${behindCount}单被压价` : ""}`, "mwi-layu-order-state"));
-          line.title = `${quote?.source || t("暂无行情")}${quote?.at ? ` · ${time(new Date(quote.at).toISOString())}` : ""}`;
+          line.append(node("small", `${isSell ? t("左一") : t("右一")} ${number(representative.best)}`, "mwi-layu-order-state"));
+          line.title = quote?.at ? time(new Date(quote.at).toISOString()) : t("暂无行情");
           line.classList.add(`mwi-layu-order-${representative.standing}`);
           mine.append(line);
         }
         const saved = cartItems.find(row => app.materialCart.key(row) === key);
-        const tr = row(body, [identity, price, bid, priceInput(item), profit(result), wage(result), profitMargin(result), mine, projectQuantity(item)], "mwi-layu-project-row"); tr.dataset.favoriteKey = key;
-        const liveCells = { market:tr.cells[1], bid:tr.cells[2], own:tr.cells[7] };
+        const tr = row(body, [partitionTransfer.bind(identity, item), price, bid, priceInput(item), profit(result), wage(result), profitMargin(result), mine, projectQuantity(item), projectStock(item), projectEnhancement(item)], "mwi-layu-project-row"); tr.dataset.favoriteKey = key;
+        [...tr.cells].forEach((cell, index) => { cell.dataset.projectColumn = app.marketPartitions.projectColumns[index].key; });
+        const liveCells = { market:tr.cells[1], bid:tr.cells[2], own:tr.cells[7], stock:tr.cells[9] };
+        liveCells.market.dataset.marketPriceColumn = "ask";
+        liveCells.bid.dataset.marketPriceColumn = "bid";
+        liveCells.market.classList.add("v3-own-market-cell");
+        liveCells.bid.classList.add("v3-own-market-cell");
+        liveCells.stock.classList.add("v3-project-stock-cell");
         liveCells.own.classList.add("v3-own-market-cell");
         tr.cells[salePriceSide === "reference" ? 3 : salePriceSide.startsWith("bid") ? 2 : 1].dataset.salePriceSelected = "true";
         const metricRow = retainedRow || tr;
+        const metricCell = name => projectCell(metricRow, name);
         const updateMetrics = () => {
           const simulation = simulationPanels.get(key);
           const active = simulation?.active();
           const metric = active ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, calculationQuote(prices.quote(item), item));
-          metricRow.cells[4].replaceChildren(profit(metric)); metricRow.cells[5].replaceChildren(wage(metric)); metricRow.cells[6].replaceChildren(profitMargin(metric));
+          metricCell("profit").replaceChildren(profit(metric)); metricCell("wage").replaceChildren(wage(metric)); metricCell("margin").replaceChildren(profitMargin(metric));
           metricRow.dataset.calculationSide = calculationSide(item);
-          metricRow.cells[3].querySelector(".v3-reference-fallback")?.remove();
-          if (salePriceSide === "reference" && calculationSide(item) !== "reference") {
-            metricRow.cells[3].append(node("small", fallbackLabel(), "mwi-layu-quote-source v3-reference-fallback"));
-          }
           metricRow.dataset.simulated = String(Boolean(active));
-          if (active) metricRow.cells[4].append(node("small", t("模拟"), "mwi-layu-quote-source"));
-          for (const [index, value] of [[4, metric?.evaluation?.profit], [5, metric?.hourlyWage], [6, metric?.evaluation?.profitMargin]]) {
-            metricRow.cells[index].dataset.metric = ({4:"profit", 5:"wage", 6:"margin"})[index];
-            metricRow.cells[index].dataset.value = value ?? "";
-            metricRow.cells[index].title = active ? t`材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : saleBasisLabel(item);
+          if (active) metricCell("profit").append(node("small", t("模拟"), "mwi-layu-quote-source"));
+          for (const [name, value] of [["profit", metric?.evaluation?.profit], ["wage", metric?.hourlyWage], ["margin", metric?.evaluation?.profitMargin]]) {
+            metricCell(name).dataset.metric = name;
+            metricCell(name).dataset.value = value ?? "";
+            metricCell(name).title = active ? t`材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : saleBasisLabel(item);
           }
         };
         updateMetrics();
@@ -12200,7 +14689,7 @@ function getPriceTier(price, direction) {
         if (saved) tr.classList.add("mwi-layu-project-selected");
         let detailRow = null;
         if (expanded.has(key)) {
-          detailRow = node("tr", null, "mwi-layu-project-detail-row"); const cell = node("td"); cell.colSpan = 9;
+          detailRow = node("tr", null, "mwi-layu-project-detail-row"); const cell = node("td"); cell.colSpan = app.marketPartitions.projectColumns.length;
           cell.append(levelSection(plan, quantity, updateMetrics)); detailRow.append(cell); body.append(detailRow);
         }
         return { tr, detail: detailRow, liveCells };
@@ -12298,7 +14787,7 @@ function getPriceTier(price, direction) {
           else if (stage.state === "buyBase") marketAction.classList.add("v3-primary");
           actions.append(marketAction, craftAction, enhanceAction); line.append(actions); list.append(line);
         }
-        panel.append(list, node("p", t("按备料车顺序分配共享库存；待到账不算备齐。底子就绪不代表强化耗材齐全，详见下方材料表。"), "mwi-layu-group-note"));
+        panel.append(list);
         const totals = app.materialCart.summarize(cartItems, wages, prices);
         const budget = app.materialCart.budget(totals, prices);
         const budgetLine = node("p", null, "mwi-layu-budget");
@@ -12384,7 +14873,7 @@ function getPriceTier(price, direction) {
           identity.append(node("span", cartDetails.has(key) ? "▾" : "▸"), app.itemUI.identity(material, spriteBase, label));
           identity.setAttribute("aria-expanded", String(cartDetails.has(key)));
           const cost = node("span", number(material.purchaseCost));
-          cost.title = material.quote?.at ? t`${material.quote.source} · ${time(new Date(material.quote.at).toISOString())}；采购 ${material.purchaseQuantity ?? t("未知")} 份` : t("金币直接消耗或报价未知");
+          cost.title = material.quote?.at ? t`${time(new Date(material.quote.at).toISOString())}；采购 ${material.purchaseQuantity ?? t("未知")} 份` : t("金币直接消耗或报价未知");
           const market = material.itemHrid === "/items/coin" ? node("span", "—")
             : button(t("市场"), el => onOpen(material, el, "shortage"), t`采购：${label}`);
           if (material.itemHrid !== "/items/coin") {
@@ -12408,10 +14897,7 @@ function getPriceTier(price, direction) {
             const sourceList = node("div", null, "v3-cart-sources");
             for (const item of sources.filter(item => activeKeys.has(app.materialCart.key(item)))) sourceList.append(app.itemUI.identity(item, spriteBase, `${names[item.itemHrid] || item.name} +${item.enhancementLevel}`));
             if (sourceList.childNodes.length) detail.append(sourceList);
-            detail.append(node("span", t`参与抵扣 ${number(material.availableCount)} · 建议购买 ${number(material.purchaseQuantity)}`),
-              node("span", t("净缺口已扣库存和买单待收；已占用作底子的装备不会重复抵扣。")),
-              node("span", t("买单未成仍需等待成交；成交待领需在游戏中领取。")),
-              node("span", t("数量按备料方案计算，采购数量向上取整。")));
+            detail.append(node("span", t`参与抵扣 ${number(material.availableCount)} · 建议购买 ${number(material.purchaseQuantity)}`));
             cell.append(detail); detailRow.append(cell); materials.body.append(detailRow);
           }
         }
@@ -12666,7 +15152,6 @@ function getPriceTier(price, direction) {
           parts.append(mirrors); panel.append(parts, node("small", t("需另备组成装备，镜子合成与精炼步骤需手动操作。")));
         } else routes.append(path(item, route, item.enhancementLevel));
         if (route.routeType === "refinementCarryover") panel.append(node("small", t("先强化未精炼底子，再按标示等级精炼继承；需分步手动操作。")));
-        if (simulated) panel.append(node("small", t("下方强化预填按当前行情方案执行；模拟方案仅用于比较。")));
         app.itemUI.decorate(panel, spriteBase, names);
         restoreFocus();
       }
@@ -12778,7 +15263,7 @@ function getPriceTier(price, direction) {
           const heading = node("div", null, "v3-stock-heading");
           const inCart = cartItems.some(entry => app.materialCart.key(entry) === key);
           heading.append(node("span", inCart ? t`计划 ${number(quantity)} 件` : t("单件备料预览 · 未加入计划")),
-            node("span", own?.cached ? t("本人挂单（缓存）· 不抵扣") : t("本人挂单 · 不抵扣")));
+            node("span", t("本人挂单 · 不抵扣")));
           stockStrip.append(heading);
           const grades = node("div", null, "v3-stock-grades"); grades.setAttribute("aria-label", t("各等级库存与本人挂单"));
           const listings = own?.characterId === wages.state().simulationOwner ? own?.listings : null;
@@ -12856,18 +15341,17 @@ function getPriceTier(price, direction) {
         actions.dataset.nextAction = nextAction || "unknown";
         const right = node("div", null, "v3-workbench-market"); const book = prices.orderBook(item);
         const heading = node("div", null, "mwi-layu-level-heading");
-        const marketAge = node("span", t("尚未读取订单簿"), "mwi-layu-group-note");
+        const marketAge = node("span", t("尚未读取行情"), "mwi-layu-group-note");
         if (Number.isFinite(book?.at) && book.at > 0) {
           marketAge.dataset.marketRefreshedAt = book.at;
           marketAge.title = time(new Date(book.at).toISOString());
-          marketAge.textContent = marketAgeText(book.at);
+          marketAge.textContent = t`行情时间 ${time(new Date(book.at).toISOString())}`;
         }
         heading.append(node("h3", t("市场深度与收益测算")), marketAge); right.append(heading);
-        // Keep the last observed queue presentation across reloads. Freshness is
-        // conveyed by the age label; the underlying book retains its stale flag.
+        // Present the last observed queue; retain freshness flags in the data model.
         const displayedBook = book ? { ...book, stale: false } : book;
         const economicView = node("div"); right.append(economicView);
-        const simulationNote = node("p", t("模拟收益 · 以下各售价按当前模拟材料成本重算"), "mwi-layu-group-note");
+        const simulationNote = node("p", t("模拟收益"), "mwi-layu-group-note");
         const ladderPanel = node("div", null, "mwi-layu-price-ladder");
         const economicDetails = node("div", null, "v3-order-depth");
         economicView.append(economicDetails, simulationNote, ladderPanel);
@@ -12991,15 +15475,14 @@ function getPriceTier(price, direction) {
             if (ladder.rows.some(entry => entry.current && entry.offGrid)) ladderPanel.append(node("p", t("左一非现档"), "mwi-layu-group-note"));
             if (ladder.rows.some(entry => entry.bid && entry.offGrid)) ladderPanel.append(node("p", t("右一非现档"), "mwi-layu-group-note"));
           }
-          if (book && !Array.isArray(book.buyRows)) ladderPanel.append(node("p", t("买单明细未读取；旧加载器或旧缓存可能仅含卖单。请更新脚本后刷新游戏，再打开该物品市场。"), "mwi-layu-group-note"));
-          if (priceRows.some(entry => entry.split)) ladderPanel.append(node("p", t("同价订单越靠下越早；先后未知的订单单独列出。仅显示已读取订单。"), "mwi-layu-group-note"));
+          if (book && !Array.isArray(book.buyRows)) ladderPanel.append(node("p", t("买单明细未读取，请打开该物品市场。"), "mwi-layu-group-note"));
           if (ladder.reason) ladderPanel.append(node("p", ladder.reason, "mwi-layu-group-note"));
           if (!priceRows.length) retainedRegion?.remove();
           const comparisons = app.marketPartitions.compareListings(own?.listings || [], item, quote);
           if (comparisons.length) {
             const comparison = table([t("方向"), t("我的价格"), t("左一／右一"), t("价格比较")], t("本人挂单价格比较"));
             for (const order of comparisons) row(comparison.body, [order.isSell ? t("出售") : t("购买"), number(order.price),
-              number(order.best), `${own.cached || order.stale ? t("旧 · ") : ""}${order.label}`], `mwi-layu-order-${order.standing}`);
+              number(order.best), order.label], `mwi-layu-order-${order.standing}`);
             const allOrders = disclosure(t("本人完整挂单价格比较"), `comparison:${key}`);
             allOrders.append(comparison.region); economicDetails.append(allOrders);
           }
@@ -13041,7 +15524,7 @@ function getPriceTier(price, direction) {
       create.append(input, button(t("新增分区"), () => attempt(() => partitions.add(input.value)))); sidebar.append(create);
       for (const group of groups) {
         const card = node("div", null, "v3-partition-card");
-        const count = entries.filter(({item}) => partitions.groupsOf(item.itemHrid).includes(group.id)).length;
+        const count = entries.filter(({item}) => partitions.groupsOf(item.itemHrid, item.enhancementLevel).includes(group.id)).length;
         card.append(node("strong", group.name), node("span", t`${count} 件`, "v3-tag"));
         if (partitions.read().groups.some(saved => saved.id === group.id)) {
           const saved = partitionEdits.get(group.id);
@@ -13077,30 +15560,30 @@ function getPriceTier(price, direction) {
         sidebar.append(card);
       }
       const main = node("div", null, "v3-matrix-panel"), heading = node("header", null, "v3-section-heading"), copy = node("div");
-      copy.append(node("h3", t("物品多分区归属矩阵")), node("p", t("同物品各强化等级共享归属；全部取消后退回未分区。"), "mwi-layu-group-note"));
+      copy.append(node("h3", t("物品多分区归属矩阵")));
       const search = node("input"); search.type = "search"; search.placeholder = t("快速过滤物品"); search.setAttribute("aria-label", t("搜索分区归属物品")); search.value = matrixQuery;
       heading.append(copy, search); main.append(heading);
       const grid = table([t("物品"), ...groups.map(group => group.name), t("操作")], t("物品多分区归属矩阵")); grid.body.parentElement.classList.add("v3-matrix-table");
       for (const { item } of entries) {
-        const label = names[item.itemHrid] || item.name;
+        const label = `${names[item.itemHrid] || item.name} +${item.enhancementLevel}`;
         const values = [app.itemUI.identity(item, spriteBase, label)];
         for (const group of groups) {
-          const toggle = node("input"); toggle.type = "checkbox"; toggle.checked = partitions.groupsOf(item.itemHrid).includes(group.id);
+          const toggle = node("input"); toggle.type = "checkbox"; toggle.checked = partitions.groupsOf(item.itemHrid, item.enhancementLevel).includes(group.id);
           toggle.setAttribute("aria-label", t`${label}所属分区：${group.name}`);
           toggle.onchange = () => attempt(() => {
-            const current = partitions.groupsOf(item.itemHrid);
+            const current = partitions.groupsOf(item.itemHrid, item.enhancementLevel);
             let next = toggle.checked ? [...current, group.id] : current.filter(id => id !== group.id);
             if (toggle.checked) next = group.id === "unassigned" ? ["unassigned"] : next.filter(id => id !== "unassigned");
-            partitions.setGroups(item.itemHrid, next);
+            partitions.setGroups(item.itemHrid, next, item.enhancementLevel);
           }); values.push(toggle);
         }
-        values.push(button(t("移出"), () => attempt(() => partitions.setGroups(item.itemHrid, [])), t`移出所有分区：${label}`));
+        values.push(button(t("移出"), () => attempt(() => partitions.setGroups(item.itemHrid, [], item.enhancementLevel)), t`移出所有分区：${label}`));
         const tr = row(grid.body, values); tr.dataset.searchText = `${label} ${item.itemHrid}`.toLocaleLowerCase();
       }
       const filter = () => { matrixQuery = search.value; for (const tr of grid.body.children) tr.hidden = !tr.dataset.searchText.includes(matrixQuery.trim().toLocaleLowerCase()); };
       search.oninput = filter; filter(); main.append(grid.region); section.append(sidebar, main); return section;
     }
-    return Object.freeze({ element, render, show(tab) { workspaceTab = tab; drawerOpen = false; savePage(); onChange(); }, destroy() { root.clearInterval(marketAgeTimer); lootPage?.destroy(); partitionGesture?.cancel(); splitObserver.disconnect(); resizeSession?.cancel(); } });
+    return Object.freeze({ element, render, show(tab) { workspaceTab = tab; drawerOpen = false; savePage(); onChange(); }, destroy() { enhancementUI.destroy(); columnGesture?.cancel(); partitionTransfer.destroy(); lootPage?.destroy(); partitionGesture?.cancel(); partitionPressCleanup?.(); splitObserver.disconnect(); resizeSession?.cancel(); } });
   }
   app.v3Workspace = Object.freeze({ create, number, preparationAction, enhancementPlanMetrics, listedQuantity });
 })(globalThis);
@@ -13119,6 +15602,24 @@ function getPriceTier(price, direction) {
     if (!match) return null;
     const jobs = { dairyhands: t("挤奶"), foragers: t("采摘"), lumberjacks: t("伐木"), cheesemakers: t("奶酪"), crafters: t("工匠"), tailors: t("裁缝"), chefs: t("厨师"), brewers: t("饮品"), alchemists: t("炼金"), enhancers: t("强化") };
     return jobs[match[1]] + (match[2] === "top" ? t("衣") : t("裤"));
+  }
+
+  // History is already scoped to the current server and character by readOwn.
+  // Keep defaults in the render snapshot, never in the shared manual-price store.
+  function withSaleReferenceDefaults(items, history) {
+    const latest = new Map();
+    for (const sale of history || []) {
+      if (!(sale.filledQuantity > 0) || !Number.isSafeInteger(sale.listingPrice) || sale.listingPrice <= 0 || !Number.isFinite(Date.parse(sale.observedAt))) continue;
+      const key = app.materialCart.key(sale), previous = latest.get(key);
+      if (!previous || Date.parse(sale.observedAt) > Date.parse(previous.observedAt) ||
+        (sale.observedAt === previous.observedAt && sale.id > previous.id)) latest.set(key, sale);
+    }
+    return items.map(item => {
+      const sale = latest.get(app.materialCart.key(item));
+      return item.customPrice != null || !sale ? item : {
+        ...item, customPrice: sale.listingPrice, referenceDefaultPrice: sale.listingPrice
+      };
+    });
   }
 
   function formatPrice(value) {
@@ -13151,12 +15652,12 @@ function getPriceTier(price, direction) {
     const store = app.marketFavoritesStore.createStore(root.localStorage);
     const partitions = app.marketPartitions.create();
     const cart = app.materialCart.create();
+    const enhancementSchedule = app.enhancementSchedule.create();
     const element = document.createElement("section"); element.id = panelId; element.className = "mwi-layu-panel";
     element.lang = app.i18n?.locale || "zh-CN";
     element.setAttribute("role", "tabpanel"); element.setAttribute("aria-label", t("强化助手")); element.hidden = true;
-    const notifications = app.v3Notifications.create({ onEmptyFocus: () => refresh.focus({ preventScroll: true }) });
-    const marketNotifications = app.v3Notifications.create({ floating: true, onEmptyFocus: () => refresh.focus({ preventScroll: true }) });
-    const marketStatus = marketNotifications.createStatus();
+    const notifications = app.v3Notifications.create({ onEmptyFocus: () => view.element.querySelector('[data-view="settings"]')?.focus({ preventScroll: true }) });
+    const marketStatus = notifications.createStatus();
     const createStatus = notifications.createStatus;
     const status = createStatus();
     const lootStatus = createStatus();
@@ -13178,12 +15679,14 @@ function getPriceTier(price, direction) {
     const fallbackNames = {};
     const names = new Proxy({}, { get(target, key) {
       if (typeof key === "string" && key.startsWith("/items/") && app.i18n?.language === "en") return target[key] || fallbackNames[key] || app.i18n.itemFallback(key);
+      if (typeof key === "string") return compactClothingName(key) || target[key];
       return target[key];
     } }), buttons = new Map(), materialNames = new Set();
     const prices = app.marketPrices.create({ onChange: schedule });
+    const listingAgeHint = app.listingAgeHint.create({ prices });
     const wages = app.marketWages.create({ prices, onChange: schedule });
     const presets = app.partitionPresets.create({ getCatalog: () => wages.presetCatalog() });
-    const view = app.v3Workspace.create({ partitions, cart, presets, createStatus, onChange() { signature = ""; schedule(); },
+    const view = app.v3Workspace.create({ partitions, cart, enhancementSchedule, presets, createStatus, notifications: notifications.element, onChange() { signature = ""; schedule(); },
       onOpen: openMarket, onCraft: (item, button) => prepareItem(item, button, "crafting"),
       onEnhance: (item, button) => prepareItem(item, button, "enhancing"),
       onPrice: (item, value) => store.setCustomPrice(item, value), onStatus: (text) => { status.textContent = text; } });
@@ -13191,8 +15694,8 @@ function getPriceTier(price, direction) {
     const refresh = document.createElement("button"); refresh.type = "button"; refresh.textContent = t("刷新行情"); refresh.className = "v3-primary";
     refresh.onclick = async () => { refresh.disabled = true; historyDirty = true; try {
       await Promise.all([prices.refresh(true), wages.refreshCharacter(), syncListings()]);
-      status.textContent = prices.state().error ? t("行情更新失败，已保留旧价格；角色与挂单状态见页面提示。")
-        : ownSaveError || !own || own.cached ? t("已更新买卖一价；本人挂单保存状态见上方提示。") : t("已更新买卖一价并自动保存本人挂单；可直接查看价格比较结果。");
+      status.textContent = prices.state().error ? t("行情更新失败，请重试；角色与挂单状态见设置。")
+        : ownSaveError || !own || own.cached ? t("已更新买卖一价；本人挂单保存状态见设置。") : t("已更新买卖一价并自动保存本人挂单；可直接查看价格比较结果。");
     } finally { refresh.disabled = false; } };
     toolbar.append(refresh);
     const header = document.createElement("header"); header.className = "v3-header";
@@ -13204,7 +15707,7 @@ function getPriceTier(price, direction) {
     const healthTitle = document.createElement("summary"); healthTitle.textContent = t("行情与角色状态");
     health.append(healthTitle, priceStatus, wageStatus);
     header.insertBefore(health, toolbar);
-    element.append(header, notifications.element, view.element, marketNotifications.element); document.body.append(element);
+    element.append(header, view.element); document.body.append(element);
     function fail() { status.textContent = t("无法读取或保存收藏，请检查浏览器存储设置后重试。"); }
     function change(item, button, remove = false) {
       try {
@@ -13223,7 +15726,7 @@ function getPriceTier(price, direction) {
               (project?.querySelector(".mwi-layu-project-identity") || undo).focus();
             } catch (error) { status.textContent = t`撤销失败：${error.message}`; }
           }; undo.append(restore);
-          if (!element.hidden) restore.focus();
+          if (restore.isConnected && !element.hidden) restore.focus();
         }
         status.textContent = ""; signature = ""; scan();
       }
@@ -13277,26 +15780,30 @@ function getPriceTier(price, direction) {
         document.activeElement.blur();
       }
       try {
-        const items = store.list().filter(wages.isListItemVisible).map(item => ({ ...item, name: names[item.itemHrid] || item.name }));
+        const items = withSaleReferenceDefaults(store.list().filter(wages.isListItemVisible), history)
+          .map(item => ({ ...item, name: names[item.itemHrid] || item.name }));
         const cartScope = app.materialCart.scope(currentCharacterId);
         let cartItems = [], cartError = "";
         try { cartItems = cart.read(cartScope); } catch (error) { cartError = error.message; }
+        let enhancementItems = [], enhancementError = "", enhancementQueueError = "";
+        try { const plan = app.enhancementSchedule.snapshot(enhancementSchedule, cartScope, wages.enhancementQueue(), names); enhancementItems = plan.items; enhancementQueueError = plan.queueError; } catch (error) { enhancementError = error.message; }
         const priceState = prices.state();
-        const next = JSON.stringify([items, cartItems, cartError, own, history, historyError, ownSaveError, priceState, wages.state(), partitions.read(), names, spriteBase, skillSpriteBase, Math.floor(Date.now() / 60000), cartScope]);
+        const next = JSON.stringify([items, cartItems, cartError, enhancementItems, enhancementError, enhancementQueueError, own, history, historyError, ownSaveError, priceState, wages.state(), partitions.read(), names, spriteBase, skillSpriteBase, Math.floor(Date.now() / 60000), cartScope]);
         if (next === signature) return;
-        priceStatus.textContent = priceState.snapshotAt ? t`市场快照 ${new Date(priceState.snapshotAt).toLocaleString(app.i18n?.locale)}${priceState.error ? t(" · 更新失败，保留已有价格") : ""}`
-          : priceState.error ? t`行情读取失败：${priceState.errorMessage}` : t("正在获取市场快照…");
-        priceStatus.textContent += t` 已保留 ${priceState.bookCount} 份订单簿。`;
-        if (own) priceStatus.textContent += t` 本人挂单 ${own.listings.length} 单 · ${own.cached ? t("本地保存，待更新") : ownSaveError ? t("尚未保存") : t("已自动保存")}${own.observedAt ? t` · 数据变更于 ${new Date(own.observedAt).toLocaleString(app.i18n?.locale)}` : ""}。`;
+        priceStatus.textContent = priceState.snapshotAt ? t`行情时间 ${new Date(priceState.snapshotAt).toLocaleString(app.i18n?.locale)}${priceState.error ? t(" · 更新失败，保留已有价格") : ""}`
+          : priceState.error ? t`行情读取失败：${priceState.errorMessage}` : t("正在获取行情…");
+        if (own) priceStatus.textContent += t` 本人挂单 ${own.listings.length} 单${own.observedAt ? t` · 数据变更于 ${new Date(own.observedAt).toLocaleString(app.i18n?.locale)}` : ""}。`;
         if (ownSaveError) priceStatus.textContent += ` ${ownSaveError}。`;
         if (priceState.cacheError) priceStatus.textContent += ` ${priceState.cacheError}。`;
         wageStatus.textContent = wages.status();
-        healthTitle.textContent = t`${priceState.snapshotAt ? t`快照 ${new Date(priceState.snapshotAt).toLocaleTimeString(app.i18n?.locale, {hour:"2-digit", minute:"2-digit"})}` : t("行情待更新")} · ${priceState.bookCount} 订单簿${priceState.error ? t(" · 更新失败") : ""}`;
+        healthTitle.textContent = t`${priceState.snapshotAt ? t`行情 ${new Date(priceState.snapshotAt).toLocaleTimeString(app.i18n?.locale, {hour:"2-digit", minute:"2-digit"})}` : t("行情待更新")}${priceState.error ? t(" · 更新失败") : ""}`;
         materialNames.clear();
+        for (const item of enhancementItems) materialNames.add(item.itemHrid);
         for (const item of [...items, ...cartItems]) for (const material of wages.materials(item, wages.calculate(item, prices.quote(item)), item.quantity || 1).inputs) {
           materialNames.add(material.itemHrid);
         }
-        view.render({ items, prices, wages, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError });
+        if (!enhancementError) for (const material of app.enhancementSchedule.summarize(enhancementItems, wages, enhancementQueueError).rows) materialNames.add(material.itemHrid);
+        view.render({ enhancementItems, enhancementError, enhancementQueueError, items, prices, wages, own, history, historyError, names, spriteBase, skillSpriteBase, cartScope, cartItems, cartError });
         element.dataset.cartOwner = owner;
         app.itemUI.decorate(element, spriteBase, names);
         signature = next;
@@ -13359,6 +15866,15 @@ function getPriceTier(price, direction) {
             if ([purchaseMode.required, inventoryCount, pendingPurchaseCount].every(value => Number.isFinite(value) && value >= 0)) {
               quantity = Math.ceil(Math.max(0, purchaseMode.required - inventoryCount - pendingPurchaseCount));
             }
+          } else if (purchaseMode.type === "enhancement") {
+            const scope = app.materialCart.scope(wages.state().simulationOwner);
+            const snapshot = app.enhancementSchedule.snapshot(enhancementSchedule, scope, wages.enhancementQueue(), names);
+            const summary = app.enhancementSchedule.summarize(snapshot.items, wages, snapshot.queueError);
+            const coins = wages.materialInfo({ itemHrid:"/items/coin", enhancementLevel:0 }).inventoryCount;
+            const plan = purchaseMode.budget ? app.enhancementSchedule.allocate(summary, prices, coins) : app.materialCart.budget(summary, prices);
+            const material = plan.rows?.find(row => app.materialCart.key(row) === app.materialCart.key(item));
+            quantity = material?.purchaseQuantity;
+            reservedCoins = plan.reservedCoins ?? summary.rows.filter(row => row.itemHrid === "/items/coin").reduce((sum, row) => sum + (row.required || 0), 0);
           } else {
             const scope = app.materialCart.scope(wages.state().simulationOwner);
             const summary = app.materialCart.summarize(cart.read(scope), wages, prices);
@@ -13566,8 +16082,8 @@ function getPriceTier(price, direction) {
         root.clearInterval(wageTimer);
         view.destroy();
         notifications.destroy();
-        marketNotifications.destroy();
         wages?.destroy();
+        listingAgeHint.destroy();
         prices.destroy();
         document.removeEventListener(app.config.bridgeEvent, onMarketMessage);
         document.removeEventListener(app.config.listingAckEvent, onHistorySaved);
@@ -13583,7 +16099,7 @@ function getPriceTier(price, direction) {
       }
     });
   }
-  app.v3Application = Object.freeze({ readItem, compactClothingName, create });
+  app.v3Application = Object.freeze({ readItem, compactClothingName, withSaleReferenceDefaults, create });
 })(globalThis);
 
 
