@@ -245,3 +245,36 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+## Milkonomy 强化分解计算
+
+- 来源：https://github.com/luyh7/milkonomy ，固定参考提交 `1984bccfac72de60ded63c04a6106857319b988e`（MIT）。
+- 线上逻辑核对：2026-10-17，`www.milkonomy.top` v2.9.0，`index-B2UG7UY5.js`、`enhance-n7VKEZNT.js`、`el-checkbox-group-CDdh1tcI.js`、`utils-5w0HdWtf.js`。
+- `src/v3/enhancement-decomposition.js` 独立适配强化马尔可夫期望、分解公式、起点规则、保护/催化剂枚举及工时配平；修复目标 +1 的 NaN，保留祝福超目标一级按目标等级计价的口径。
+- 游戏规则和角色参数由本地只读桥接提供；行情统一使用助手读取的数据，全部在本地计算。不再请求网站历史中位价，也不使用网站 NPC 固定价、均价替换或缺价配方兜底；不包含自动强化、分解或交易代码。
+
+```text
+MIT License
+
+Copyright (c) 2025 luyuhao
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
