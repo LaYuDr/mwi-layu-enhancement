@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         强化助手
 // @namespace    https://www.milkywayidle.com/mwi-layu-enhancement
-// @version      0.3.20
+// @version      0.3.21
 // @author       柆雨
 // @description  银河奶牛强化助手：比较强化路线与预计收益，汇总材料、库存缺口和备料计划。
 // @name:en      Enhancement Assistant
@@ -507,7 +507,7 @@
     return { dispose, report, client };
   }
   if (typeof module !== "undefined" && module.exports) module.exports = { createUsageClient, boot };
-  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.20","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false,"defaultEnabled":true,"reportOptOut":true}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
+  try { boot({"pluginId":"mwi_enhancement","name":"强化助手","version":"0.3.21","endpoint":"https://ukpyedhl.cn-hk1.rainapp.top","development":false,"defaultEnabled":true,"reportOptOut":true}, {getValue: typeof GM_getValue === "function" ? GM_getValue : null,
 setValue: typeof GM_setValue === "function" ? GM_setValue : null,
 listen: typeof GM_addValueChangeListener === "function" ? GM_addValueChangeListener : null,
 unlisten: typeof GM_removeValueChangeListener === "function" ? GM_removeValueChangeListener : null,
@@ -815,1686 +815,7 @@ SOFTWARE.
 
 
 // ---- src/v3/translations-en.js ----
-(function initEnglishMessages(root) {
-  "use strict";
-  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
-  app.englishMessages = Object.freeze({
-  "开始时间: {0}": "Start time: {0}",
-  "持续时间: {0}": "Duration: {0}",
-  "更早的本地记录": "Earlier local records",
-  "等待原生掉落记录就绪，请打开或刷新游戏的掉落与经验记录页。": "Waiting for native loot records. Open or refresh the game's loot and XP history.",
-  "角色 {0} · 本地已保存 {1} 条 · 补充 {2} 条历史": "Character {0} · {1} records saved locally · {2} additional historical records",
-  "自制／自行强化": "Self-made / self-enhanced",
-  "市场成品": "Market finished item",
-  "{0} · {1}": "{0} · {1}",
-  "取得成本对比": "Acquisition cost comparison",
-  "市场成品价": "Finished item price",
-  "自制／自行强化期望成本": "Expected self-making cost",
-  "两条路径均缺少有效价格，请补齐行情或填写成品价。": "Both routes lack valid prices. Refresh quotes or enter a finished item price.",
-  "自动采用 {0}，节省 {1}。": "Automatically using {0}, saving {1}.",
-  "暂按 {0} 计算，另一条路径缺价或不可用。": "Using {0}; the other route lacks prices or is unavailable.",
-  "按当前角色的最低材料成本路线，计入底子、制造材料、强化与保护消耗及合成费用；库存不按免费计算。": "Uses the current character's lowest material-cost route, including bases, production materials, enhancement, protection and combination costs. Owned materials retain their value.",
-  "自制为期望材料成本，不含茶费、制作耗时的机会成本及等待时间；实际消耗可能更高，请保留周转金。": "Self-making uses expected material costs, excluding tea, time opportunity cost and waiting. Actual consumption may be higher; keep working capital available.",
-  "回本＝较低取得成本扣旧装净收入 ÷ 每日新增净收益。自制按期望材料成本计算。": "Payback = lower acquisition cost less old-item proceeds / added daily net profit. Self-making uses expected material costs.",
-  "预计取得成本 · {0}": "Expected acquisition cost · {0}",
-  "取得后剩余金币（按期望）": "Coins remaining (expected)",
-  "取得资金缺 {0}": "Acquisition shortfall: {0}",
-  "全部计入": "Include all",
-  "全部跳过": "Skip all",
-  "批量采购范围": "Bulk purchase selection",
-  "设置当前角色的全部计划，包含游戏队列、队列外计划及原备料车。": "Apply to all plans for this character, including the game queue, manual plans and legacy cart.",
-  "计入": "Include",
-  "跳过": "Skip",
-  "本次采购：{0} +{1}": "This purchase: {0} +{1}",
-  "奶酪鞋": "Cheese Boots",
-  "强化精华": "Enhancing Essence",
-  "左一利润 / h": "Ask profit / h",
-  "右一利润 / h": "Bid profit / h",
-  "打开强化精华市场": "Open Enhancing Essence market",
-  "强化方案、茶饮和底子来源沿用原列表设置；宝箱收益不计入。": "Enhancement routes, drinks and base sources use the list settings. Crate revenue is excluded.",
-  "按分解产物售价计算每小时利润": "Hourly profit from decomposition output sales",
-  "强化 / 分解": "Enhancing / Decomposition",
-  "分解计价": "Decomposition cost",
-  "左右报价共用同一强化方案和成本耗时；优先按左一收入选择原列表路线，缺左价时用右价。": "Ask and bid share the same enhancement route, cost and time. The list route is selected using ask revenue, or bid revenue when the ask is missing.",
-  "{0}可用 {1}": "{0} available {1}",
-  "{0} {1}": "{0} {1}",
-  "每小时利润＝（分解期望税后收入－强化成本－分解成本）÷（强化期望耗时＋分解耗时）。强化沿用原列表方案；分解概率计入产出一次，不再重复扣减。": "Hourly profit = (expected net output revenue - enhancement cost - decomposition cost) / (expected enhancement time + decomposition time). Enhancement uses the list route. Decomposition probability is applied to output once.",
-  "强化精华分别使用左一、右一售价，其余分解材料使用右一报价；不使用催化剂，不计宝箱。强化设置、底子采购或自制、材料模拟和备料倍率与原列表共用；备料倍率只影响需备数量。交易与游戏动作需手动确认。": "Enhancing Essence uses separate ask and bid sale prices; other outputs use bids. No catalyst or crate revenue is included. Enhancement settings, base sourcing, material simulation and preparation multipliers are shared with the list. Multipliers affect preparation quantities only. Trades and game actions require manual confirmation.",
-  "同款计划均已保留；同时计入采购时请先核对。": "Matching plans are retained. Review them before purchasing for both.",
-  "计入本次采购：{0} +{1}": "Include in this purchase: {0} +{1}",
-  "仅影响本次采购；自动刷新保留选择，刷新页面后恢复全选。": "Only affects this purchase. Automatic updates preserve choices; reloading the page selects all projects.",
-  "计入本次采购": "Included in this purchase",
-  "不计入本次采购": "Excluded from this purchase",
-  "本次预算": "Purchase budget",
-  "本次采购 {0} / {1} 项": "Purchasing {0} / {1} projects",
-  "仅为“计入”项目采购材料；共享库存重算，计划进度与时长不变。": "Only Include projects contribute to this purchase. Shared stock is recalculated; plan progress and time stay unchanged.",
-  "未选采购项目，请在上方选择“计入”。": "No projects selected. Choose Include above.",
-  "本次需备": "Selected need",
-  "计划已变化，请重新选择采购项目。": "The plan changed. Select purchase projects again.",
-  "采购选择已变化，请从材料表重新操作。": "Purchase selection changed. Try again from the material table.",
-  "此材料已不在本次采购中，请从材料表重新操作。": "This material is no longer in the purchase. Try again from the material table.",
-  "序": "#",
-  "耗时": "Time",
-  "成功率≈": "Success ≈",
-  "材料时长": "Stock time",
-  "起始": "Start",
-  "进度": "Status",
-  "自动": "Auto",
-  "等前项制造": "Await prior craft",
-  "已关联队列": "Linked",
-  "已达标": "Complete",
-  "制造缺料": "Craft short",
-  "制造待料": "Craft pending",
-  "待制造": "To craft",
-  "待购底子": "Buy base",
-  "强化缺料": "Enhance short",
-  "强化待料": "Enhance pending",
-  "待强化": "To enhance",
-  "达标 {0} · 缺底子 {1}": "Done {0} · Bases short {1}",
-  "原备料车：数量为新增制作，沿用原路线。": "Legacy cart: additional crafting units, original route.",
-  "参数只读，在游戏中修改。": "Read-only. Edit in game.",
-  "目标数先扣达标装备，再用库存底子。": "Deduct completed gear, then use stocked bases.",
-  "队列 {0} 件 · 额外 {1} 件": "Queued {0} · Additional {1}",
-  "取消关联": "Unlink",
-  "仅跳转预填，核对后手动开始": "Navigate and prefill only. Review and start manually.",
-  "同步 · 只读": "Synced · Read-only",
-  "清空计划": "Clear plans",
-  "整行剩余强化的期望耗时（小时）。": "Expected hours for all remaining enhancements in this row.",
-  "当前库存完成本行的近似概率，非单次强化成功率。": "Approximate chance of completing this row with current stock, not per-click success.",
-  "前项预留后，剩余已到账材料可支撑的强化时长（小时），不以期望耗时封顶。": "Enhancement hours supported by physical stock after earlier reservations, uncapped by expected time.",
-  "<0.01时": "<0.01h",
-  "{0}时": "{0}h",
-  "无保护": "Unprotected",
-  "已达标 {0} 件": "Completed {0}",
-  "缺底子 {0} 件": "Bases short {0}",
-  "自动匹配库存；也可指定起始等级。": "Auto matches inventory; a starting level can also be set.",
-  "自动选择剩余成本最低的保护等级；也可手动指定。": "Auto selects the protection level with the lowest remaining cost; manual levels are also available.",
-  "使用当前角色的实际强化和炼金参数；不采用原列表的虚拟角色、底子自制选择或备料倍率。全部使用助手读取的市场行情在本地计算，不读取网站中位价，不用均价替换报价；不可交易箱子按本地掉落表和物品行情估价。": "Uses the current character's Enhancing and Alchemy parameters, independently of virtual characters, crafted base selection and preparation multipliers. All calculations use the assistant's market quotes locally, with no website median or average-price substitution. Non-tradable loot is valued from local drop tables and market quotes.",
-  "点击表头排序；行情刷新保留行序。拖动表头调整列顺序，拖动边缘调整列宽。": "Click a heading to sort. Price updates retain row order. Drag headings to reorder columns and edges to resize.",
-  "强化保护": "Enhancement protection",
-  "强化掉落": "Enhancement drops",
-  "强化投入": "Enhancement inputs",
-  "分解掉落": "Decomposition drops",
-  "分解所得": "Decomposition yield",
-  "分解投入": "Decomposition inputs",
-  "投入缺少买入报价，完整成本与利润待计算。": "An input has no ask quote. Complete cost and profit are pending.",
-  "可交易产物缺少卖出报价，仅显示已知收入，完整利润待计算。": "A tradable output has no bid quote. Only known revenue is shown; complete profit is pending.",
-  "采购成本独立核算；收益仅计入有卖出报价的产物。未估值掉落单列，不计入利润、工时费和利润率。": "Purchase cost is calculated independently. Revenue includes only quoted outputs. Unvalued drops are listed separately and excluded from profit, hourly profit and margin.",
-  "另有未估值掉落，未计入收益。": "Additional unvalued drops are excluded from returns.",
-  "已知部分": "Known portion",
-  "可交易产物收益": "Tradable output revenue",
-  "已知部分，缺价产物列于未估值掉落。": "Known portion. Outputs without quotes are listed under unvalued drops.",
-  "未估值掉落": "Unvalued drops",
-  "下列掉落保留期望数量，价值未知，未计入上方收益。": "Expected quantities are retained below. Their value is unknown and excluded from the returns above.",
-  "未估值掉落明细": "Unvalued drop details",
-  "缺少卖出报价": "No bid quote",
-  "不可交易，未估值": "Non-tradable; unvalued",
-  "使用当前角色的实际强化和炼金参数；不采用原列表的虚拟角色、底子自制选择或备料倍率。全部使用助手读取的市场行情在本地计算，不读取网站中位价，不用均价替换报价。不可交易箱子单列为未估值掉落，不按箱内物品或牛铃推算卖出收入。投入或可交易产物缺价时，完整利润保持未知。": "Uses the current character's Enhancing and Alchemy parameters, independently of virtual characters, crafted base selection and preparation multipliers. Calculations use the assistant's market quotes locally, without website medians or average-price substitution. Non-tradable crates are listed as unvalued drops; their contents and cowbells are not converted into sale revenue. Complete profit remains unknown when inputs or tradable outputs lack quotes.",
-
-  "等待前项制造": "Waiting for earlier crafting",
-  "采购入口已变化，请从强化计划重新操作。": "This purchase entry changed. Retry from the enhancement plan.",
-  "统一备料与预算": "Unified materials and budget",
-  "强化计划统一显示游戏队列、队列外计划与原备料车，下方共用一张材料与采购表。新增只需加入一次计划。": "The enhancement workspace combines the game queue, manual targets and legacy cart in one materials and purchasing ledger. Add a new target only once.",
-  "队列外计划按目标数量抵扣已有达标装备和可用库存底子；原备料车保留新增制作数量与原路线含义。": "Manual targets deduct owned finished equipment and available bases. Legacy cart entries retain their additional-production quantities and original routes.",
-  "游戏队列自动同步且参数只读。同款重复时可选择独立新增，或关联队列承担相应数量；核对前不生成采购预填。": "The game queue syncs automatically and is read-only. Review matching targets as additional units or link them to the queue before purchase prefilling.",
-  "材料汇总底子采购、直接制造、强化耗材与保护材料，共享库存和待到账只抵扣一次。": "Requirements combine base purchases, direct crafting, enhancement and protection. Shared stock and incoming orders are deducted once.",
-  "按游戏队列、队列外计划、原备料车的顺序分配预算；每项先安排取得底子与制造，再安排强化耗材，部分备料后停止向后分配。": "Budget follows game queue, manual targets and legacy cart order. Fund base acquisition and crafting before enhancement; stop after a partially funded stage.",
-  "材料已到账但底子未完成时可以先制造，不要求后续强化耗材也全部备齐。待到账和等待前项制造会分别标记。": "Craft once its own materials arrive, even if later enhancement supplies are short. Incoming orders and earlier crafting are shown separately.",
-  "跨等级需求按产品合并制造批次；同款保护装备随采购或自制来源备料。未知库存、配方、队列与报价保持未知。": "Crafting batches are combined across target levels. Same-item protection follows its purchase or craft source. Unknown stock, recipes, queues and prices stay unknown.",
-  "原新增制作路线的库存支撑时长与成功率暂不估算；已知总期望时长和材料采购仍保留。": "Stock-supported duration and probability are not estimated for legacy production routes. Known total duration and procurement requirements remain available.",
-  "底子就绪不表示强化材料已齐。缺料、待到账、待制造、待强化与已达标分别显示；所有操作只导航和预填，由玩家手动确认。": "A ready base does not mean enhancement supplies are ready. Shortages, incoming orders, crafting, enhancement and completed targets are shown separately. Actions only navigate and prefill; confirm manually.",
-  "原材料分区汇集收藏及计划关联材料，需备与缺口采用强化计划的统一核算结果。": "The materials partition includes favorites and planned inputs, using the unified plan requirements and shortages.",
-
-  "20 个目标等级": "20 target levels",
-  "选择一件装备，自动比较 +1～+20 的强化分解收益。": "Choose equipment to compare enhancement and decomposition returns from +1 to +20.",
-  "采购起点": "Starting equipment",
-  "强化 → 分解 → 出售产物": "Enhance \u2192 Decompose \u2192 Sell outputs",
-  "最高时利": "Best hourly profit",
-  "等待报价后计算。": "Waiting for prices to calculate.",
-  "分解 {0}": "Decomposing {0}",
-  "合计 {0}": "Total {0}",
-  "采购投入": "Purchase inputs",
-  "分解产出": "Decomposition outputs",
-  "采购投入明细": "Purchase input details",
-  "分解产出明细": "Decomposition output details",
-  "税后金额": "After-tax amount",
-  "每件起始装备的期望投入与产出；采购、强化、分解和出售均需手动确认。": "Expected inputs and outputs per starting equipment. Purchases, enhancement, decomposition and sales require manual confirmation.",
-  "祝福跳出目标等级仍按目标等级分解计价。": "Blessed overshoots are decomposed and valued at the target level.",
-
-  "计划关联数据异常，原数据已保留": "Invalid plan links. Original data retained.",
-  "底子或制造用量未知": "Base or manufacturing requirements are unknown",
-  "装备库存、待到账或制造配方未就绪": "Equipment stock, incoming orders or crafting recipes are not ready",
-  "原新增制作路线的库存时长暂未计入，逐项结果以已核算部分为准。": "Stock-supported duration for legacy production routes is not included. Check the calculated rows.",
-  "补齐预算": "Restocking budget",
-  "装备进度": "Equipment readiness",
-  "核对重复计划": "Review overlapping plans",
-  "同款项目可能重复，核对后再生成采购预填；原计划均已保留。": "These plans may overlap. Review them before purchase prefilling. All original entries are retained.",
-  "原备料车与现有计划同款": "Legacy cart overlaps with an existing plan",
-  "队列外计划与游戏队列同款": "Manual plan overlaps with the game queue",
-  "作为独立新增计划": "Treat as additional units",
-  "关联游戏队列": "Link to game queue",
-  "仅保留现有计划": "Keep existing plan only",
-  "撤销移除原备料计划": "Undo legacy plan removal",
-  "该物品已有新计划，未覆盖。": "A new entry already exists. It was not overwritten.",
-  "已关联游戏队列": "Linked to game queue",
-  "目标已达标": "Target met",
-  "待购买制造材料": "Purchase crafting materials",
-  "制造材料待到账": "Crafting materials pending",
-  "底子就绪，强化缺料": "Base ready; enhancement supplies short",
-  "底子就绪，强化材料待到账": "Base ready; enhancement supplies pending",
-  "可准备强化": "Ready to prepare enhancement",
-  "详情": "Details",
-  "原备料车：新增制作数量，保留原路线与取得方式。": "Legacy cart: additional production quantities retain their original routes and acquisition sources.",
-  "游戏队列参数只读，请在游戏中修改。": "Game queue parameters are read-only. Edit them in the game.",
-  "队列外目标数量会抵扣已有达标装备，剩余部分使用库存底子。": "Manual targets deduct owned finished equipment, then use available lower-level bases.",
-  "取消队列关联": "Unlink queue",
-  "只导航与预填，请在游戏中核对后手动开始": "Navigation and prefilling only. Review and start manually in the game.",
-  "游戏队列": "Game queue",
-  "自动同步，参数只读": "Synced automatically; parameters are read-only",
-  "添加装备": "Add equipment",
-  "备料进度": "Preparation status",
-  "路线与操作": "Route and actions",
-  "撤销移除计划": "Undo plan removal",
-  "原备料车计划": "Legacy cart plans",
-  "新增制作数量保留原含义；与上方计划共用材料核算，不再单独维护采购表。": "Additional production quantities retain their meaning and share one materials ledger with the plans above.",
-  "原备料车计划装备": "Legacy cart equipment",
-  "材料与采购": "Materials and purchasing",
-  "制造与底子": "Crafting and bases",
-  "强化期望消耗": "Expected enhancement use",
-  "共享库存只扣一次；待到账抵扣采购，不计入已备齐与库存可支撑时长。": "Shared stock is deducted once. Incoming orders reduce purchases but do not count as ready stock or supported duration.",
-  "{0} / {1} 件底子就绪": "{0} / {1} bases ready",
-  "已达标 {0} 件 · 缺底子 {1} 件": "{0} targets met · {1} bases missing",
-  "游戏队列承担 {0} 件；队列外还需 {1} 件": "Queue covers {0} unit(s); {1} remain outside the queue",
-  "缺少起始底子 {0} 件": "Missing {0} starting base(s)",
-  "减少强化数量：{0}": "Decrease planned quantity: {0}",
-  "增加强化数量：{0}": "Increase planned quantity: {0}",
-  "原备料数量：{0} +{1}": "Legacy quantity: {0} +{1}",
-  "移除原备料计划：{0}": "Remove legacy plan: {0}",
-  "计划已变化或同款尚未核对，请在强化计划中重新操作。": "The plan changed or overlapping entries need review. Retry from the enhancement plan.",
-  "计划未算全或存在待核对项目，暂不能预填采购。": "The plan is incomplete or has overlapping entries to review. Purchase prefilling is unavailable.",
-  "计划未算全，请等待数据同步。": "The plan is incomplete. Wait for data to sync.",
-  "当前项目无需新增制造，请检查底子来源或待到账。": "This entry needs no additional crafting. Check its source and incoming orders.",
-  "当前项目没有可用起始装备，请先取得底子或查看已达标数量。": "No starting equipment is available for this entry. Obtain a base or check completed targets.",
-  "同款有多个计划，请在队列外计划中分别调整。": "Multiple entries share this target. Edit them separately in the manual plan.",
-  "查看计划": "View plan",
-  "计划已有新修改，未覆盖当前计划。": "The plan has changed. Current entries were not overwritten.",
-  "计划关联 · 角色 {0}": "Plan links · Character {0}",
-
-  "强化 {0} + 分解 {1}；祝福跳出目标等级仍按目标等级分解计价。": "Enhancing {0} + Decomposing {1}. Blessed overshoots are valued at the target level.",
-  "装备对比 · 角色 {0}": "Equipment comparison · Character {0}",
-  "装备对比": "Equipment comparison",
-  " · 过期参考": " · Stale reference",
-  "{0} 天": "{0} days",
-  "{0} 天回本": "Payback in {0} days",
-  "{0} 天收益减投入": "{0}-day profit less investment",
-  "{0}% 时间 · {1} / 天": "{0}% of time · {1} / day",
-  "不含期末装备残值": "Excludes remaining equipment value",
-  "买入后剩余金币": "Coins remaining after purchase",
-  "买入时需要": "Upfront purchase cost",
-  "今天": "Today",
-  "使用基准左价": "Snapshot ask price",
-  "使用手动报价。": "Manual price. ",
-  "保存失败，本次修改仅在当前页面有效。": "Could not save. Changes remain in this page only. ",
-  "保留": "Keep",
-  "保留周转金": "Working capital reserve",
-  "候选装备": "Equipment candidates",
-  "候选装备或价格无效。": "Invalid candidate equipment or price.",
-  "净投入": "Net investment",
-  "卖出抵扣": "Sell and deduct",
-  "占比按强化时间填写，合计须为 100%。新增项目默认 0%，由你决定时间分配。": "Allocate enhancement time totaling 100%. New projects start at 0%; choose their share yourself.",
-  "原路线所需价格不完整，无法固定路线比较。": "Prices for the original route are incomplete; a fixed-route comparison is unavailable.",
-  "可用金币（手动覆盖）": "Available coins (override)",
-  "可计算时间占比 {0}% / 100%。": "Calculable time: {0}% / 100%.",
-  "各方案都从当前装备出发，只替换一个槽位。": "Each candidate replaces one slot from your current equipment.",
-  "同项目 · 同路线 · 同保护设置": "Same projects, routes and protection",
-  "周转金缺 {0}": "Reserve shortfall: {0}",
-  "回本最快": "Fastest payback",
-  "回本＝净投入 ÷ 每日新增净收益；缺少数据的方案不参与排名。": "Payback = net investment / added daily net profit. Incomplete candidates are excluded from ranking.",
-  "固定日常强化项目，比较每次换一件装备带来的新增收益。": "Keep your usual enhancement projects fixed and compare the added profit from replacing one item.",
-  "基准更新失败，保留已有方案。": "Baseline refresh failed. Existing plans are retained. ",
-  "小时": "Hours",
-  "已更新本地对比方案。": "Local comparison updated.",
-  "已更新角色与行情基准，全部方案已重算。": "Character and market baseline refreshed; all candidates recalculated.",
-  "已有新数据，当前仍使用冻结基准。": "New data is available; this comparison still uses its frozen baseline.",
-  "已留足 {0} 周转金": "Working capital reserve of {0} covered",
-  "常做项目组合": "Regular project mix",
-  "平均分配时间": "Distribute time evenly",
-  "强化 {0} · 建筑 {1}": "Enhancing {0} · Observatory {1}",
-  "强化项目与占比无效。": "Invalid enhancement projects or weights.",
-  "当前净收益待补茶费或项目数据；相同的每小时茶费在增收中抵消。": "Net profit needs tea costs or project data. Shared hourly tea costs cancel out in the difference.",
-  "当前强化未配置饮品": "No enhancement drinks configured",
-  "当前槽位存在多件装备，无法确定换装基准。请重新读取角色。": "Multiple items occupy this slot. Reload your character to establish a baseline.",
-  "当前槽位未装备": "Slot currently empty",
-  "当前装备": "Current equipment",
-  "当前预计净收益 {0} / 小时 · {1} / 天": "Current estimated net profit: {0} / hour · {1} / day",
-  "待填写": "Enter amount",
-  "待补数据": "Data needed",
-  "成品购入价（金币）": "Finished item price (coins)",
-  "手动购入价 {0}": "Manual purchase price: {0}",
-  "换装净投入": "Net replacement cost",
-  "换装方案": "Replacement candidate",
-  "搜索收藏项目": "Search favorite projects",
-  "撤销移除": "Undo removal",
-  "收益下降": "Profit decreases",
-  "收益对比": "Profit comparison",
-  "新增收益何时覆盖投入": "When added profit covers investment",
-  "方案 {0}": "Candidate {0}",
-  "无增收": "No added profit",
-  "无需回本": "No payback needed",
-  "旧装出售净收入（金币）": "Net proceeds from old item (coins)",
-  "旧装备如何处理": "What to do with old equipment",
-  "时间占比": "Time share",
-  "暂无可用项目，请先在列表或分区中收藏已强化物品。": "No projects available. First add enhanced items to your favorites in the list or groups.",
-  "暂无报价，可手动填写。": "No quote available. Enter a price manually.",
-  "更换为": "Replace with",
-  "更新基准并重算": "Refresh baseline",
-  "期望收益不代表当天到账。不预测价格变化、出售等待或后续升级；时间仅计强化，另行制造备料耗时未计入。": "Expected profit is not same-day cash. Price changes, sale delays and later upgrades are not forecast. Time covers enhancement only, excluding production and preparation.",
-  "期限内收益最多": "Highest period return",
-  "本地模拟，不会更换装备或执行游戏操作。": "Local simulation. No equipment changes or game actions are performed.",
-  "查看各项目的增收贡献": "View added profit by project",
-  "正在读取角色与行情…": "Reading character and market data…",
-  "每天多赚": "Added profit / day",
-  "每小时净收益": "Net profit / hour",
-  "每小时增收 {0}": "Added profit / hour: {0}",
-  "每小时工时费（未扣茶费）": "Hourly earnings before tea costs",
-  "每小时茶水费用（金币）": "Hourly tea costs (coins)",
-  "每日增收最多": "Highest daily increase",
-  "每日强化时间": "Daily enhancing time",
-  "每日新增净收益": "Added net profit / day",
-  "比较基准": "Comparison baseline",
-  "比较期限": "Comparison period",
-  "沿用已装备物品、茶与增益": "Uses equipped items, drinks and buffs",
-  "添加一个装备方案，开始比较。": "Add equipment to begin comparing.",
-  "添加方案": "Add candidate",
-  "留空使用基准右价扣除 4% 交易费；售出前不增加可用金币。": "Leave blank for the snapshot bid less a 4% fee. Proceeds are unavailable until sold. ",
-  "留空使用基准左价；缺价时可手动填写。": "Leave blank for the snapshot ask. Enter a price if missing. ",
-  "目标强化等级": "Target enhancement level",
-  "目标装备": "Target equipment",
-  "真实角色或物品数据未就绪，请重新读取。": "Real character or item data is unavailable. Reload it.",
-  "移除方案": "Remove",
-  "第 {0} 天": "Day {0}",
-  "第 {0} 天：{1}": "Day {0}: {1}",
-  "等待真实角色与物品数据。可点击更新基准重试。": "Waiting for real character and item data. Refresh the baseline to retry.",
-  "累计新增收益减投入：开始 {0}，第 {1} 天 {2}。": "Cumulative added profit less investment: {0} initially; {2} on day {1}.",
-  "累计新增经营净收益 − 换装净投入": "Cumulative added net profit − replacement cost",
-  "编辑当前方案": "Edit candidate",
-  "缺少可靠的饮品消耗速率时不推算茶费。可填实际每小时总费用；所有方案使用相同饮品和时长，增收差额不受共同茶费影响。": "Tea costs are not estimated without a reliable consumption rate. Enter the actual hourly total. All candidates share the same drinks and duration, so shared tea costs cancel out.",
-  "茶水费用与收益口径": "Tea costs and profit basis",
-  "补齐项目数据与换装价格后显示回本曲线。": "Complete project data and replacement prices to show the payback chart.",
-  "装备对比设置无效，原记录保留。": "Invalid equipment comparison settings. Original records are retained.",
-  "装备投资对比": "Equipment investment comparison",
-  "装备收益对比表，可横向滚动": "Equipment profit table; scroll horizontally",
-  "角色 {0} · 基准 {1}": "Character {0} · Snapshot {1}",
-  "角色与行情已固定；全部方案共用。": "All candidates share this frozen character and market baseline.",
-  "角色尚未就绪。": "Character is not ready.",
-  "请从收藏选择强化项目。": "Select enhancement projects from favorites.",
-  "请输入 {0}～{1} 的有效数值。": "Enter a valid number from {0} to {1}.",
-  "请选择支持的装备和 0～20 的强化等级。": "Choose supported equipment and an enhancement level from 0 to 20.",
-  "调整项目与占比": "Edit projects and shares",
-  "购入资金缺 {0}": "Purchase shortfall: {0}",
-  "资金或装备价格未知": "Funds or equipment price unknown",
-  "部分项目缺少计算数据，暂不汇总和排名。": "Some projects lack data. Totals and ranking are unavailable.",
-  "项目时间占比须合计为 100%。": "Project time shares must total 100%.",
-  "项目缺少有效售价、底子或材料价格。": "Project is missing a valid sale, base item or material price.",
-  "预计回本": "Estimated payback",
-  "预计覆盖净投入": "Time to cover investment",
-  "强化或炼金等级尚未就绪，请重新读取角色。": "Enhancing or Alchemy level is unavailable. Read the character again.",
-  "角色增益数据无效，请重新读取角色。": "Invalid character buffs. Read the character again.",
-  "装备或饮品数据尚未就绪，请重新读取角色。": "Equipment or drink data is unavailable. Read the character again.",
-  "装备强化加成表尚未就绪。": "Equipment enhancement bonus data is unavailable.",
-  "强化计算参数无效。": "Invalid enhancement parameters.",
-  "强化成功率超出有效范围，请核对角色增益。": "Enhancement success is outside the valid range. Check character buffs.",
-  "强化期望计算失败，请核对游戏规则。": "Expected enhancement calculation failed. Check game rules.",
-  "此物品没有可用的强化分解规则。": "This item has no enhancement and decomposition rules.",
-  "没有可购买的起始装备报价。": "No starting equipment has a buying quote.",
-  "目标等级不高于网站选定的起点。": "Target does not exceed the website's selected starting level.",
-  "保护道具缺少买入报价。": "No protection item has a buying quote.",
-  "动作耗时或炼金效率数据尚未就绪。": "Action duration or Alchemy efficiency is unavailable.",
-  "分解成功率无效，请核对炼金参数。": "Invalid decomposition success. Check Alchemy parameters.",
-  "投入或产物缺少有效行情，暂不计算收益。": "An input or output has no valid quote. Profit is unavailable.",
-  "网站盈利预筛选未通过。": "Did not pass the website's profitability filter.",
-  "强化分解": "Enhance Decompose",
-  "更换物品": "Change item",
-  "采购装备与耗材 → 强化 → 自行分解 → 出售产物；自动比较全部 20 个目标等级。": "Buy equipment and materials → Enhance → Decompose yourself → Sell outputs. All 20 target levels are compared automatically.",
-  "选择强化分解物品": "Select an item to enhance and decompose",
-  "搜索物品名称或 HRID": "Search item name or HRID",
-  "搜索强化分解物品": "Search enhancement decomposition items",
-  "没有匹配的物品。": "No matching items.",
-  "等待游戏物品规则，请刷新角色数据。": "Waiting for game item rules. Refresh character data.",
-  "请等待当前角色加载后选择物品。": "Wait for the current character to load before selecting an item.",
-  "行情更新失败，当前使用已有报价，请核对行情时间。": "Market refresh failed. Existing quotes remain in use; check their timestamp.",
-  "网站选定起点：": "Website starting level:",
-  "暂无通过网站盈利筛选的方案。": "No route passed the website's profitability filter.",
-  "目标": "Target",
-  "催化剂": "Catalyst",
-  "期望成本": "Expected cost",
-  "库存抵扣后": "After stock",
-  "单件期望成本": "Expected cost per item",
-  "扣除可用库存价值后的单件成本": "Per-item cost after deducting available inventory value",
-  "期望成本未知": "Expected cost unavailable",
-  "单件材料需求或库存数据未知，暂不能计算库存抵扣": "Per-item material demand or inventory is unknown; stock deduction is unavailable",
-  "税后收入": "Net revenue",
-  "总耗时": "Total time",
-  "强化次数": "Enhance actions",
-  "分解成功率": "Decompose success",
-  "强化分解 20 个等级": "Enhance decompose: 20 levels",
-  "不保护": "No protection",
-  "以下为处理一件起始装备的期望投入与产出；采购、强化、分解和出售均需手动确认。": "Expected inputs and outputs per starting gear. Buying, enhancing, decomposing and selling require manual confirmation.",
-  "用途": "Use",
-  "期望数量": "Expected quantity",
-  "强化分解投入产出": "Enhance decompose inputs and outputs",
-  "投入": "Inputs",
-  "产出": "Outputs",
-  "计算口径": "Calculation method",
-  "沿用 Milkonomy 强化分解逻辑：优先选择有报价的 +1～+5 起点，否则 +0；枚举保护等级及三档催化剂，按强化与分解合计时利选优。仅修复目标 +1 的 NaN。未通过盈利筛选的等级保留显示供核对。": "Uses Milkonomy's logic: choose the first quoted starting level from +1 to +5, otherwise +0; compare protection thresholds and three catalyst options by combined hourly profit. Fixes target +1 NaN. Levels failing the profit filter remain visible for comparison.",
-  "当前角色：强化 {0} · 炼金 {1}；买入左一，卖出右一，卖出税率 4%。": "Current character: Enhancing {0} · Alchemy {1}. Buy at ask, sell at bid, 4% sales tax.",
-  "最高时利 +{0}：{1} / h": "Best hourly profit +{0}: {1} / h",
-  "强化 {0} h + 分解 {1} h；祝福跳出目标等级仍按目标等级分解计价。": "Enhancing {0} h + Decomposing {1} h. Blessed overshoots are valued at the target level.",
-
-  "物品可同时属于多个分区，分区归属按物品和强化等级独立保存。全部取消则归入未分区；删除分区保留其他归属。管理列表按游戏编号升序排列。": "Items can belong to multiple partitions. Membership is saved separately for each item and enhancement level. Clearing all memberships moves an item to Unassigned; deleting one partition retains the others. Management rows follow game ID order.",
-  "按备料车顺序分配共享库存；待到账不算备齐。底子就绪不代表强化耗材齐全，请查看备料车材料表。": "Shared stock is allocated in cart order. Pending deliveries are not ready supplies. Having the base item does not mean enhancement materials are ready; check the cart material table.",
-  "强化预填按当前行情方案执行；模拟方案仅用于比较。": "Enhancement forms use the current market route. Simulated routes are for comparison only.",
-  "预设与收藏管理": "Presets and favorite management",
-  "期望成功率（近似）": "Expected success (approx.)",
-  "材料可支撑时间": "Material-supported time",
-  "合计每项最多计入其计划期望时间；行内材料可支撑时间显示剩余库存的容量，不以期望时间封顶。": "The total caps each row at its expected duration. Row material-supported time shows remaining stock capacity without that cap.",
-  "行内成功率和材料可支撑时间按当前已到账库存估算：前项按期望消耗预留，不足时预留可支撑部分；本项按剩余库存中最先耗尽的材料反推。成功率采用指数／Gamma 近似，不是队列整体成功率，保护材料的实际随机消耗可能有偏差。": "Row success rates and material-supported times use physical inventory. Earlier rows reserve expected consumption, or the supported fraction if short; this row is limited by the first material to run out in the remainder. Rates use an exponential/Gamma approximation, not a joint queue probability. Actual random protection consumption may differ.",
-  "混合起始等级，暂不能用同尺度 Gamma 模型估算成功率。": "Mixed starting levels cannot be estimated with a common-scale Gamma model.",
-  "缺少起始底子，当前库存不能完成整行计划。": "Missing base equipment: current inventory cannot complete the entire row.",
-  "按本行剩余件数与可用材料容量估算；不是单次强化点击成功率。": "Estimated for this row\u2019s remaining units and available material capacity, not success per click.",
-
-  "计划已变化，请重新输入成功率。": "The plan changed. Please enter the success rate again.",
-  "备料设置数据异常，原数据已保留": "Invalid preparation settings. Original data has been preserved.",
-  "备料倍率须为 0～100": "Preparation multipliers must be between 0 and 100.",
-  "队列备料设置 · 角色 {0}": "Queue preparation settings \u00b7 Character {0}",
-  "逐行设置：成功率以计划材料备齐为前提，按该行剩余件数共用预算的 Gamma 模型估算；倍率以该行剩余强化的期望消耗为基准。输入成功率后，倍率向上取两位小数，回显对应概率。回车或离开输入框保存。": "Per-row settings: rates assume all planned materials are supplied and use a Gamma model with a shared budget for the remaining units in that row. Multipliers apply to expected remaining enhancement consumption. Entering a rate rounds the multiplier up to two decimals and displays the resulting rate. Press Enter or leave the field to save.",
-  "强化耗材与保护材料分别估算，不代表两类材料同时够用的概率，也不是单次点击成功率。混合起始等级暂不估算概率；缺少底子时以补齐底子为前提，不含底子成本。": "Enhancement and protection materials are estimated separately. Rates do not represent joint material sufficiency or success per click. Mixed starting levels have no probability estimate. Missing bases must be supplied first; base costs are excluded.",
-  "期望时间（整行）": "Expected time (row)",
-  "强化耗材 · 成功率 / 倍率": "Enhancement \u00b7 Success / Multiplier",
-  "保护材料 · 覆盖率 / 倍率": "Protection \u00b7 Coverage / Multiplier",
-  "已完成 · 100%": "Completed \u00b7 100%",
-  "无需此类材料": "Not required",
-  "待强化 {0} 件": "{0} units remaining",
-  "混合起点 · 概率未知": "Mixed starts \u00b7 Rate unknown",
-  "数据未齐 · 概率未知": "Missing data \u00b7 Rate unknown",
-  "近似完成概率；接近 100% 时显示 99.99%。": "Approximate completion probability; displayed as 99.99% near 100%.",
-
-  "计划顺序已变化，请重新拖动。": "Plan order changed. Please drag again.",
-  "拖动调整顺序；Alt + 上下方向键移动，Esc 取消拖动。": "Drag to reorder; Alt + Up/Down moves the row, Esc cancels dragging.",
-  "调整顺序：{0} +{1}": "Reorder: {0} +{1}",
-  "队列计划": "Queue plans",
-  "队列外计划": "Manual plans",
-  "队列计划装备": "Queue equipment",
-  "队列外计划装备": "Manual equipment",
-  "清空队列外计划": "Clear manual plans",
-  "未启用保护": "Protection disabled",
-  "队列尚未读取完整，正在自动重试；手动计划已保留，合计与采购暂不可用。": "Queue data is incomplete. Retrying automatically; manual plans are preserved. Totals and purchasing are unavailable.",
-  "队列强化参数暂不支持核算，已保留原始设置。": "These queue parameters cannot be calculated yet. Original settings are preserved.",
-  "自动同步游戏中的强化动作，每条动作单独显示并按 1 件核算。顺序、起始等级、目标与保护设置以队列为准；重复次数不是装备件数。": "Enhancement actions sync automatically, in queue order, at one piece per action. Starting levels, targets and protection come from the queue. Repeat counts are not equipment quantities.",
-  "当前没有强化队列。游戏中加入强化动作后会自动显示。": "No enhancement actions in the queue. Actions added in the game will appear automatically.",
-  "手动添加和填写，可调整数量、等级与顺序。旧版已保存的计划保留在此；如与队列重复且不需额外强化，请手动移除。": "Add and edit quantities, levels and order manually. Previously saved plans remain here; remove overlaps with the queue if no additional enhancement is intended.",
-  "合计按队列计划在前、队列外计划在后的顺序核算，共用库存只扣除一次。": "Totals use queue plans first, then manual plans. Shared stock is deducted only once.",
-
-  "全部计划期望时长": "Total expected enhancement time",
-  "库存材料可支撑时长": "Time supported by current stock",
-  "强化计划时长": "Enhancement plan duration",
-  "不足 0.01 小时": "Less than 0.01 hours",
-  "暂无法计算": "Unavailable",
-  "未算全（已知 {0}）": "Incomplete (known: {0})",
-  "库存或强化时长未读取完整，暂不能估算。": "Stock or enhancement duration is incomplete; an estimate is unavailable.",
-  "按计划顺序扣除共用库存，缺料项计入可支撑的部分时间，再继续计算后续项目。仅计已到账材料与金币，不计待到账、采购或备料倍率，不含制造及等待时间。强化有随机性，实际时长会有差异。": "Shared stock is allocated in plan order. Partially supplied items contribute their supported time, then later items use the remaining stock. Only physical materials and coins count; excludes deliveries, purchases, preparation buffers, manufacturing and waiting. Actual duration varies with enhancement outcomes.",
-  "缺少装备底子的部分不计入可支撑时长，其余项目继续按剩余库存计算。": "Portions without base equipment are excluded. Other items continue to use the remaining stock.",
-  "数量": "Quantity",
-  "上移": "Move up",
-  "下移": "Move down",
-  "保护": "Protection",
-  "状态": "Status",
-
-  "已加入": "Added",
-    "清空强化计划": "Clear enhancement plan",
-    "撤销清空": "Undo clear",
-    "强化计划已有新项目，未覆盖当前计划。": "The plan has new projects. They were not overwritten.",
-    "从当前队列添加并排序": "Add from queue and sort",
-    "当前强化队列尚未读取完整，未修改强化计划。": "The current enhancement queue is incomplete. The plan was not changed.",
-    "已添加 {0} 项并按队列逐条排列；重复物品分别显示，未入队项目按添加顺序排在末尾。": "Added {0} projects in queue order, retaining repeated items as separate rows. Unqueued projects follow in the order added.",
-    "按当前及排队中的强化动作逐条导入，同物品每次出现各占一行。再次导入复用已有行并保留数量与设置；未入队项目按添加顺序放在末尾。": "Import each active and queued enhancement as a separate row, including repeated items. Reimport reuses existing rows and preserves quantities and settings. Unqueued projects follow in the order added.",
-    "队列新增项目带入有效保护等级，未设置或不支持的保护等级使用自动方案；重复次数不作为装备数量。": "New queue projects use valid protection levels; unset or unsupported levels use the automatic plan. Repeat counts are not equipment quantities.",
-    "加入强化计划": "Add to enhancement plan",
-    "已加入强化计划": "Already in enhancement plan",
-    "已加入强化计划，可在强化计划页调整数量": "Already added. Adjust quantity on the enhancement plan page.",
-    "加入 1 件强化计划": "Add one unit to the enhancement plan",
-    "按当前队列排序": "Sort by current queue",
-    "当前强化队列尚未读取完整，未调整计划顺序。": "The current enhancement queue is incomplete. Plan order was not changed.",
-    "角色已切换或尚未就绪，未调整计划顺序。": "The character changed or is not ready. Plan order was not changed.",
-    "已按当前队列排序；未入队项目按添加顺序排在末尾。": "Sorted by the current queue. Unqueued projects follow in the order added.",
-    "按物品与目标等级匹配，包含正在强化的项目；重复入队取首次位置。未入队项目按添加顺序排在末尾，金币分配随新顺序更新。": "Matches item and target level, including the active enhancement. Repeated entries use their first position. Unqueued projects follow in the order added. Coin allocation follows the new order.",
-    "强化计划": "Enhancement schedule",
-  "强化计划与采购": "Enhancement schedule and purchasing",
-  "强化计划 · 角色 {0}": "Enhancement schedule · Character {0}",
-  "强化计划数据异常，原数据已保留": "Invalid enhancement schedule. The original data has been preserved.",
-  "项目已移出强化计划": "This item is no longer in the enhancement schedule.",
-  "同物品有多个计划，请选择具体一行。": "This item has multiple projects. Select a specific row.",
-  "无效的强化顺序": "Invalid enhancement order.",
-  "强化方案未算全，暂不能分配。": "Enhancement requirements are incomplete. Budget allocation is unavailable.",
-  "装备库存未知，暂不能核算强化计划": "Equipment inventory is unknown. Cannot calculate the enhancement schedule.",
-  "强化材料数据未知": "Enhancement material data is unknown.",
-  "角色或强化材料数据未就绪": "Character or enhancement material data is not ready.",
-  "强化路线或材料报价未就绪": "The enhancement route or material quotes are not ready.",
-  "批量添加装备": "Add equipment in bulk",
-  "仅核算普通强化耗材与保护材料，不含底子制造或镜子、精炼路线。与备料车分别核算，共用的库存不能视为已被两个清单同时预留。": "Includes ordinary enhancement consumables and protection materials only; excludes base manufacturing, mirror and refinement routes. Calculated separately from the preparation cart; shared inventory cannot be reserved by both lists at once.",
-  "添加强化计划": "Add to enhancement schedule",
-  "搜索装备": "Search equipment",
-  "搜索可添加装备": "Search equipment to add",
-  "选择强化计划：{0} +{1}": "Select for enhancement: {0} +{1}",
-  "选择可见项": "Select visible items",
-  "添加所选（每项 1 件）": "Add selected (1 each)",
-  "请先选择装备": "Select equipment first.",
-  "列表中暂无强化装备，请先在列表或分区中添加目标物品。": "No enhancement equipment in the list. Add target items to the list or groups first.",
-  "选择装备后，将按计划顺序合并材料和采购缺口。": "Select equipment to combine materials and purchase shortages in schedule order.",
-  "顺序": "Order",
-  "计划物品": "Planned item",
-  "起始等级": "Starting level",
-  "目标等级": "Target level",
-  "保护等级": "Protection level",
-  "库存与路线": "Inventory and route",
-  "强化计划装备": "Scheduled equipment",
-  "强化数量：{0} +{1}": "Enhancement quantity: {0} +{1}",
-  "数量须为 1～1,000,000 的整数": "Quantity must be an integer from 1 to 1,000,000.",
-  "自动匹配库存": "Match inventory automatically",
-  "自动最低剩余成本": "Auto: lowest remaining cost",
-  "目标等级已有 {0} 件": "Already at target: {0}",
-  "缺少起始底子 {0} 件（不计入采购）": "Missing starting equipment: {0} (excluded from purchases)",
-  "强化备料倍率 {0}× · 保护材料倍率 {1}×（在设置中调整）": "Enhancement multiplier {0}× · Protection multiplier {1}× (change in Settings)",
-  "按当前金币顺序分配": "Allocate current coins in order",
-  "按当前": "Allocate current ",
-  "顺序分配": " in order",
-  "总缺口预算": "Total shortage budget",
-  "预算未计全": "Budget incomplete",
-  "按顺序先备齐前项；不足时仅为当前项按比例备料，停止向后分配。备料比例不代表强化成功率。": "Fund earlier items first. If funds run short, partially supply the current item proportionally and stop. The supply percentage is not an enhancement success probability.",
-  "目标已备齐": "Target already owned",
-  "本项已分配": "Fully allocated",
-  "部分备料": "Partially supplied",
-  "尚未分配": "Not allocated",
-  "期望消耗": "Expected consumption",
-  "计划需备": "Planned supply",
-  "可用库存": "Available inventory",
-  "本次采购": "Purchase now",
-  "参考单价": "Reference unit price",
-  "采购金额": "Purchase amount",
-  "强化计划材料合计": "Enhancement schedule materials",
-  "直接消耗": "Direct consumption",
-  "采购强化材料：{0}": "Purchase enhancement material: {0}",
-  "市场预填": "Prefill market",
-  "待到账只抵扣采购缺口，不表示已备齐。采购前重新核算库存、买单与余额；仅预填，由你确认交易。倍率备料不保证全部强化成功。": "Pending purchases reduce purchase shortages but are not ready inventory. Inventory, buy orders and balance are recalculated before prefilling; you confirm the trade. Supply multipliers do not guarantee completion.",
-
-  "加入计划": "Add to plan",
-  "加入计划：{0}": "Add to plan: {0}",
-  "加入 1 件备料计划": "Add 1 item to the preparation plan",
-  "取消": "Cancel",
-  "操作记录": "Operation history",
-  "保存天数": "Save retention",
-  "操作记录保存天数": "Operation history retention in days",
-  "已设置保存 {0} 天，已清理到期记录。": "Retention set to {0} days. Expired records cleared.",
-  "显示更多记录": "Show more records",
-  "记录分区归属调整，包含拖动、分区设置和预设添加；只影响对应物品的强化等级。": "Records group changes from dragging, group settings and presets. Each change applies to the specified item and enhancement level.",
-  "默认保存 7 天，可设为 1–3650 天。缩短期限会立即清理到期记录，清理后无法撤销。": "Records are kept for 7 days by default (range: 1–3650 days). Shortening retention immediately removes expired records; those changes can no longer be undone.",
-  "暂无操作记录。拖动物品调整分区后，可在这里查看和撤销。": "No operations recorded yet. Drag an item to change its groups, then view and undo the change here.",
-  "分区：{0} → {1}": "Groups: {0} → {1}",
-  "撤销此操作": "Undo this change",
-  "已撤销此条分区调整。": "This group change has been undone.",
-  "操作记录保存天数无效。": "Invalid operation history retention period.",
-  "操作记录格式异常，原数据已保留。": "Invalid operation history format. Original data retained.",
-  "请输入 1 至 3650 的整数天数。": "Enter a whole number of days between 1 and 3650.",
-  "记录已到期，无法撤销。": "This record has expired and cannot be undone.",
-  "已撤销": "Undone",
-  "归属已变化，请先撤销后续操作。": "Membership has changed. Undo later changes first.",
-  "原分区已删除，无法撤销。": "The original group was deleted. Undo is unavailable.",
-  "原默认归属已变化，无法撤销。": "The inherited membership changed. Undo is unavailable.",
-  "无效的列顺序": "Invalid column order",
-  "移动列：{0}": "Move column: {0}",
-  "拖动调整列顺序；Alt + 左右方向键移动": "Drag to reorder columns; Alt + Left/Right moves the column",
-  "列顺序保存失败，已保留原顺序，请重试。": "Column order could not be saved. The previous order is retained; try again.",
-  "无效物品或强化等级": "Invalid item or enhancement level",
-  "独立等级分区已达上限。": "The limit for per-level group assignments has been reached.",
-  "此等级的分区已再次变化，无法撤销。": "Groups for this level have changed again; undo is unavailable.",
-  "已撤销分区调整。": "Group change undone.",
-  "无法撤销，请重新调整分区。": "Could not undo. Adjust the groups again.",
-  "分区归属未变化。": "Group membership is unchanged.",
-  "已移出全部分区，回到未分区。": "Removed from all groups and returned to Unassigned.",
-  "已加入「{0}」。": "Added to \"{0}\".",
-  "已移出「{0}」。": "Removed from \"{0}\".",
-  "已更新此等级的分区。": "Groups updated for this level.",
-  "未能保存分区，原归属已保留，请重试。": "Could not save groups. Original membership is retained. Try again.",
-  "仅调整当前强化等级；可同时属于多个分区。": "Changes apply only to this enhancement level. Multiple groups are allowed.",
-  "调整分区": "Adjust groups",
-  "暂无自定义分区，请先在分区栏新增分区。": "No custom groups. Create one in the group bar first.",
-  "保存归属": "Save membership",
-  "此等级的分区已变化，请关闭后重新调整。": "Groups for this level changed. Close and reopen to adjust them.",
-  "未能读取分区，请关闭后重试。": "Could not read groups. Close and try again.",
-  "移出全部分区": "Remove from all groups",
-  "保存后回到未分区。": "Saving will return this level to Unassigned.",
-  "移出全部分区，回到未分区": "Remove from all groups and return to Unassigned",
-  "移出「{0}」": "Remove from \"{0}\"",
-  "已在此分区": "Already in this group",
-  "加入「{0}」": "Add to \"{0}\"",
-  "拖到分区标签加入；松手到空白处取消": "Drop on a group to add; release on empty space to cancel",
-  "目标分区已变化，请重新拖动。": "The target group changed. Drag again.",
-  "单击展开；拖动调整分区；右键或 Shift+F10 打开分区设置": "Click for details; drag to adjust groups; right-click or Shift+F10 for group settings",
-  "调整分区：{0} +{1}": "Adjust groups: {0} +{1}",
-  "按物品和强化等级独立归属；全部取消后退回未分区。": "Membership is independent for each item and enhancement level. Clearing all returns it to Unassigned.",
-  "单击切换基准并保留顺序；双击当前选项按原规则重新排序（键盘：Shift+Enter）。": "Click to change the price basis without moving rows; double-click the selected option to reapply the previous sort (keyboard: Shift+Enter).",
-  "行情更新失败，请重试；角色与挂单状态见页面提示。": "Market refresh failed. Try again; see the page for character and listing status.",
-  "行情时间 {0}{1}": "Market data time {0}{1}",
-  "行情时间 {0}": "Market data time {0}",
-  "正在获取行情…": "Loading market data…",
-  " 本人挂单 {0} 单{1}。": " Your listings: {0}{1}.",
-  "行情 {0}": "Market {0}",
-  "{0}{1}": "{0}{1}",
-  "尚未读取行情": "Market data not read yet",
-  "买单明细未读取，请打开该物品市场。": "Buy orders have not been read. Open this item's market.",
-  "左一：{0}": "Best ask: {0}",
-  "{0}；采购 {1} 份": "{0}; buy {1} units",
-  "优于行情": "Better than market",
-  "暂无法预估": "Estimate unavailable",
-  "请刷新物品市场；保留当前输入。": "Refresh the item market; current input is retained.",
-  "请打开或刷新该物品市场。": "Open or refresh this item’s market.",
-  "区间外按报价估算，低于下限的卖单实际按区间下限执行。左一非现档时保留原价参考。": "Out-of-range quotes are used as quoted for estimates; sell orders below the lower bound execute at that bound. Off-tick best asks retain their original quote for reference.",
-  "库存概况": "Stock overview",
-  "低等级库存": "Lower-level stock",
-  "库存与制作": "Inventory & production",
-  "制作中": "In progress",
-  "低等级": "Lower levels",
-  "持续": "Ongoing",
-  "当前 +{0} 等级的库存数量": "Inventory at the current +{0} level",
-  "当前及排队制作任务的剩余配方产出；不含已完成量，不表示已得到当前强化等级成品。同款不同等级行共享队列，不能相加。": "Remaining recipe output from active and queued production, excluding completed output. This is not finished equipment at the target enhancement level. Rows for the same item share a queue; do not add them together.",
-  "低于 +{0} 的同款库存总数（含 +0，不含制作中）": "Inventory of the same item below +{0}, including +0 and excluding production",
-  "；数据尚未读取，请等待游戏同步": "; data not read yet; wait for the game to sync",
-  "{0} 分钟": "{0} min",
-  "{0} 小时": "{0} hr",
-  "已挂参考": "Listing age",
-  "暂无数据": "unavailable",
-  "读取中…": "loading…",
-  "参考挂单时长：{0}": "Reference listing age: {0}",
-  "{0}到{1}": "{0} to {1}",
-  "秒": " seconds",
-  "分钟": " minutes",
-  "个小时": " hours",
-  "天": " days",
-  "以内": " or less",
-  "以內": " or less",
-  "以上": " or more",
-  "参考挂单时长：暂无数据": "Reference listing age: unavailable",
-  "参考挂单时长：读取中…": "Reference listing age: loading…",
-  "参考 {0} 档首条订单的已挂时长，不是预计成交时间。": "Age of the first listing at price {0}, not an estimated fill time.",
-  "相邻价格档位未提供可读取的挂单时长。": "No readable listing age at the adjacent price level.",
-  "制作进度待确认": "Production progress unknown",
-  "待购买材料": "Materials needed",
-  "材料待到账": "Materials pending delivery",
-  "材料齐全，待缝纫": "Materials ready; awaiting tailoring",
-  "材料齐全，待制造": "Materials ready; awaiting production",
-  "底子已就绪，待强化": "Base ready; awaiting enhancement",
-  "已有强化底子，待继续强化": "Enhanced base ready; awaiting continuation",
-  "目标等级已备齐": "Target level ready",
-  "待购买底子": "Base purchase needed",
-  "底子待到账": "Base pending delivery",
-  "达标 {0}/{1} · 底子 {2}/{3}": "At target {0}/{1} \u00b7 Bases {2}/{3}",
-  "按备料车顺序分配共享库存；待到账不算备齐。底子就绪不代表强化耗材齐全，详见下方材料表。": "Shared stock is allocated in cart order; pending deliveries are not ready. Base readiness excludes enhancement supplies; see the material table below.",
-
-  " · 无需再购 {0}/{1} 种": " · No purchase needed: {0}/{1} types",
-  "按当前{0}分配采购": "Allocate purchases to available {0}",
-  "工作区页面与备料计划": "Workspace pages & preparation plans",
-  "强化备料": "Enhancement",
-  "工作区页面": "Workspace pages",
-  "列表": "List",
-  "分区": "Partitions",
-  "设置": "Settings",
-  "备料与采购": "Preparation & purchasing",
-  "前往列表添加计划": "Add plans from the list",
-  "排序": "Sort",
-  "备料材料排序": "Sort preparation materials",
-  "缺料优先": "Shortages first",
-  "预算降序": "Budget: high to low",
-  "单价降序": "Price: high to low",
-  "待核算": "Unknown",
-  "缺料": "Short",
-  "已备齐": "Ready",
-  "待到账": "Pending",
-  "材料 {0} 种": "{0} materials",
-  "买单未成": "Unfilled buys",
-  "成交待领": "Unclaimed",
-  "净缺口": "Net shortage",
-  "计划需求": "Plan requirements",
-  "库存与买单": "Inventory & buy orders",
-  "采购核算": "Purchase estimate",
-  "材料明细：{0}": "Material details: {0}",
-  "采购：{0}": "Purchase: {0}",
-  "前往市场并预填缺口，请在游戏中确认购买": "Open the market and prefill the shortage; confirm your purchase in game",
-  "需求核对": "Requirement details",
-  "参与抵扣 {0} · 建议购买 {1}": "Available for this plan {0} \u00b7 Suggested purchase {1}",
-  "净缺口已扣库存和买单待收；已占用作底子的装备不会重复抵扣。": "Net shortage deducts inventory and pending buys; equipment reserved as a base is not deducted twice.",
-  "买单未成仍需等待成交；成交待领需在游戏中领取。": "Unfilled buys still await a match; claim filled orders in game.",
-  "数量按备料方案计算，采购数量向上取整。": "Requirements follow the preparation plan; purchase quantities are rounded up.",
-  "当前筛选下没有缺料。": "No shortages match this filter.",
-
-  "使用参考售价计算整表收益": "Use reference sale prices for all project returns",
-  "未设 · 用右一": "Unset · use bid",
-  "未设 · 用右": "Unset · use bid",
-  "默认使用最近记录到的本人已成交卖单原挂单价，并非实际成交单价。": "Defaults to the original listing price of your most recently observed filled sell order, not its execution price.",
-  "支持 K / M / B（大小写均可）；清空恢复成交记录默认价，无记录则留空。": "Accepts K / M / B (case-insensitive). Clear to restore the sale-history default, or leave blank when no record exists.",
-  "未设 · 用左": "Unset · use ask",
-  "未设 · 用左一": "Unset · use ask",
-  "按参考售价计算收益": "Returns based on reference sale price",
-  "保护材料备料倍率": "Protection preparation multiplier",
-  "保护材料覆盖率（%）": "Protection coverage (%)",
-  "两类备料独立调整；覆盖率按同一近似公式估算，不代表两类材料同时够用的概率。倍率不改变期望成本与收益。": "Adjust the two supplies independently. Coverage uses the same approximation, not the probability that both supplies suffice. Multipliers do not change expected costs or profits.",
-  "切换整表利润、利润率和工时费的成品售价；保留材料计价与模拟调价。未设置参考售价时沿用此前选择的左一或右一；该侧无报价时显示未知。排序请使用上方排序菜单。": "Change the sale price used for all project profit, margin and hourly returns. Keep material pricing and simulation edits. Unset reference prices use the previously selected ask or bid; missing quotes on that side remain unknown. Use the sorting menu above to sort.",
-  "市场左价": "Market ask",
-  "市场右价": "Market bid",
-  "左": "Ask",
-  "左−": "Ask\u2212",
-  "右": "Bid",
-  "右+": "Bid+",
-  "使用市场左一降一档计算整表收益": "Use one tick below best ask for all project returns",
-  "使用市场右一升一档计算整表收益": "Use one tick above best bid for all project returns",
-  "按市场左一降一档计算收益": "Returns based on one tick below best ask",
-  "按市场右一升一档计算收益": "Returns based on one tick above best bid",
-  "未设 · 用左−": "Unset \u00b7 Ask\u2212",
-  "未设 · 用右+": "Unset \u00b7 Bid+",
-  "点击用于计算": "Use for calculation",
-  "✓ 计算采用": "\u2713 Used for calculation",
-  "使用市场左一计算整表收益": "Use best ask for all project returns",
-  "使用市场右一计算整表收益": "Use best bid for all project returns",
-  "按市场左一计算收益": "Returns based on best ask",
-  "按市场右一计算收益": "Returns based on best bid",
-  "市场右一": "Market best bid",
-  "固定比例：整体宽度变化时，左右按当前比例一起伸缩。": "Lock ratio: both panels resize proportionally with the overall width.",
-  "固定右宽：保持右侧宽度，整体宽度变化由左侧吸收。": "Lock right width: keep the right panel width; the left panel absorbs width changes.",
-  "固定比例": "Lock ratio",
-  "固定右宽": "Lock right width",
-  "继续拖动收起左侧": "Keep dragging to collapse left",
-  "继续拖动收起右侧": "Keep dragging to collapse right",
-  "左侧已收起，向右拖动恢复": "Left collapsed; drag right to restore",
-  "右侧已收起，向左拖动恢复": "Right collapsed; drag left to restore",
-  "左侧 {0} 像素，右侧 {1} 像素": "Left {0} px, right {1} px",
-  "拖到最小宽度后继续拖动收起；反向拖动恢复。双击或 Enter 恢复双栏；方向键微调，Esc 取消。": "Drag past the minimum width to collapse; reverse to restore. Double-click or Enter resets both panels; arrows adjust, Esc cancels.",
-  "调整左右区块比例": "Resize workbench panels",
-  "拖动调整比例；双击恢复 60:40；方向键微调，Esc 取消。": "Drag to resize; double-click to reset to 60:40; use arrow keys to adjust, Esc to cancel.",
-  "左侧 {0}%，右侧 {1}%": "Left {0}%, right {1}%",
-  "挤奶": "Milking",
-  "采摘": "Foraging",
-  "伐木": "Woodcutting",
-  "奶酪": "Cheesemaker",
-  "工匠": "Crafter",
-  "裁缝": "Tailor",
-  "厨师": "Chef",
-  "饮品": "Brewer",
-  "炼金": "Alchemy",
-  "强化": "Enhancing",
-  "衣": " Top",
-  "裤": " Bottoms",
-  "强化助手": "Enhancement Assistant",
-  "刷新行情": "Refresh market",
-  "行情更新失败，已保留旧价格；角色与挂单状态见页面提示。": "Market update failed. Previous prices retained; see character and listing status above.",
-  "已更新买卖一价；本人挂单保存状态见上方提示。": "Best ask and bid updated. See your listing save status above.",
-  "已更新买卖一价并自动保存本人挂单；可直接查看价格比较结果。": "Best ask and bid updated; your listings saved. Price comparisons are ready.",
-  "柆雨强化助手": "LaYu Enhancement Assistant",
-  "设置与备份": "Settings & backup",
-  "管理预设": "Manage presets",
-  "掉落与经验": "Loot & XP",
-  "行情与角色状态": "Market & character status",
-  "无法读取或保存收藏，请检查浏览器存储设置后重试。": "Unable to read or save favorites. Check browser storage settings and retry.",
-  " 已取消收藏 ": " removed from favorites ",
-  "撤销取消收藏": "Undo removal",
-  "该项目已有新的收藏记录，保留现值。": "A newer favorite exists. Its current values were kept.",
-  "已恢复收藏及原参考售价。": "Favorite and original reference price restored.",
-  "撤销失败：{0}": "Undo failed: {0}",
-  "角色尚未就绪": "Character not ready",
-  "本地挂单不可用，请检查浏览器存储权限": "Local listings unavailable. Check browser storage permissions.",
-  "挂单保存失败，本次数据仅在当前页面有效；请检查浏览器存储空间或权限": "Could not save listings. Data is only available on this page; check browser storage space or permissions.",
-  "本地历史不可用，请检查浏览器存储权限后重试": "Local history unavailable. Check browser storage permissions and retry.",
-  "本人记录读取失败": "Could not read your records",
-  "市场快照 {0}{1}": "Market snapshot {0}{1}",
-  " · 更新失败，保留已有价格": " · Update failed; previous prices retained",
-  "行情读取失败：{0}": "Market read failed: {0}",
-  "正在获取市场快照…": "Fetching market snapshot…",
-  " 已保留 {0} 份订单簿。": " Order books retained: {0}.",
-  " 本人挂单 {0} 单 · {1}{2}。": " Your listings: {0} · {1}{2}.",
-  "本地保存，待更新": "Saved locally; awaiting update",
-  "尚未保存": "Not saved yet",
-  "已自动保存": "Saved automatically",
-  " · 数据变更于 {0}": " · Data changed at {0}",
-  "{0} · {1} 订单簿{2}": "{0} · Order books: {1}{2}",
-  "快照 {0}": "Snapshot {0}",
-  "行情待更新": "Market update pending",
-  " · 更新失败": " · Update failed",
-  "分区读取失败：{0}。原有数据保留。": "Could not read groups: {0}. Existing data retained.",
-  "正在打开制作页面…": "Opening production page…",
-  "正在打开强化页面并填写设置…": "Opening enhancement page and filling settings…",
-  "角色已切换，请在当前角色的方案中重新操作。": "Character changed. Repeat this action from the current character's plan.",
-  "材料不足，已打开白板物品市场。": "Insufficient materials. Opened the +0 item market.",
-  "已预填生产数量 {0}，请核对材料和用茶后手动开始。": "Production quantity set to {0}. Check materials and drinks, then start manually.",
-  "已填写强化目标和保护设置，请确认后手动开始。": "Enhancement target and protection settings filled. Review and start manually.",
-  "未能完成页面跳转或预填，请刷新游戏后重试。": "Could not navigate or fill settings. Refresh the game and retry.",
-  "读取库存或预填失败，请重试。": "Could not read inventory or fill settings. Please retry.",
-  "市场跳转提示": "Market navigation notice",
-  "正在打开市场…": "Opening market…",
-  "角色已切换，请在当前角色的材料卡片重新打开市场。": "Character changed. Open the market again from the current character's material card.",
-  "市场已打开，采购数量未知，请手动填写。": "Market opened. Purchase quantity unknown; enter it manually.",
-  "采购数量尚未确定，请等待库存、挂单和行情更新后重试。": "Purchase quantity is not ready. Wait for inventory, listings and market data to update, then retry.",
-  "市场已打开。2 分钟内可预填数量（不超过余额），请核对后确认。": "Market opened. Open the buy form within 2 minutes to fill an affordable quantity. Review and confirm.",
-  "游戏桥接未响应，请确认脚本更新后已刷新游戏。": "Game bridge did not respond. Refresh the game after updating the script.",
-  "未找到游戏市场入口，请刷新游戏后重试。": "Game market entry not found. Refresh the game and retry.",
-  "打开市场失败，请重试。": "Could not open market. Please retry.",
-  "从柆雨收藏移除：{0}": "Remove from LaYu favorites: {0}",
-  "收藏到柆雨：{0}": "Add to LaYu favorites: {0}",
-  "从柆雨收藏移除": "Remove from LaYu favorites",
-  "收藏到柆雨": "Add to LaYu favorites",
-  "本地备份与恢复": "Local backup & restore",
-  "导出本地备份": "Export local backup",
-  "已生成本地备份文件。": "Local backup file created.",
-  "导出失败：{0}": "Export failed: {0}",
-  "选择备份文件 ": "Choose backup file ",
-  "选择本地备份文件": "Choose local backup file",
-  "文件超过 2 MiB，请选择插件导出的备份": "File exceeds 2 MiB. Choose a backup exported by this plugin.",
-  "将恢复 {0} 项本地数据。仅覆盖文件内同名数据；未包含的数据保留。备料车按文件中的角色 ID 恢复。": "Restore {0} local data entries. Only matching keys in the file will be overwritten; other data is retained. Carts use the character IDs in the file.",
-  "覆盖现有": "Overwrite existing",
-  "新增": "Add new",
-  " · 空数据将清空该项": " · Empty data will clear this entry",
-  "确认覆盖并刷新游戏": "Confirm overwrite and reload game",
-  "恢复成功，正在刷新游戏以载入设置。": "Restore succeeded. Reloading the game to load settings.",
-  "恢复失败：{0}": "Restore failed: {0}",
-  "取消恢复": "Cancel restore",
-  "已取消，数据未改动。": "Cancelled. Data unchanged.",
-  "校验通过，请检查覆盖范围后再恢复。": "Validation passed. Review the overwrite scope before restoring.",
-  "无法读取备份：{0}": "Could not read backup: {0}",
-  "强化经验": "Enhancing XP",
-  "制造经验 · 锻造": "Production XP · Cheesesmithing",
-  "制造经验 · 制作": "Production XP · Crafting",
-  "制造经验 · 缝纫": "Production XP · Tailoring",
-  "制造经验 · 烹饪": "Production XP · Cooking",
-  "制造经验 · 冲泡": "Production XP · Brewing",
-  "制造经验": "Production XP",
-  "虚拟角色没有可对应的实际经验进度": "Virtual characters have no actual XP progress to compare",
-  "经验所需的角色增益、游戏规则或路线数据未就绪": "Required character buffs, game rules or route data are not ready",
-  "按当前角色增益及路线估算，不预测途中升级或增益到期引起的变化": "Estimated using current buffs and route; changes from leveling up or expiring buffs are not predicted",
-  "制造配方、库存或经验增益未知": "Production recipe, inventory or XP buffs are unknown",
-  "按当前计划需实际制作的批次估算，扣除同名 +0 库存；含备料倍率对应的保护装备，不含另行加工原材料": "Estimated from actual production batches in this plan, after deducting matching +0 inventory; includes protection equipment at the preparation multiplier, excludes processing raw materials separately",
-  "管理收藏": "Manage favorites",
-  "名称或 HRID": "Name or HRID",
-  "搜索收藏": "Search favorites",
-  "收藏类别": "Favorite category",
-  "全部类别": "All categories",
-  "装备": "Equipment",
-  "材料": "Materials",
-  "其他": "Other",
-  "类别未知": "Unknown category",
-  "收藏分区": "Favorite group",
-  "全部分区": "All groups",
-  "最低强化等级": "Minimum enhancement",
-  "不限": "Any",
-  "最高强化等级": "Maximum enhancement",
-  "收藏来源": "Favorite source",
-  "全部来源": "All sources",
-  "明确由预设新增": "Added by a preset",
-  "手动或来源未记录": "Manual or unrecorded",
-  "收藏管理表格": "Favorite management table",
-  "保存失败，原数据保留，可重试：{0}": "Save failed. Existing data retained; retry: {0}",
-  "已删除 {0} 条收藏及其参考价；可撤销最近一次批量删除。": "Removed {0} favorites and their reference prices. You can undo the latest batch deletion.",
-  "全选筛选结果": "Select all matches",
-  "清空勾选": "Clear selection",
-  "删除勾选收藏": "Delete selected favorites",
-  "删除筛选结果": "Delete matching favorites",
-  "仅删除筛选结果中的预设新增收藏": "Delete preset-added matches only",
-  "一键删除所有预设新增收藏": "Delete all preset-added favorites",
-  "撤销最近一次批量删除": "Undo latest batch deletion",
-  "已恢复 {0} 条收藏及原参考价，保留 {1} 条后续新增或修改的记录。": "Restored {0} favorites and original reference prices; kept {1} records added or changed later.",
-  "管理现有收藏与批量清理": "Manage and clean up favorites",
-  "组合筛选物品、等级与来源，支持撤销最近一次删除。": "Filter by item, level and source. You can undo the latest deletion.",
-  "删除范围与撤销说明": "Deletion scope and undo",
-  "筛选条件同时生效；改变条件会清空勾选。删除同时移除参考价，可撤销最近一次删除。分区、备料车及游戏挂单保持原状。": "Filters apply together. Changing filters clears the selection. Deletion also removes reference prices; the latest deletion can be undone. Groups, carts and game listings remain unchanged.",
-  "一键清理覆盖全部分区与强化等级，仅删除明确由预设新增的收藏；旧收藏及预设复用的已有收藏保留。": "Bulk cleanup covers all groups and enhancement levels. Only favorites explicitly added by presets are removed; older and reused favorites are kept.",
-  "共 {0} 条收藏 · 筛选命中 {1} 条 · 已勾选 {2} 条": "Favorites: {0} · Matches: {1} · Selected: {2}",
-  " · 最低等级高于最高等级，请调整条件": " · Minimum level exceeds maximum; adjust the filters",
-  "选择": "Select",
-  "物品 / 强化等级": "Item / enhancement",
-  "所属分区": "Groups",
-  "参考售价": "Reference price",
-  "操作": "Actions",
-  "勾选收藏：{0} +{1}": "Select favorite: {0} +{1}",
-  "删除": "Delete",
-  "删除收藏：{0} +{1}": "Delete favorite: {0} +{1}",
-  "预设新增": "Preset-added",
-  "手动 / 未记录": "Manual / unrecorded",
-  "未设置": "Not set",
-  "没有匹配收藏，请调整条件或从预设添加。": "No matching favorites. Adjust filters or add from presets.",
-  "查看一键清理范围：{0} 条预设新增收藏": "Review bulk cleanup: {0} preset-added favorites",
-  "仅删除筛选结果中的预设新增收藏 ({0})": "Delete preset-added matches only ({0})",
-  "删除勾选收藏 ({0})": "Delete selected favorites ({0})",
-  "删除筛选结果 ({0})": "Delete matching favorites ({0})",
-  "一键删除所有预设新增收藏 ({0})": "Delete all preset-added favorites ({0})",
-  "收藏与参考售价": "Favorites & reference prices",
-  "分区与旧计划": "Groups & legacy plans",
-  "工时费与虚拟角色设置": "Hourly profit & virtual character settings",
-  "旧版目标数量": "Legacy target quantities",
-  "旧版收藏视图": "Legacy favorite view",
-  "界面排序、筛选与展开状态": "Sorting, filters & expanded sections",
-  "工作台页面与备料抽屉": "Workspace & preparation drawer",
-  "备份数据格式无效，未修改本地数据。": "Invalid backup data. Local data unchanged.",
-  "备份包含不支持的存储键或其他站点的备料车，未修改本地数据。": "Backup contains unsupported keys or carts from another site. Local data unchanged.",
-  "当前站点无效。": "Invalid current site.",
-  "备料车 · 角色 {0}": "Preparation cart · Character {0}",
-  "备份文件为空、格式不正确或超过 2 MiB。": "Backup is empty, invalid or exceeds 2 MiB.",
-  "备份不是有效 JSON，未修改本地数据。": "Backup is not valid JSON. Local data unchanged.",
-  "不支持该备份版本。": "Unsupported backup version.",
-  "备份站点与当前站点不同，请到原游戏站点恢复。": "Backup belongs to another site. Restore it on the original game site.",
-  "部分本地设置无法读取，请修复后再备份。": "Some local settings could not be read. Fix them before exporting a backup.",
-  "覆盖文件内同名设置；未包含的设置保持不变。空数组或空对象也会覆盖对应设置。成交历史不在备份范围内。": "Overwrite matching settings in the file; retain settings not included. Empty arrays and objects also overwrite their settings. Trade history is excluded.",
-  "请先选择备份并查看预览。": "Choose a backup and review the preview first.",
-  "预览后本地设置已变化，请重新预览后恢复。": "Local settings changed after preview. Preview again before restoring.",
-  "恢复失败，部分设置未能回滚。请保留备份文件并检查浏览器存储权限。": "Restore failed and some settings could not be rolled back. Keep the backup and check browser storage permissions.",
-  "恢复失败，已回滚本次写入；原有设置保留。": "Restore failed. Writes rolled back; original settings retained.",
-  "锻造": "Cheesesmithing",
-  "制作": "Crafting",
-  "缝纫": "Tailoring",
-  "烹饪": "Cooking",
-  "冲泡": "Brewing",
-  "战斗": "Combat",
-  "耐力": "Stamina",
-  "智力": "Intelligence",
-  "攻击": "Attack",
-  "力量": "Power",
-  "防御": "Defense",
-  "远程": "Ranged",
-  "魔法": "Magic",
-  "总经验": "Total XP",
-  "掉落与经验历史": "Loot & XP history",
-  "启用插件后，自动保存当前浏览器收到的记录，不限 20 条。同一活动保留最新累计值。打开游戏原生记录页或点击其刷新按钮可获取最新数据；已被游戏删除且从未采集的记录无法补回。": "Records received by this browser are saved while the plugin is enabled, without the 20-record limit. The latest cumulative values are kept for each activity. Open or refresh the game's native history page for new data. Records deleted by the game before collection cannot be recovered.",
-  "仅保存在当前浏览器，按服务器和角色隔离。清理网站数据会丢失存档，建议定期导出备份。": "Stored only in this browser, separately by server and character. Clearing site data deletes the archive. Export backups regularly.",
-  "读取本地记录": "Read local records",
-  "重试保存": "Retry save",
-  "导出全部记录": "Export all records",
-  "导出失败，请检查浏览器存储后重试。": "Export failed. Check browser storage and retry.",
-  "上一页": "Previous",
-  "下一页": "Next",
-  "未知": "Unknown",
-  "{0} · {1} 次": "{0} · Actions: {1}",
-  " · 队伍": " · Party",
-  "开始：{0}　持续：{1}　最近采集：{2}": "Started: {0}　Duration: {1}　Last collected: {2}",
-  "{0} 秒": "{0} s",
-  "掉落未知": "Unknown drops",
-  "无掉落": "No drops",
-  "经验未知": "Unknown XP",
-  "{0}经验 +{1}": "{0} XP +{1}",
-  "无经验": "No XP",
-  "等待游戏确认当前角色。若刚启用插件，请刷新游戏，再打开原生掉落与经验记录页。": "Waiting for the game to confirm the character. If you just enabled the plugin, refresh the game and open its native loot and XP history.",
-  "正在读取本地记录…": "Reading local records…",
-  "角色 {0} · 已保存 {1} 条{2}{3}": "Character {0} · Saved records: {1}{2}{3}",
-  " · 仍有数据待保存": " · Data still waiting to be saved",
-  "。请打开游戏原生掉落与经验记录页读取当前记录。": ". Open the game's native loot and XP history to read current records.",
-  "第 {0} / {1} 页": "Page {0} / {1}",
-  "本地记录读取失败，请检查浏览器存储设置后点击读取本地记录重试。": "Could not read local records. Check browser storage settings and click Read local records to retry.",
-  "装备底子": "Base equipment",
-  "强化材料": "Enhancement materials",
-  "当前保护物": "Selected protection",
-  "保护候选": "Protection candidate",
-  "贤者之镜": "Philosopher's Mirror",
-  "制作原料": "Crafting ingredients",
-  "目标数量须为 1 至 1,000,000 的整数": "Target quantity must be an integer from 1 to 1,000,000",
-  "强化等级": "Enhancement level",
-  "房屋": "House",
-  "饮品槽": "Drink slots",
-  "成就增益": "Achievement buffs",
-  "社区增益": "Community buffs",
-  "工时费已关闭": "Hourly profit disabled",
-  "等待游戏物品数据，请刷新游戏后重试": "Waiting for game item data. Refresh the game and retry.",
-  "角色读取超时，请更新 V3 脚本并刷新游戏后重试": "Character read timed out. Update the script, refresh the game and retry.",
-  "未找到当前角色状态，请等待角色加载后重试读取": "Current character state not found. Wait for the character to load and retry.",
-  "角色读取桥接不可用，请刷新游戏后重试": "Character bridge unavailable. Refresh the game and retry.",
-  "角色读取失败，请刷新游戏后重试": "Character read failed. Refresh the game and retry.",
-  "角色参数缺失：{0}，请重试读取": "Missing character parameters: {0}. Retry reading.",
-  "虚拟角色": "Virtual character",
-  "当前角色": "Current character",
-  "无效的底子取得方式": "Invalid base item source",
-  "角色尚未就绪，请重新读取角色后选择底子来源。": "Character not ready. Read the character again before choosing a base source.",
-  "已关闭": "Disabled",
-  "等待物品数据": "Waiting for item data",
-  "等待角色参数": "Waiting for character parameters",
-  "未强化": "Not enhanced",
-  "暂无售价": "No sale price",
-  "缺少材料、底子或保护物价格": "Missing material, base item or protection prices",
-  "请先开启工时费计算。": "Enable hourly profit calculation first.",
-  "等待游戏物品数据，请刷新游戏后重试。": "Waiting for game item data. Refresh the game and retry.",
-  "角色参数尚未就绪，请重新读取角色。": "Character parameters not ready. Read the character again.",
-  "请选择已强化的收藏项目。": "Choose an enhanced favorite item.",
-  "无效的准备路线": "Invalid preparation route",
-  "无效的计划数量": "Invalid planned quantity",
-  "生产需求或成品库存未知，请待数据就绪后重试。": "Production demand or finished-item inventory is unknown. Retry when data is ready.",
-  "所选路线包含镜子或精炼步骤，请按路线明细手动设置各步骤的生产数量。": "This route includes mirror or refinement steps. Set production quantities for each step manually.",
-  "同名 +0 成品库存已满足当前计划，无需继续生产。": "Matching +0 inventory already covers this plan. No further production needed.",
-  "所选路线包含镜子或精炼步骤，无法预填为一次普通强化。请按路线明细手动准备各步骤。": "This route includes mirror or refinement steps and cannot be filled as a single normal enhancement. Prepare each step manually.",
-  "制造配方或产出数量未知，无法计算完整备料。": "Production recipe or output quantity is unknown. Full requirements cannot be calculated.",
-  "强化方案未就绪": "Enhancement plan not ready",
-  "材料数据尚未就绪，请重新读取角色或刷新游戏。": "Material data not ready. Read the character again or refresh the game.",
-  "操作提示": "Notifications",
-  "暂无提示": "No notifications",
-  "行情更新失败，请重试；角色与挂单状态见设置。": "Market refresh failed. Try again; see Settings for character and listing status.",
-  "已更新买卖一价；本人挂单保存状态见设置。": "Best ask and bid updated. See Settings for your listing save status.",
-  "删除提示": "Dismiss notification",
-  "生活衣裤": "Skilling clothing",
-  "各生活技能衣裤 · 按装备等级建分区": "Skilling tops and bottoms · Grouped by item level",
-  "生活工具": "Skilling tools",
-  "各生活技能工具 · 包含全部材料系列": "Tools for all skilling activities · All material tiers",
-  "武器": "Weapons",
-  "主手与双手武器 · 包含普通与精制": "Main-hand and two-handed weapons · Regular and refined",
-  "战斗防具": "Combat armor",
-  "战斗衣甲、头手足装备与副手": "Combat body, leg, head, hand, foot and off-hand equipment",
-  "配饰": "Accessories",
-  "首饰、背部、袋子及通用生活装备": "Jewelry, back, pouches and general skilling equipment",
-  "护符": "Charms",
-  "各技能护符 · 按装备等级建分区": "Skill charms · Grouped by item level",
-  "强化消耗与保护物 · 补充原材料分区": "Enhancement costs and protection · Added to Materials",
-  "等级未知": "Unknown level",
-  "{0}级": "Level {0}",
-  "请选择至少一个有效预设。": "Choose at least one valid preset.",
-  "强化等级须为 0 至 20 的整数。": "Enhancement level must be an integer from 0 to 20.",
-  "预设物品选择无效，请重新选择。": "Invalid preset selection. Select again.",
-  "预设物品已变化或不属于该分区，请重新选择。": "Preset items changed or no longer belong to this group. Select again.",
-  "请选择至少一件物品。": "Choose at least one item.",
-  "请选择至少一个强化等级。": "Choose at least one enhancement level.",
-  "目标分区不存在，请重新选择。": "Target group no longer exists. Select again.",
-  "{0}（预设{1}）": "{0} (preset {1})",
-  "添加后将超过 10,000 条收藏或 200 个分区，请减少所选等级或分区。": "This would exceed 10,000 favorites or 200 groups. Select fewer levels or groups.",
-  "设置已变化，请重试。": "Settings changed. Please retry.",
-  "添加失败，部分写入未能回滚。请检查浏览器存储权限后重新打开管理分区。": "Add failed; some writes could not be rolled back. Check browser storage permissions and reopen group management.",
-  "添加失败，已回滚本次写入。请检查浏览器存储空间或权限后重试。": "Add failed; writes rolled back. Check browser storage space or permissions and retry.",
-  "从预设添加": "Add from presets",
-  "按预设批量删除": "Delete by preset",
-  "批量添加": "Batch add",
-  "批量删除": "Batch delete",
-  "搜索预设物品": "Search preset items",
-  "隐藏普通装备": "Hide basic equipment",
-  "已开启 · 隐藏 {0} 件普通装备": "Enabled · Basic items hidden: {0}",
-  "未开启 · 显示全部装备": "Disabled · Showing all equipment",
-  "隐藏范围": "What is hidden",
-  "隐藏 1–65 级生活工具、基础奶酪与木材系列装备，以及粗糙、爬行动物、哥布林、野兽、暗影皮革系列装备；另隐藏 40 级哥布林装备及棉、亚麻、竹、丝绸、光辉基础布料装备，以及指定的 12 件低中阶装备及小、中、大、巨大四种袋子。保留高阶皮革装备、80/90 级工具及所有精制版。开启时取消被隐藏物品的本次勾选，关闭后不恢复勾选；已有收藏不变。": "Hides level 1–65 skilling tools; basic cheese and wood equipment; rough, reptile, gobo, beast and umbral leather equipment; level 40 gobo equipment; cotton, linen, bamboo, silk and radiant cloth equipment; 12 specified low/mid-tier items; and small, medium, large and giant pouches. Higher-tier leather, level 80/90 tools and all refined equipment remain. Enabling clears hidden selections; disabling does not reselect them. Existing favorites are unchanged.",
-  "商店": "Shop",
-  "打开商店：{0}": "Open shop: {0}",
-  "{0}装备等级": "{0} item levels",
-  "展开分类：{0}": "Expand category: {0}",
-  "预设：{0}": "Preset: {0}",
-  "全选": "Select all",
-  " · {0} 个分区 · {1} 件 · 已选 {2} 件": " · Groups: {0} · Items: {1} · Selected: {2}",
-  "筛选后暂无可添加物品，可关闭隐藏查看。": "No items remain after filtering. Disable hiding to see more.",
-  "当前物品表中无可添加物品": "No eligible items in the current catalog",
-  "预设分区：{0}": "Preset group: {0}",
-  "{0} · {1}/{2} 件": "{0} · Items: {1}/{2}",
-  "全部选中": "All selected",
-  "部分选中": "Partly selected",
-  "未选择": "Not selected",
-  "{0}预设物品": "{0} preset items",
-  "预设物品：{0}：{1}": "Preset item: {0}: {1}",
-  "官方预设目录分类树": "Official preset category tree",
-  "全 {0} 大主分类 · 逐件或按品阶勾选": "Categories: {0} · Select by item or tier",
-  "全选所有分类": "Select all categories",
-  "{0} 种装备类型尚未识别（不自动添加）": "Unrecognized equipment types: {0} (not added automatically)",
-  "清空选择": "Clear selection",
-  "已选分区与物品": "Selected groups & items",
-  "目标归属分区 ": "Target group ",
-  "目标归属分区": "Target group",
-  "按预设自动分区": "Group automatically by preset",
-  "删除哪些强化等级": "Enhancement levels to delete",
-  "加入哪些强化等级": "Enhancement levels to add",
-  "预设强化等级 +{0}": "Preset enhancement +{0}",
-  "快捷：": "Quick select:",
-  "全选 0–20": "Select 0–20",
-  "清空等级": "Clear levels",
-  "等级可多选；不可强化物品仅加入 +0。": "Multiple levels allowed; non-enhanceable items are added at +0 only.",
-  "删除所有匹配收藏": "Delete all matches",
-  "添加所选分区与物品": "Add selected groups & items",
-  "已删除 {0} 条收藏。": "Deleted {0} favorites.",
-  "已创建 {0} 个分区，新增 {1} 条收藏，复用 {2} 条收藏。": "Created {0} groups, added {1} favorites and reused {2} favorites.",
-  "撤销预设批量删除": "Undo preset batch deletion",
-  "已恢复 {0} 条收藏，保留 {1} 条后续新增或修改的记录。": "Restored {0} favorites; kept {1} records added or changed later.",
-  "仅删除预设新增收藏": "Delete preset-added only",
-  "已删除 {0} 条预设新增收藏，手动及来源未记录的收藏保留。": "Deleted {0} preset-added favorites; kept manual and unrecorded favorites.",
-  "预计执行结果": "Preview",
-  "两个按钮使用相同物品与强化等级条件：仅删预设新增，或删除全部匹配。删除同时移除参考价，可撤销；分区、备料车及游戏挂单保持原状。": "Both buttons use the same item and level filters: delete only preset-added favorites or all matches. Reference prices are also removed; deletion can be undone. Groups, carts and game listings stay unchanged.",
-  "仅添加所选物品；保留已有分区归属、收藏与参考价。": "Adds only selected items; preserves existing groups, favorites and reference prices.",
-  "已选 {0} 个分区 · {1} 件物品": "Selected groups: {0} · Items: {1}",
-  "尚无匹配收藏": "No matching favorites yet",
-  "全部匹配 {0} 条收藏 · 其中预设新增 {1} 条": "Matching favorites: {0} · Preset-added: {1}",
-  "仅删除预设新增收藏 ({0})": "Delete preset-added only ({0})",
-  "删除所有匹配收藏 ({0})": "Delete all matches ({0})",
-  "查看匹配收藏：{0} 条 · 其中预设新增 {1} 条": "Review matches: {0} · Preset-added: {1}",
-  "来源未记录": "Source unrecorded",
-  "{0} 个新分区": "New groups: {0}",
-  "{0} 条新收藏": "New favorites: {0}",
-  "复用已有 {0} 条收藏": "Reused favorites: {0}",
-  "请展开分类，选择需要的物品。": "Expand a category and select items.",
-  "匹配": "Match",
-  "加入": "Add",
-  "取消选择：{0}：{1}": "Deselect: {0}: {1}",
-  "移除": "Remove",
-  "尚未选择物品。": "No items selected.",
-  "采购": "Buy",
-  "制造": "Produce",
-  "{0}材料模拟单价：{1}": "{0} material simulated unit price: {1}",
-  "降低一档": "One tick lower",
-  "提高一档": "One tick higher",
-  "{0}材料{1}：{2}": "{0} material {1}: {2}",
-  "左一": "Best ask",
-  "暂无有效左一价格，请先读取该材料行情": "No valid best ask. Read this material's market data first.",
-  "{0}材料恢复当前左一价格：{1}": "{0} material: reset to current best ask: {1}",
-  "右一": "Best bid",
-  "{0}材料使用当前右一价格：{1}": "{0} material: use current best bid: {1}",
-  "请输入大于 0 且不超过 1,000,000,000,000 的单价": "Enter a unit price greater than 0 and at most 1,000,000,000,000",
-  "强化计价": "Enhancement cost basis",
-  "底子采购计价": "Base purchase cost basis",
-  "自制材料计价": "Production material cost basis",
-  "镜子计价": "Mirror cost basis",
-  "保护计价": "Protection cost basis",
-  "模拟报价：{0} · {1}：{2}": "Simulated quote: {0} · {1}: {2}",
-  "{0}{1}{2}左一：{3}": "{0}{1}{2}Best ask: {3}",
-  "缓存 · ": "Cached · ",
-  "旧报价 · ": "Old quote · ",
-  "已有行情": "Available market data",
-  "暂无有效右一价格": "No valid best bid",
-  "用当前右一 {0} 模拟本项成本": "Simulate this cost at the current best bid {0}",
-  "无可用更低档位": "No lower price tick available",
-  "模拟{0}：{1}": "Simulate {0}: {1}",
-  "无可用更高档位": "No higher price tick available",
-  "计算未就绪，请重新展开项目重试": "Calculation not ready. Reopen the item details and retry.",
-  "无市场报价，请先读取该材料行情": "No market quote. Read this material's market data first.",
-  " · 自制未启用、缺价或组合分摊未知": " · Production disabled, missing prices or unknown allocation",
-  "模拟报价：{0} · 制造计价：{1} · 强化计价：{2}": "Simulated quote: {0} · Production cost basis: {1} · Enhancement cost basis: {2}",
-  "模拟报价无效，请修正": "Invalid simulated quote. Please correct it.",
-  "亏损／持平": "Loss / break-even",
-  "低工时": "Low hourly profit",
-  "一般工时": "Fair hourly profit",
-  "中等工时": "Medium hourly profit",
-  "较高工时": "High hourly profit",
-  "高工时": "Top hourly profit",
-  "不使用": "Disabled",
-  "左一退一档": "One tick below best ask",
-  "右一进一档": "One tick above best bid",
-  "强化计算设置": "Enhancement calculation settings",
-  "计算与显示": "Calculation & display",
-  "自动收藏挂单": "Auto-favorite listings",
-  "自动收藏读取到的本人买卖挂单，同物品、同等级去重；手动移除后，同一挂单不会重复加入。保存后在下一次读取挂单时生效。": "Automatically favorite your observed buy and sell listings, deduplicated by item and level. Manually removed listings are not added again. Takes effect on the next listing read after saving.",
-  "显示工时费": "Show hourly profit",
-  "计入当前社区强化增益": "Include current community enhancing buff",
-  "制造时使用工匠茶": "Use Artisan Tea for production",
-  "强化路线选择": "Enhancement route objective",
-  "最高工时费": "Highest hourly profit",
-  "最低成本": "Lowest cost",
-  "标准时薪": "Standard hourly rate",
-  "标准时薪（M／小时）": "Standard hourly rate (M/h)",
-  "强化备料倍率": "Preparation multiplier",
-  "期望成功率（%）": "Expected success rate (%)",
-  "按 1 − e^(−备料倍率) 估算，保留两位小数；接近 100% 时显示 99.99%。": "Estimated as 1 − e^(−preparation multiplier), rounded to two decimals; capped at 99.99% for display.",
-  "100% 需要无限备料倍率，请输入小于 100% 的成功率。": "100% requires an infinite preparation multiplier. Enter a rate below 100%.",
-  "底子取得成本": "Base item cost",
-  "材料第 {0} 顺位": "Material price priority {0}",
-  "成品 +0 报价": "Finished +0 item quote",
-  "工时费颜色": "Hourly profit colors",
-  "分档阈值": "Tier thresholds",
-  "第 {0} 档阈值（M／小时）": "Tier {0} threshold (M/h)",
-  "显示颜色": "Display colors",
-  "启用虚拟配置": "Enable virtual configuration",
-  "强化技能等级": "Enhancing skill level",
-  "天文台等级": "Observatory level",
-  "强化器等级": "Enhancer level",
-  "强化上衣等级": "Enhancer's Top level",
-  "强化下装等级": "Enhancer's Bottoms level",
-  "项链等级": "Necklace level",
-  "附魔手套等级": "Enchanted Gloves level",
-  "机缘披风等级": "Chance Cape level",
-  "暴饮之囊等级": "Guzzling Pouch level",
-  "技能与建筑": "Skills & buildings",
-  "强化器类型": "Enhancer type",
-  "星空强化器": "Celestial Enhancer",
-  "神圣强化器": "Holy Enhancer",
-  "机缘披风类型": "Chance Cape type",
-  "不装备": "Unequipped",
-  "普通": "Normal",
-  "精炼": "Refined",
-  "茶与增益": "Drinks & buffs",
-  "强化茶": "Enhancing Tea",
-  "普通强化茶": "Enhancing Tea",
-  "超级强化茶": "Super Enhancing Tea",
-  "究极强化茶": "Ultra Enhancing Tea",
-  "冠军成就": "Champion achievement",
-  "虚拟社区增益等级": "Virtual community buff level",
-  "跟随当前社区增益开关": "Follow community buff toggle",
-  "虚拟参数无效，尚未应用。请修正标记的输入。": "Invalid virtual parameters; not applied. Correct the highlighted input.",
-  "虚拟配置已生效，计算已更新。": "Virtual configuration applied. Calculations updated.",
-  "已切回当前角色，计算已更新。": "Switched to current character. Calculations updated.",
-  "虚拟配置保存失败，仍使用原设置，请重试。": "Could not save virtual configuration. Previous settings retained; retry.",
-  "保存并应用": "Save & apply",
-  "恢复默认值": "Restore defaults",
-  "重新读取角色": "Read character again",
-  "无法读取已保存设置，暂用默认值。请检查浏览器存储后重新保存。": "Could not read saved settings. Using defaults temporarily; check browser storage and save again.",
-  "颜色阈值必须依次递增，设置尚未保存。": "Color thresholds must increase in order. Settings not saved.",
-  "已保存，工时费已更新。": "Saved. Hourly profit updated.",
-  "保存失败，请检查浏览器存储设置后重试。": "Save failed. Check browser storage settings and retry.",
-  "已填入默认值，点击保存并应用后生效。": "Defaults filled. Click Save & apply to use them.",
-  "制造原料": "Production ingredients",
-  "底子": "Base item",
-  "镜子路线候选": "Mirror route candidate",
-  "缺少可用的材料、底子或保护物价格，请先读取对应行情后刷新页面。": "Missing material, base item or protection prices. Read the relevant market data, then refresh the page.",
-  "模拟报价格式无效": "Invalid simulated quote format",
-  "模拟物品不在当前成本候选中": "Simulated item is not a current cost candidate",
-  "模拟报价须大于 0 且不超过 1,000,000,000,000": "Simulated quote must be greater than 0 and at most 1,000,000,000,000",
-  "暂无有效售价": "No valid sale price",
-  "页面状态读取失败，已使用默认视图，原记录保留。": "Could not read page state. Using the default view; original record retained.",
-  "页面状态保存失败，当前操作仍可继续，刷新后可能无法恢复。": "Could not save page state. You can continue, but the view may not restore after reload.",
-  "0秒": "0s",
-  "不足1秒": "Less than 1s",
-  "{0}秒": "{0}s",
-  "{0}天": "{0}d",
-  "{0}小时": "{0}h",
-  "{0}分": "{0}m",
-  "{0} 次": "{0} actions",
-  "{0} + 未知": "{0} + unknown",
-  "保存失败，请重试": "Save failed. Please retry.",
-  "长按编辑分区；F2 编辑；拖动或 Alt + 左右方向键排序": "Hold to edit group; F2 to edit; drag or Alt + Left/Right to reorder",
-  "拖动或 Alt + 左右方向键排序": "Drag or Alt + Left/Right to reorder",
-  "数量为 1，点击后再次点击可移除规划": "Quantity is 1. Click, then click again to remove the plan.",
-  "继续下拉收起": "Pull farther down to collapse",
-  "调整备料抽屉高度": "Resize preparation drawer",
-  "上下拖动调整高度，最低处继续下拉可收起；方向键微调，双击或 Enter 恢复默认": "Drag vertically to resize; pull below the minimum to collapse. Arrow keys adjust; double-click or Enter resets.",
-  "{0} 像素": "{0} pixels",
-  "{0} 像素，继续下拉收起": "{0} pixels; pull farther down to collapse",
-  "调整列宽：{0}": "Resize column: {0}",
-  "列宽保存失败，已恢复原宽度，请重试。": "Could not save column width. Previous width restored; retry.",
-  "返回强化项目": "Back to enhancement projects",
-  "分区筛选": "Group filters",
-  "全部": "All",
-  "分区内物品排序": "Sort items within groups",
-  "工时费": "Hourly profit",
-  "利润": "Profit",
-  "利润率": "Profit margin",
-  "物品名称 / 等级": "Item name / level",
-  "市场左一": "Market best ask",
-  "我的挂单价格": "My listing price",
-  "降序": "Descending",
-  "升序": "Ascending",
-  "收藏顺序": "Favorite order",
-  "搜索物品或等级": "Search items or levels",
-  "搜索收藏与原材料": "Search favorites & materials",
-  "清除搜索": "Clear search",
-  "挂单快速筛选": "Quick listing filters",
-  "全部项目": "All projects",
-  "我的挂单": "My listings",
-  "被压价": "Undercut",
-  "需要更新": "Needs update",
-  "管理功能": "Management",
-  "预设批量添加 / 删除": "Preset batch add / delete",
-  "自定义分区与归属": "Custom groups & membership",
-  "收藏批量管理": "Batch manage favorites",
-  "返回选品主表": "Back to item table",
-  "{0} 个项目": "Projects: {0}",
-  "没有符合搜索或挂单筛选的项目。": "No projects match the search or listing filters.",
-  "所选分区暂无项目。": "No projects in the selected groups.",
-  "物品 / 等级": "Item / level",
-  "工时费 / h": "Profit / h",
-  "备料": "Prepare",
-  "收藏项目列表": "Favorite project list",
-  "原材料": "Materials",
-  "{0} 种材料": "Material types: {0}",
-  "请勾选上方分区，可同时选择多个。": "Select groups above. Multiple groups can be selected.",
-  "备料抽屉": "Preparation drawer",
-  "备料车 · {0} 项 / {1} 件": "Cart · Projects: {0} / Quantity: {1}",
-  "采购预算 {0}{1}": "Purchase budget {0}{1}",
-  " · 数据待完整": " · Incomplete data",
-  "收起备料清单": "Collapse preparation list",
-  "展开备料清单": "Expand preparation list",
-  "等 {0} 项": "and more · Total: {0}",
-  "缺料 {0} 种": "Missing material types: {0}",
-  "{0}：点击{1}排列": "{0}: sort {1}",
-  "原材料统一核算看板": "Combined material requirements",
-  "需求仅按备料车累计，制造与强化共用材料统一扣减库存。": "Demand is totaled from the cart; shared production and enhancement inventory is deducted once.",
-  "查看采购清单": "View purchase list",
-  "角色尚未就绪，备料需求未知。": "Character not ready. Requirements unknown.",
-  "暂无可显示的材料，请添加收藏并读取角色与配方。": "No materials to show. Add favorites and read character and recipe data.",
-  "原材料 / 等级": "Material / level",
-  "库存": "Inventory",
-  "需备合计": "Total required",
-  "还缺": "Missing",
-  "采购预算": "Purchase budget",
-  "快捷采购": "Quick purchase",
-  "原材料分区列表": "Material group list",
-  "{0} 项": "Entries: {0}",
-  "预填采购": "Fill purchase",
-  "预填采购：{0}": "Fill purchase: {0}",
-  "材料范围可能不完整：": "Material scope may be incomplete: ",
-  "等待计算": "Waiting for calculation",
-  "暂无利润": "Profit unavailable",
-  "暂无利润率": "Margin unavailable",
-  "自定义价格：{0}": "Custom price: {0}",
-  "支持 K / M / B（大小写均可），例如 500K、170m、1.2B；清空表示未设置。": "Supports K / M / B (case insensitive), e.g. 500K, 170m, 1.2B; clear to leave unset.",
-  "参考售价支持 K / M / B，换算后须为非负安全整数金币；清空表示未设置。": "Reference prices support K / M / B and must resolve to a non-negative safe integer in coins; clear to leave unset.",
-  "参考售价请输入非负整数金币，清空表示未设置。": "Enter a non-negative integer reference price in coins; clear to leave unset.",
-  "计划备料数量：{0}": "Planned quantity: {0}",
-  "输入整数数量，0 表示移出备料计划": "Enter an integer; 0 removes it from the plan",
-  "备料数量须为 0 至 {0} 的整数；同物品各等级合计最多 1,000,000 件": "Quantity must be an integer from 0 to {0}; total across levels of the same item is capped at 1,000,000",
-  "同物品各等级合计最多 1,000,000 件": "Total across levels of the same item is capped at 1,000,000",
-  "减少计划备料数量：{0}": "Decrease planned quantity: {0}",
-  "增加计划备料数量：{0}": "Increase planned quantity: {0}",
-  "减少 1 件，减到 0 移出计划": "Decrease by 1; reaching 0 removes it from the plan",
-  "增加 1 件": "Increase by 1",
-  "项目明细：{0}": "Project details: {0}",
-  "本地缓存 · ": "Local cache · ",
-  "等待行情": "Waiting for market data",
-  "旧": "Old",
-  "缓存": "Cached",
-  "市场快照": "Market snapshot",
-  "快照": "Snapshot",
-  "订单簿": "Order book",
-  "；报价超过 5 分钟，请打开市场复核": "; quote is over 5 minutes old. Open the market to verify.",
-  "未读取": "Not read",
-  "{0} {1} · {2}单": "{0} {1} · Listings: {2}",
-  "卖": "Sell",
-  "买": "Buy",
-  "旧 · ": "Old · ",
-  " · 另{0}单被压价": " · Other undercut listings: {0}",
-  "暂无行情": "No market data",
-  "模拟": "Simulated",
-  "材料价格模拟 · 固定售价 {0}": "Material price simulation · Fixed sale price {0}",
-  "按当前行情计算": "Using current market data",
-  "备料车": "Preparation cart",
-  "备料计划与采购清单核算": "Preparation plan & purchase list",
-  "{0} 项 · {1} 件": "Projects: {0} · Quantity: {1}",
-  "角色尚未就绪，读取后即可加入项目。": "Character not ready. Read the character to add projects.",
-  "在强化项目中加入备料后，统一计算材料需求。": "Add projects to the preparation cart to calculate combined requirements.",
-  "备料数量：{0}": "Preparation quantity: {0}",
-  "备料数量须为 1 至 {0} 的整数；同物品各等级合计最多 1,000,000 件": "Quantity must be an integer from 1 to {0}; total across levels of the same item is capped at 1,000,000",
-  "项目已移出备料车，请重新加入": "Project is no longer in the cart. Add it again.",
-  "请先输入有效的整数数量": "Enter a valid integer quantity first",
-  "{0}备料数量：{1}": "{0} preparation quantity: {1}",
-  "减少": "Decrease",
-  "增加": "Increase",
-  "再次点击移除该规划": "Click again to remove this plan",
-  "减少 1 件": "Decrease by 1",
-  "移出备料车：{0}": "Remove from cart: {0}",
-  "{0} {1} 金币 · 无需再购 {2}/{3} 种": "{0} {1} coins · No purchase needed: {2}/{3} types",
-  "缺口预算": "Shortfall budget",
-  "缺口预算未计全": "Incomplete shortfall budget",
-  "收起预算采购清单": "Collapse budget purchase list",
-  "按当前金币分配采购": "Allocate purchases to available coins",
-  "可用 {0} · 采购 {1} · 预留消耗 {2} · 余额 {3}": "Available {0} · Purchase {1} · Reserved consumption {2} · Remaining {3}",
-  "金币不足以备齐制造材料；本次仅分配制造材料，暂不分配强化材料。": "Not enough coins for all production materials. Only production materials are allocated; enhancement materials are deferred.",
-  "建议购买": "Suggested purchase",
-  "金额": "Amount",
-  "预算采购清单": "Budget purchase list",
-  "当前预算下无须或无法追加采购。": "No additional purchases needed or affordable under this budget.",
-  "未计入金额：": "Excluded from total: ",
-  "备料车只看缺料": "Cart: show shortages only",
-  "只看缺料（含未知）": "Shortages only (including unknown)",
-  "合计材料 · 单价降序": "Combined materials · Unit price descending",
-  "数量中的「+ 未知」表示尚有项目未算入；已算部分保留，完整缺口和预算待方案就绪后计算。": "“+ unknown” means some projects are not included yet. Known requirements are retained; full shortages and budget await complete plans.",
-  "总需": "Required",
-  "缺口": "Shortfall",
-  "左一单价": "Best ask unit price",
-  "预算小计": "Budget subtotal",
-  "备料车材料合计": "Combined cart materials",
-  "{0} · {1}；采购 {2} 份": "{0} · {1}; purchase quantity: {2}",
-  "金币直接消耗或报价未知": "Direct coin consumption or quote unknown",
-  "{0}（待收 {1}）": "{0} (incoming {1})",
-  "制造 {0}；强化备料 {1}": "Production {0}; enhancement preparation {1}",
-  "制造 / 强化用量拆分": "Production / enhancement breakdown",
-  "备料用量拆分": "Preparation breakdown",
-  "未算全：": "Incomplete: ",
-  "备料路线：": "Preparation route: ",
-  "打开原材料市场：{0}": "Open material market: {0}",
-  "等待材料参数": "Waiting for material parameters",
-  "制造与强化备料合计": "Combined production & enhancement requirements",
-  "单价": "Unit price",
-  "补齐总价": "Shortfall cost",
-  "暂无报价": "No quote",
-  "当前单价：{0}": "Current unit price: {0}",
-  "无需补齐，补齐总价为 0；已扣除库存与待收货": "No shortfall; cost is 0 after deducting inventory and incoming purchases",
-  "补齐总价：{0} × {1} = {2}；缺少数量已扣除库存与待收货": "Shortfall cost: {0} × {1} = {2}; inventory and incoming purchases already deducted",
-  "缺少数量或当前单价未知": "Missing quantity or current unit price unknown",
-  "{0}备料进度": "{0} preparation progress",
-  "自制 {0}": "Craft {0}",
-  "当前计划数量：{0}": "Current plan quantity: {0}",
-  "减少当前计划数量：{0}": "Decrease current plan quantity: {0}",
-  "增加当前计划数量：{0}": "Increase current plan quantity: {0}",
-  "强化 {0}": "Enhance {0}",
-  "自制可用 {0}": "Craft available {0}",
-  "强化可用 {0}": "Enhance available {0}",
-  "剩余 {0}": "Remaining {0}",
-  "{0}库存分配": "{0} inventory allocation",
-  "库存缺口 {0}": "Stock gap {0}",
-  "库存 {0}；自制需 {1}，可用 {2}；强化需 {3}，可用 {4}；剩余 {5}；库存缺口 {6}。条长按库存与总需求较大值计算，按先自制、后强化分配；红色缺口未扣待收货，下方缺少数量已扣待收货。": "Inventory {0}; craft needs {1}, available {2}; enhance needs {3}, available {4}; remaining {5}; stock gap {6}. Scale is the greater of inventory and total demand, allocated to crafting first, then enhancement. The red gap excludes incoming purchases; the shortfall below deducts them.",
-  "缺：{0}": "Missing: {0}",
-  "已扣除待收货数量 {0}": "Incoming quantity already deducted: {0}",
-  "需：{0}": "Required: {0}",
-  "库存：{0}": "Inventory: {0}",
-  "无需此类材料。": "No materials of this type needed.",
-  "强化方案未就绪，合计需备未知。": "Enhancement plan not ready. Total requirements unknown.",
-  "计划经验预估": "Planned XP estimate",
-  "{0}{1}，预计 {2}；预计增加 {3} 经验": "{0}{1}, projected {2}; estimated gain {3} XP",
-  "跨级，": "Level up, ",
-  "实心表示已有经验，斜纹表示预计新增经验。{0}": "Solid fill shows current XP; hatching shows estimated added XP. {0}",
-  "跨级": "Level up",
-  "预计经验未知": "Estimated XP unknown",
-  "预计 +{0} 经验": "Estimated +{0} XP",
-  "期望时间": "Expected time",
-  "期望次数": "Expected actions",
-  "单件期望强化耗时，不含制造、采购或等待；期望值不保证本次完成时间": "Expected enhancement time per item, excluding production, purchases and waiting; an expectation is not a completion guarantee",
-  "单件期望强化动作次数，不是保护材料消耗量": "Expected enhancement actions per item, not protection material consumption",
-  "强化方案": "Enhancement plan",
-  "方案尚未就绪，请先读取所需行情。": "Plan not ready. Read the required market data first.",
-  "保护之镜": "Mirror Of Protection",
-  "打开市场：{0}": "Open market: {0}",
-  "无需强化": "No enhancement needed",
-  "无需保护": "No protection needed",
-  "· +{0} 精炼继承": "· +{0} refinement carryover",
-  "组成装备与数量": "Component equipment & quantities",
-  "需另备组成装备，镜子合成与精炼步骤需手动操作。": "Prepare component equipment separately. Mirror combination and refinement steps require manual actions.",
-  "先强化未精炼底子，再按标示等级精炼继承；需分步手动操作。": "Enhance the unrefined base first, then refine at the indicated level for carryover. Perform each step manually.",
-  "下方强化预填按当前行情方案执行；模拟方案仅用于比较。": "Enhancement prefill below uses the current market plan; the simulated plan is for comparison only.",
-  "底子取得方式": "Base item source",
-  "自制": "Craft",
-  "{0}底子：{1}": "{0} base: {1}",
-  "{0}底子及同物品保护；同角色的该物品各强化等级共用此选择{1}": "{0} base and same-item protection; shared across this item's enhancement levels for the current character{1}",
-  "；采购报价缺失时使用自制成本": "; use production cost if the purchase quote is missing",
-  "同物品保护：": "Same-item protection: ",
-  "同步自制": "Craft as well",
-  "同步采购": "Buy as well",
-  "保护：": "Protection: ",
-  "保护随组成装备来源": "Protection follows component source",
-  "方案未就绪": "Plan not ready",
-  "普通保护 · +{0} 起保": "Normal protection · Start at +{0}",
-  "普通路线 · 无需保护": "Normal route · No protection needed",
-  "贤者之镜路线": "Philosopher's Mirror route",
-  "精炼继承路线": "Refinement carryover route",
-  "缺价，按自制": "No quote; using production cost",
-  "工时费差未知": "Hourly profit difference unknown",
-  "工时费相同": "Same hourly profit",
-  "{0}{1}/h收益": "{0} {1}/h profit",
-  "获得": "Gain",
-  "失去": "Lose",
-  "采购报价缺失，底子及同物品保护按自制成本计算；采购报价恢复后按采购成本计算。": "Purchase quote missing. Base and same-item protection use production cost until a purchase quote is available again.",
-  "当前{0}方案相对{1}方案的预计工时费差；使用相同售价、角色参数和当前模拟报价，分别计算完整强化方案。{2}": "Estimated hourly profit difference for {0} compared with {1}, using the same sale price, character parameters and simulated quotes to calculate both full routes. {2}",
-  "缺少有效售价或可比较的方案。": "No valid sale price or comparable plan.",
-  "按未缩写数值计算。": "Calculated using unrounded values.",
-  "等待路线计算；采购报价缺失时使用自制成本，自制成本也缺失时无法估算": "Waiting for route calculation; production cost is used if the purchase quote is missing. Cannot estimate when both are missing.",
-  "无有效售价 · 最低成本强化方案 · 单件预计成本 {0} · 预计耗时 {1} 小时": "No valid sale price · Lowest-cost plan · Expected cost per item {0} · Expected time {1} hours",
-  "配方材料与调价模拟": "Recipe materials & price simulation",
-  "恢复左一": "Reset to ask",
-  "恢复全部材料当前报价": "Reset all material quotes",
-  "重新读取已收到的当前行情，清除全部模拟调价": "Read current received market data again and clear all simulated prices",
-  "价格模拟": "Price simulation",
-  "关闭价格模拟": "Disable price simulation",
-  "开启价格模拟": "Enable price simulation",
-  "关闭并清除模拟调价，恢复当前行情计算": "Disable and clear simulated prices; return to current market calculations",
-  "开启后显示材料调价按钮": "Enable to show material price controls",
-  "计划 {0} 件": "Planned quantity: {0}",
-  "单件备料预览 · 未加入计划": "Single-item preview · Not in plan",
-  "{0} · 库存同等级 {1} 件": "{0} · Inventory at this level: {1}",
-  "强化：{0}": "Enhance: {0}",
-  "前往强化并预填，请在游戏中确认后开始": "Open enhancement and fill settings; confirm in the game before starting",
-  "市场": "Market",
-  "市场：{0}": "Market: {0}",
-  "计划": "Plan",
-  "角色尚未就绪，请先刷新角色。": "Character not ready. Refresh character data first.",
-  "计划：{0}": "Plan: {0}",
-  "加入备料并查看采购": "Add to cart & view purchases",
-  "买 {0} 单": "Buy: {0} orders",
-  "卖单": "Sell orders",
-  "仅汇总已读取的同价订单，买卖分开，不代表全市场总量": "Observed same-price orders only; buy and sell quantities are separate, not market totals",
-  "买单明细未读取；旧加载器或旧缓存可能仅含卖单。请更新脚本后刷新游戏，再打开该物品市场。": "Buy depth unavailable; an old loader or cache may contain only sells. Update the script, reload the game, then open this item in the market.",
-  "先后未知": "Queue order unknown",
-  "{0} 单": "{0} orders",
-  "同价订单越靠下越早；先后未知的订单单独列出。仅显示已读取订单。": "Earlier same-price orders appear lower; unranked orders are separate. Observed orders only.",
-  "市场页面刷新于 {0}前": "Market page refreshed {0} ago",
-  "市场深度与收益测算": "Market depth & estimated returns",
-  "卖单量": "Sell quantity",
-  "测算": "Estimate",
-  "位置未知": "Position unknown",
-  "旧位置 {0}": "Old position {0}",
-  "卖单 {0}": "Sell order {0}",
-  "仅汇总已读取的同价卖单，不代表全市场总量": "Sum of observed sell orders at this price, not the entire market",
-  "市场卖单深度与本人在售状态": "Sell order depth & your active listings",
-  "本地缓存 · 待复核 · ": "Local cache · Needs verification · ",
-  "已过期 · ": "Expired · ",
-  "订单簿 · ": "Order book · ",
-  "尚未读取订单簿": "Order book not read yet",
-  "模拟收益 · 以下各售价按当前模拟材料成本重算": "Simulated profit · Recalculated at each sale price using simulated material costs",
-  "{0}价格档位工时费": "{0} hourly profit by price tick",
-  "各售价对应工时费、利润和利润率，售价从高到低": "Hourly profit, profit and margin at each sale price, highest price first",
-  "售价档位": "Price tick",
-  "单件利润": "Profit per item",
-  "售价：{0}": "Sale price: {0}",
-  "左一 · 非现档": "Best ask · Off tick",
-  "右一 · 非现档": "Best bid · Off tick",
-  "区间外": "Out of range",
-  "工时费：{0} / h": "Hourly profit: {0} / h",
-  "工时费 / h：{0}": "Profit / h: {0}",
-  "利润：{0}": "Profit: {0}",
-  "利润率：{0}": "Margin: {0}",
-  "存在区间外报价": "Some quotes are outside the trading range",
-  "可交易区间尚未读取，以游戏挂单窗口为准。": "Trading range not read yet. Check the game's listing form.",
-  "左一非现档": "Best ask off tick",
-  "右一非现档": "Best bid off tick",
-  "方向": "Side",
-  "我的价格": "My price",
-  "左一／右一": "Best ask / bid",
-  "价格比较": "Price comparison",
-  "本人挂单价格比较": "Your listing price comparison",
-  "出售": "Sell",
-  "购买": "Buy",
-  "本人完整挂单价格比较": "Full listing price comparison",
-  "本人在售 {0} 单 · 剩余 {1} 件；等待成交时间未知。": "Your sell listings: {0} · Remaining quantity: {1}; time until sale is unknown.",
-  "位置": "Position",
-  "售价": "Sale price",
-  "挂单量": "Listed quantity",
-  "{0}卖单": "{0} sell orders",
-  "其余本人订单 · 公开订单簿未给出位置": "Other own orders · Position not provided by public order book",
-  "省略第 {0}–{1} 条": "Omitted rows {0}–{1}",
-  "本人 · {0}": "Yours · {0}",
-  "待复核": "Needs verification",
-  "旧 {0}": "Old {0}",
-  "旧订单簿中的位置；请打开该物品市场更新": "Position in an old order book; open this item's market to update",
-  "本人订单：与我的左一订单同价": "Your order: same price as your best-ask order",
-  "本人订单：前方有其他玩家订单或售价高于左一": "Your order: other players ahead or price above best ask",
-  "本人订单：左一归属未知，请读取最新订单簿": "Your order: best-ask ownership unknown; read a fresh order book",
-  "该等级暂无卖单。": "No sell orders at this level.",
-  "打开该物品市场后读取前三卖单。": "Open this item's market to read the top three sell orders.",
-  "本人挂单尚未读取，归属暂不可确认。": "Your listings have not been read; ownership cannot be confirmed.",
-  "{0} · 估算工时费 {1}": "{0} · Estimated hourly profit {1}",
-  "模拟固定售价 {0}": "Simulated fixed sale price {0}",
-  "无有效售价 · 最低成本模拟": "No valid sale price · Lowest-cost simulation",
-  "{0}{1}{2}左一 {3}": "{0}{1}{2}Best ask {3}",
-  "{0} · 本人已成交历史订单记录": "{0} · Your filled order history",
-  "原挂单价": "Original price",
-  "累计成交": "Total filled",
-  "挂单时间": "Listed at",
-  "成交耗时上限": "Fill time upper bound",
-  "记录时间": "Recorded at",
-  "{0}本人成交记录": "{0} own trade records",
-  "本人卖出订单 #{0}": "Your sell order #{0}",
-  "收起历史": "Collapse history",
-  "查看全部 {0} 条": "View all {0} records",
-  "历史读取失败：{0}": "History read failed: {0}",
-  "正在读取本人记录…": "Reading your records…",
-  "尚未记录到该等级的本人卖出成交。": "No recorded filled sell orders at this level yet.",
-  "分区分类管理": "Manage groups",
-  "新分区名称": "New group name",
-  "添加分区": "Add group",
-  "编辑分区": "Edit group",
-  "编辑分区：{0}": "Edit group: {0}",
-  "分区名称": "Group name",
-  "删除分区": "Delete group",
-  "删除此分区": "Delete this group",
-  "分区已不存在，请关闭后重试。": "This group no longer exists. Close and try again.",
-  "删除「{0}」？保留收藏及其他分区归属；无其他归属的物品回到未分区。": "Delete “{0}”? Favorites and other memberships are kept. Items without another group return to Ungrouped.",
-  "已删除分区，收藏已保留。": "Group deleted. Favorites kept.",
-  "分区已保存。": "Group saved.",
-  "新增分区": "Add group",
-  "{0} 件": "Items: {0}",
-  "重命名分区：{0}": "Rename group: {0}",
-  "保存名称": "Save name",
-  "合并分区": "Merge groups",
-  "再次点击，将“{0}”的物品归属合并到“{1}”，并移除当前分区": "Click again to merge items from “{0}” into “{1}” and remove the current group",
-  "删除分区并移出物品": "Delete group & remove memberships",
-  "系统兜底": "Fallback",
-  "内置分区": "Built-in group",
-  "物品多分区归属矩阵": "Item group membership matrix",
-  "同物品各强化等级共享归属；全部取消后退回未分区。": "All enhancement levels share membership. Clearing all groups returns the item to Ungrouped.",
-  "快速过滤物品": "Filter items",
-  "搜索分区归属物品": "Search group items",
-  "物品": "Item",
-  "{0}所属分区：{1}": "{0} group: {1}",
-  "移出": "Remove",
-  "移出所有分区：{0}": "Remove from all groups: {0}",
-  "收藏与分区": "Favorites & groups",
-  "点击刷新价格与库存即可更新全市场买卖一价；本人挂单在打开游戏我的挂单时自动保存。": "Refresh prices and inventory to update best asks and bids across the market. Your listings are saved automatically when you open My Listings in the game.",
-  "收藏中的资源材料默认归入此区，同时汇集备料车及收藏项目的直接制造、强化和保护材料；相同物品和等级合并。未加入备料车的项目不计入需备数量。": "Favorited resource materials appear here, together with direct production, enhancement and protection materials from the cart and favorites. Matching items and levels are combined. Projects outside the cart do not contribute to required quantities.",
-  "点击物品旁的收藏按钮保存物品与等级；参考售价可以单独填写。收藏已有挂单商品可导入现有挂单，以后新挂单会自动收藏。": "Use the favorite button beside an item to save its item and level. Reference prices can be entered separately. Existing listings can be imported as favorites; new listings are favorited automatically when enabled.",
-  "物品可同时属于多个分区，分区归属适用于全部收藏等级。全部取消则归入未分区；删除分区保留其他归属。管理列表按游戏编号升序排列。": "Items may belong to multiple groups; membership applies to all favorited enhancement levels. Clearing all memberships returns an item to Ungrouped. Deleting one group retains other memberships. Management lists follow ascending game sort order.",
-  "点击表头切换升降序，未知值始终置底；我的挂单按本人最低挂单价排序。": "Click a column header to toggle ascending or descending order. Unknown values always sort last. My listings sort by your lowest listing price.",
-  "拖动调节列宽；双击或 Enter 恢复默认；方向键调节，Esc 取消拖动。": "Drag to resize columns; double-click or Enter resets. Arrow keys adjust and Esc cancels dragging.",
-  "计算与路线": "Calculation & routes",
-  "与月饼相同的强化计算口径：售价扣除 4% 税，再减期望成本、除以强化小时。材料按市场机会成本计价，库存不抵扣；不包含交易等待时间。": "Uses Mooncake's enhancement calculation: subtract 4% tax and expected costs from the sale price, then divide by enhancement hours. Materials use market opportunity cost, without inventory deductions. Trade waiting time is excluded.",
-  "自制材料依次尝试以下报价，与成品 +0 报价比较，取较低完整路径。全部选择“不使用”可停用自制路线。": "Production materials try the configured quote priorities. The full production cost is compared with the finished +0 item quote, and the cheaper complete route is used. Disable all priorities to turn off production routes.",
-  "按当前价格与角色参数选择最低总成本方案；次数为期望值，可能与工时费所选方案不同。": "The lowest-total-cost preparation plan uses current prices and character parameters. Action counts are expectations and may differ from the route selected for hourly profit.",
-  "耗时不含制造、排队与等待成交；利润和成本沿用当前路线。": "Time excludes production, queues and waiting for trades. Profit and costs follow the current route.",
-  "列表默认按市场左一出售价估算。利润 = 税后售价 − 总成本；利润率 = 税后利润 ÷ 总成本。价格阶梯按每一档售价和当前角色参数重新估算。": "The list defaults to the market best ask. Profit = after-tax sale price − total cost; margin = after-tax profit ÷ total cost. Each price tick is recalculated using its sale price and current character parameters.",
-  "项目明细的材料名称下显示当前模拟单价。左右按钮按该材料 +0 的价格档位减一档、加一档，悬停可看下一档报价；点击后立即更新展开区的利润、利润率、工时费及模拟路线备料。不同收藏等级独立模拟；收藏主行、展开摘要、售价档位和卖单工时费同步标注模拟收益。备料车仍按真实行情计算。": "Material controls show simulated unit prices. Left and right buttons move one +0 price tick; hover to see the next quote. Changes update profit, margin, hourly profit and simulated requirements. Each favorite level has an independent simulation. Project rows, details, price ticks and sell-order profit are marked as simulated. The cart still uses real market prices.",
-  "首次打开项目明细截取行情、成品售价和角色参数。材料行可点击“恢复当前左一价格”，将该计价使用的报价恢复为插件最新已读取的 +0 左一价格，仅影响当前材料；缺少有效左一价时按钮不可用。强化与保护按实际单价显示，自制材料按直接配方采用的计价显示；报价与计价可能因自制比较而不同，复杂组合配方无法逐项分摊时显示未知。引擎按原有报价顺位、制造/购买比较和路线目标重新选择方案，候选材料调价可能不影响最终成本。": "Opening details captures market quotes, sale price and character parameters. Reset to current best ask updates only that material's cost basis to the latest received +0 ask; it is unavailable without a valid ask. Enhancement and protection show actual unit costs; production materials show costs used by the direct recipe. Quotes and cost allocation can differ after production comparisons; complex combinations may remain unknown. The engine keeps its quote priorities, buy/produce comparison and route objective, so changing a candidate quote may not affect the final cost.",
-  "模拟仅计算单件期望值，不使用备料倍率或向上取整的备料数量。变化含重新选择路线的影响。零价不表示免费，缺价显示未知。金币等固定成本沿用原公式。": "Simulation calculates expected cost per item, without preparation multipliers or rounded preparation quantities. Changes include route reselection effects. Zero is not a free price; missing prices are unknown. Fixed costs such as Coins retain the original formulas.",
-  "模拟不会修改真实行情、参考售价、库存或挂单；输入仅保留在当前页面，刷新游戏或确认切换角色后清空。自动刷新角色参数、库存、行情不会清空当前模拟；新角色参数在刷新页面后重新截取。恢复左一只更新对应材料报价，保留其他材料调整、成品售价与基准参数。缺价或达到档位边界时，对应换档按钮不可用。": "Simulation does not change real quotes, reference prices, inventory or listings. Inputs last only for this page and clear on reload or confirmed character change. Automatic character, inventory and market updates do not clear simulations; new character parameters are captured after reloading. Reset to ask affects the selected material only, retaining other edits, sale price and baseline parameters. Tick buttons are disabled at boundaries or without a valid quote.",
-  "备料与库存": "Preparation & inventory",
-  "强化备料 = 单件路线期望消耗 × 目标数量 × 倍率，按材料汇总后向上取整。包含实际保护物和贤者之镜；默认 1.2，期望值不保证实际够用。": "Enhancement preparation = expected route consumption per item × target quantity × multiplier, totaled by material and rounded up. Includes actual protection items and Philosopher's Mirror. The default multiplier is 1.2; expected quantities do not guarantee enough materials.",
-  "按当前左一估算路线的期望消耗备料，非保证用量；不同等级独立对照库存。": "Preparation uses expected consumption at current best asks and is not guaranteed sufficient. Different enhancement levels compare against inventory independently.",
-  "备料车将同装备各目标等级的件数合并，统一抵扣未强化（+0）库存，只为不足的件数计算制造用量；已有强化装备不抵扣。项目明细仍显示新增制作的配方用量，未加入备料车时按 1 件预览。": "The cart combines target quantities across levels of the same equipment and deducts unenhanced (+0) inventory once. Only the remaining quantity needs production materials; enhanced equipment is not deducted. Details still show requirements for new production, previewing one item when not in the cart.",
-  "制造按直接配方和整批次数计算，保留小数用量；详情按物品合并制造与强化用量，需备显示合计，还缺统一扣除一次库存。制造与强化初始计价相同时共用调价控件，不同时在同一行分别显示；已显示的调价控件在本次模拟中保持可见。镜子路线的组成装备需另行备齐，制造用量仍为目标装备的直接配方。": "Production uses direct recipes and whole batches while retaining fractional consumption. Details combine production and enhancement by material and deduct inventory once from total requirements. Identical starting cost bases share price controls; different ones are separate. Controls already shown remain visible during the simulation. Prepare mirror-route components separately; production requirements cover the target equipment's direct recipe.",
-  "没有目标售价时，备料和准备强化按最低成本路线计算，利润与工时费仍保持售价未知；有售价时恢复所选路线目标。材料、底子或保护物价格缺失时仍可能无法计算。": "Without a target sale price, preparation and enhancement prefill use the lowest-cost route; profit and hourly profit still show an unknown sale price. A valid sale price restores the selected route objective. Missing material, base or protection prices can still prevent calculation.",
-  "备料车中某个项目方案未就绪时，已算出的材料仍会保留；数量中的「+ 未知」表示还有未计入部分，不是完整需求。库存足够覆盖已算部分也不代表整车备齐。": "If a cart project is not ready, known materials remain visible. “+ unknown” means some requirements are excluded. Enough inventory for the known portion does not mean the whole cart is ready.",
-  "启用工匠茶时按角色饮料浓度估算制造减耗，可在设置关闭；升级底子不减耗。": "When enabled, Artisan Tea reduces production consumption using the character's drink concentration. Disable it in settings if needed. Base-item upgrades do not receive this reduction.",
-  "备料车与预算": "Cart & budget",
-  "按当前左一估算缺口，采购数量向上取整；金币直接消耗只计一次。预算不改变工时费成本。": "Shortfalls use current best asks; purchase quantities round up. Direct Coin consumption is counted once. Budget calculations do not alter hourly profit costs.",
-  "制造按直接配方，强化为期望备料；同材料合并，库存统一扣一次。": "Production uses direct recipes and enhancement uses expected preparation. Matching materials are combined; inventory is deducted once.",
-  "金币不足时，可点击「按当前金币分配采购」查看整数采购数量。先备齐缺少装备的制造材料，再按各项目路线的强化期望消耗同比例分配余额；普通强化材料保持每次强化的用量比例，保护物按期望消耗参与。现有库存优先使用，并为制造、强化直接消耗的金币预留额度。": "If coins are insufficient, Allocate purchases to available coins suggests whole purchase quantities. Missing-equipment production materials take priority; remaining coins are distributed in proportion to expected enhancement consumption. Normal materials retain per-action ratios, while protection follows expected usage. Existing inventory is used first, with coins reserved for direct production and enhancement consumption.",
-  "制造材料也买不齐时，仅按制造用量比例分配；取整后无法利用的余额保留。清单随库存、行情和备料数量更新，只提供采购建议，不执行购买。缺价、未知库存或不完整路线无法分配；当前左一报价不保证实际可成交数量。": "If production materials alone exceed the budget, only production materials receive proportional allocation. Unusable rounding remainders stay unspent. Suggestions update with inventory, market prices and quantities and never execute purchases. Missing quotes, unknown inventory or incomplete routes block allocation. Best-ask quotes do not guarantee available volume.",
-  "从预算采购清单点击材料进入市场，两分钟内打开该物品同等级的购买表单，会一次性预填本次建议数量并保留制造、强化消耗金币；从合计材料进入，则预填全部剩余缺口，金币不够时按表单当前价格填最大可负担数量。卖单不预填，填写后仍需自行确认购买。": "Open a material from the budget list, then open its same-level buy form within two minutes to fill the suggested quantity once, reserving coins for direct production and enhancement costs. Opening from combined materials fills the remaining shortfall, capped by affordability at the form's current price. Sell forms are not filled. Purchases still require your confirmation.",
-  "挂单成功后，未成交买单和已成交未领取材料计入待收货，与当前库存共同抵扣采购缺口；已扣金币不会再次计作可用余额。部分成交、领取和撤单后自动更新，避免对已下单材料重复分配。待收货不代表已经可以用于制造或强化。": "After a buy listing is placed, unfilled orders and filled but unclaimed materials count as incoming and reduce the purchase shortfall alongside inventory. Spent coins are not counted again. Partial fills, claims and cancellations update the plan to avoid duplicate purchases. Incoming materials are not yet available for production or enhancement.",
-  "项目和材料按市场左一单价降序排列；金币按 1，未知价格置底。只看缺料会同时保留未知项。": "Projects and materials sort by best-ask unit price, highest first. Coins use 1; unknown prices sort last. Shortages-only filtering also keeps unknown requirements.",
-  "数量减至 1 后，再次点击减号进入移除确认，再点一次移除；也可直接使用移除按钮。": "At quantity 1, click minus once to enter removal confirmation and again to remove. The Remove button is also available.",
-  "市场制作与强化": "Market, production & enhancement",
-  "打开市场查看当前物品及等级；打开制作进入该物品的直接配方。开始强化会选择背包中低于目标等级的最高等级同物品，并按当前展示路线填写目标等级、保护物和保护起始等级，仍需手动确认开始。缺少物品或保护材料时会提示；多段路线按明细手动准备。制造请自行核对材料与游戏茶槽。": "Market opens the selected item and level; production opens its direct recipe. Enhancement chooses the highest-level matching inventory item below the target and fills target level, protection item and protection start according to the displayed route. You must still confirm Start manually. Missing equipment or protection is reported; multi-step routes require manual preparation. Check production materials and game drink slots yourself.",
-  "行情与挂单": "Market & listings",
-  "左一／右一价格可对照买卖挂单；同价只表示价格相同，不代表同价队列第一。完整订单可在项目明细查看。": "Best ask and bid can be compared with your listings. Equal price does not mean first in the queue. Full orders are available in project details.",
-  "旧报价保留来源和时间；旧订单簿位置需要重新打开物品市场更新。区间外按报价估算，低于下限的卖单实际按区间下限执行。左一非现档时保留原价参考。": "Old quotes retain their source and time. Reopen an item's market to refresh old order-book positions. Out-of-range quotes are used as quoted for estimates; sell orders below the lower bound execute at that bound. Off-tick best asks retain their original quote for reference.",
-  "成交历史": "Trade history",
-  "每行对应一个已有成交的本人订单，包含部分成交，记录原挂单价与累计成交量。挂单时间取自订单创建时间；成交耗时上限为挂单至记录时间的间隔，用 ≤ 表示，仅针对已成交部分，不代表整单售罄耗时。缺少挂单时间或时间异常时显示未知；旧记录再次读取到同一订单的创建时间后可补齐，已从游戏移除且未保存创建时间的订单无法恢复。数据源未提供实际成交价和成交时间；原挂单价仅供对照，记录时间不是成交时间，离线或后续订单更新可能使耗时上限偏大。": "Each row is one of your orders with recorded fills, including partial fills, showing the original listing price and cumulative filled quantity. Listed at comes from order creation. The fill-time upper bound is the interval from creation to observation, marked ≤; it covers observed fills and is not the time to sell the entire order. Missing or invalid creation times show Unknown. Old records can be backfilled when the same order is observed with a creation time; removed orders whose creation time was never saved cannot be recovered. The source provides neither actual execution price nor execution time. The original price is for reference, and observation time is not execution time. Offline periods or later updates may widen the bound.",
-  "设置与虚拟角色": "Settings & virtual character",
-  "排序、筛选、搜索词及各区块展开状态会自动保存在当前浏览器与站点，刷新后恢复，并包含在本地备份中。未提交输入、删除确认和页面滚动位置不跨刷新恢复。": "Sorting, filters, searches and expanded sections are saved for this browser and site, restored after reload and included in local backups. Unsubmitted inputs, deletion confirmations and scroll positions do not persist across reloads.",
-  "阈值须依次递增。颜色仅按工时费分档，达到阈值进入下一档；亏损或持平使用对应颜色，不受利润率评级影响。": "Thresholds must increase. Colors depend only on hourly profit; reaching a threshold enters the next tier. Loss or break-even uses its own color, independently of profit-margin ratings.",
-  "切换后立即生效；启用时修改下方参数会自动保存并重算。关闭时读取当前角色已装备物品、技能、建筑、茶与成就。装备等级 -1 表示未装备；虚拟模式按月饼默认计入祝福茶。": "Virtual mode takes effect immediately. While enabled, parameter changes save and recalculate automatically. When disabled, current equipment, skills, buildings, drinks and achievements are read. Equipment level −1 means unequipped. Virtual mode includes Blessed Tea by the upstream defaults.",
-  "本地备份": "Local backup",
-  "导出收藏、参考售价、分区、设置和本服务器各角色的备料车。文件仅保存在本机，不含行情缓存、游戏账号凭据或成交历史。": "Exports favorites, reference prices, groups, settings and each character's cart on this server. Files stay local and exclude market caches, game credentials and trade history.",
-  "恢复只覆盖文件内同名数据，未包含的数据保留；备料车按文件中的角色 ID 恢复。恢复前会显示覆盖范围，确认后刷新游戏。": "Restore overwrites only matching data included in the file and preserves other data. Carts restore under the file's character IDs. Review the overwrite preview, then confirm to restore and reload the game.",
-  "帮助": "Help",
-  "未分区": "Ungrouped",
-  "分区数据格式异常，原数据已保留": "Invalid group data. Original data retained.",
-  "收藏数据异常，无法迁移默认分区，原数据已保留": "Invalid favorite data prevents default-group migration. Original data retained.",
-  "生活衣裤（{0}）": "Skilling clothing ({0})",
-  "物品分区数据异常，原数据已保留": "Invalid item membership data. Original data retained.",
-  "分区选择数据异常，原数据已保留": "Invalid group selection data. Original data retained.",
-  "分区名称须为 1 至 40 个字": "Group names must contain 1 to 40 characters",
-  "无效的列或列宽": "Invalid column or width",
-  "无效分区选择": "Invalid group selection",
-  "无效物品或分区": "Invalid item or group",
-  "计划数量须为 1 至 1,000,000 的整数": "Planned quantity must be an integer from 1 to 1,000,000",
-  "已有同名分区": "A group with this name already exists",
-  "默认分区不可重命名": "Default groups cannot be renamed",
-  "合并分区已变化，请重新选择": "Groups changed. Select the merge target again.",
-  "默认分区不可删除": "Default groups cannot be deleted",
-  "{0}未知": "{0} unknown",
-  "{0}同价": "Same as {0}",
-  "优于快照": "Better than snapshot",
-  "备料车数据异常，原数据已保留": "Invalid cart data. Original data retained.",
-  "同物品各等级的总件数不能超过 1,000,000": "Total quantity across levels of the same item cannot exceed 1,000,000",
-  "角色尚未就绪，请重新读取角色": "Character not ready. Read the character again.",
-  "无目标售价，按最低成本路线备料": "No target sale price; preparing the lowest-cost route",
-  "强化方案未就绪{0}": "Enhancement plan not ready{0}",
-  "镜子路线组成装备需另外备齐": "Prepare mirror-route component equipment separately",
-  "未强化装备库存未知，制造用量待确认": "Unenhanced inventory unknown; production requirements unconfirmed",
-  "制造配方未就绪": "Production recipe not ready",
-  "材料范围尚未完整": "Material scope incomplete",
-  "金币": "Coins",
-  "金币库存未知，暂不能分配。": "Coin inventory unknown; allocation unavailable.",
-  "备料方案未算全，暂不能分配。": "Preparation plan incomplete; allocation unavailable.",
-  "材料库存或用量未知，暂不能分配。": "Material inventory or consumption unknown; allocation unavailable.",
-  "缺少材料报价，暂不能分配。": "Material quotes missing; allocation unavailable.",
-  "预算超出可计算范围，暂不能分配。": "Budget exceeds the supported calculation range; allocation unavailable.",
-  "暂无有效左一价格": "No valid best ask",
-  "工时费未知": "Hourly profit unknown",
-  "已到最低报价，尚未出现负工时费": "Lowest price reached without negative hourly profit",
-  "档位过多，计算已暂停，尚未找到负工时费": "Too many price ticks. Calculation paused before finding negative hourly profit.",
-  "市场缓存读取失败，已保留本次内存数据": "Could not read market cache. Current in-memory data retained.",
-  "市场缓存保存失败，本次数据仅在当前页面有效，请检查浏览器存储空间或权限": "Could not save market cache. Data is available only on this page; check browser storage space or permissions.",
-  "请求超时": "Request timed out",
-  "市场快照保存失败，本次快照仅在当前页面有效": "Could not save market snapshot. It is available only on this page.",
-  "IndexedDB 不可用": "IndexedDB unavailable",
-  "市场缓存打开超时": "Opening market cache timed out",
-  "市场缓存被其他页面阻塞": "Market cache blocked by another page",
-  "市场缓存读取失败": "Could not read market cache",
-  "市场缓存保存失败": "Could not save market cache",
-  "[柆雨强化助手] 挂单记录保存失败，将重试；原有记录保留。": "[LaYu Enhancement Assistant] Could not save listings; will retry. Existing records retained.",
-  "掉落与经验记录保存失败，待保存数据暂留当前页面；请检查浏览器存储空间并点击重试，成功前不要关闭或刷新页面。": "Could not save loot and XP records. Pending data is kept on this page; check browser storage space and click Retry save. Do not close or refresh until saving succeeds.",
-  "部分界面偏好无效，已使用默认显示；原存储暂未修改。": "Some view preferences are invalid. Using default display; stored data unchanged for now.",
-  "界面偏好读取失败，暂用默认显示；请检查浏览器存储权限。": "Could not read view preferences. Using defaults; check browser storage permissions.",
-  "无效的界面偏好": "Invalid view preference",
-  "界面选择仅在本次页面有效，保存失败；请检查浏览器存储空间或权限。": "Could not save view preferences. Changes apply only to this page; check browser storage space or permissions.",
-  "无效的展开区域": "Invalid expandable section",
-  "强化上衣": "Enhancer's Top",
-  "强化下装": "Enhancer's Bottoms",
-  "附魔手套": "Enchanted Gloves",
-  "界面语言": "Interface language",
-  "应用语言": "Apply language",
-  "切换语言会重建插件界面，请先保存其他设置和未提交的输入。": "Changing language rebuilds the plugin interface. Save other settings and unfinished inputs first.",
-  "语言设置已保存。": "Language preference saved.",
-  "工匠茶": "Artisan Tea",
-  "祝福茶": "Blessed Tea",
-  "暴饮之囊": "Guzzling Pouch",
-  "机缘披风": "Chance Cape",
-  "生产数量无效，请核对当前计划后重试。": "Invalid production quantity. Check the current plan and retry.",
-  "未找到该物品的制作配方，无法打开制作页面。": "Recipe not found. Cannot open production for this item.",
-  "该路线需分步准备，请按路线明细手动设置。": "This route requires separate steps. Set them manually using the route details.",
-  "目标等级为 +0，无需强化。": "Target is +0. No enhancement needed.",
-  "背包中没有低于目标等级的该物品，请先准备可强化的物品。": "No matching inventory item is below the target level. Prepare an eligible item first.",
-  "制作所需参数尚未完整，已打开白板市场，请先核对配方与用茶设置。": "Production parameters are incomplete. Opened the +0 market; check the recipe and drink settings.",
-  "库存中已有达到目标等级的物品，无需继续强化。": "Inventory already contains an item at the target level. No more enhancement needed.",
-  "已填目标等级；所选方案的保护物不足，请补齐后选择保护物。": "Target level filled. Protection is insufficient; obtain it and select it manually.",
-  "已填目标等级；保护方案暂不可用，请手动确认保护设置。": "Target level filled. Protection plan unavailable; review protection settings manually.",
-  "该等级没有可用库存底子": "No eligible inventory base at this level",
-  "装备库存未知，暂不抵扣制造用量": "Equipment inventory is unknown; manufacturing requirements have not been reduced",
-  "现有装备库存已满足当前计划，无需继续生产。": "Existing equipment covers this plan. No additional production is needed.",
-  "所选库存底子已不可用，请刷新角色后重新选择。": "The selected inventory base is no longer available. Refresh your character and select again.",
-  "库存续强化单独估算；市场收益仍按完整成本测算。": "Inventory continuation is estimated separately; market profits still use full costs.",
-  "自制 · 用库存": "Craft · Use stock",
-  "本人挂单（缓存）· 不抵扣": "My listings (cached) · Excluded",
-  "本人挂单 · 不抵扣": "My listings · Excluded",
-  "各等级库存与本人挂单": "Inventory and my listings by level",
-  "+{0}：库存 {1}，本人挂单 {2}": "+{0}: inventory {1}, my listings {2}",
-  "本次底子": "Selected base",
-  "不低于目标等级，不作底子": "At or above target; not an eligible base",
-  "自制模式下可选为底子": "Can be selected as a base in Craft mode",
-  "没有可用库存底子": "No eligible inventory base",
-  "库 {0}": "Stock {0}",
-  "挂 {0}": "Listed {0}",
-  "使用库存 {0}；还需制造 {1} 件底子": "Use stock {0}; craft {1} missing base(s)",
-  "使用库存 {0}；无需制造底子": "Use stock {0}; no base manufacturing needed",
-  "无可用低等级库存，按自制备料": "No eligible lower-level stock; prepare crafting materials"
-});
-})(globalThis);
-
+(function(root){const app=root.MWILayuEnhancement=root.MWILayuEnhancement||{};app.englishMessages=Object.freeze({"计划":"Plan","全部计划":"Plan All","全部收集，并仅为收藏物品按本次已售数量添加计划":"Collect all and add sold quantities of favorites to the plan","收集金币，并按本次已售数量添加计划":"Collect coins and add the sold quantity to the plan","无法准确核对本次已售数量，请使用原生收集并手动添加计划。":"Cannot verify the sold quantity. Collect normally and add the plan manually.","挂单状态已变化，请刷新后重试。":"Listing changed. Refresh and retry.","未确认收集成功，未添加计划；请核对挂单状态。":"Collection was not confirmed. No plan added; check the listing.","已收集并添加 {0} 件计划。":"Collected and added {0} items to the plan.","已收集，但计划保存失败；可重试添加，收集不会重复执行。":"Collected, but saving the plan failed. Retry adding without collecting again.","重试添加计划":"Retry adding plan","计划保存失败，请检查浏览器存储后重试。":"Saving the plan failed. Check browser storage and retry.","开始采购":"Start purchasing","采购队列":"Purchase queue","待采购物品":"Items to purchase","待购 {0}":"To buy: {0}","移除当前":"Remove current","下一项":"Next item","结束采购":"End purchasing","采购计划已变化，请重新开始采购。":"The purchase plan has changed. Start purchasing again.","当前没有需要采购的物品。":"There are no items to purchase.","开始时间: {0}":"Start time: {0}","持续时间: {0}":"Duration: {0}","更早的本地记录":"Earlier local records","等待原生掉落记录就绪，请打开或刷新游戏的掉落与经验记录页。":"Waiting for native loot records. Open or refresh the game's loot and XP history.","角色 {0} · 本地已保存 {1} 条 · 补充 {2} 条历史":"Character {0} · {1} records saved locally · {2} additional historical records","自制／自行强化":"Self-made / self-enhanced","市场成品":"Market finished item","{0} · {1}":"{0} · {1}","取得成本对比":"Acquisition cost comparison","市场成品价":"Finished item price","自制／自行强化期望成本":"Expected self-making cost","两条路径均缺少有效价格，请补齐行情或填写成品价。":"Both routes lack valid prices. Refresh quotes or enter a finished item price.","自动采用 {0}，节省 {1}。":"Automatically using {0}, saving {1}.","暂按 {0} 计算，另一条路径缺价或不可用。":"Using {0}; the other route lacks prices or is unavailable.","按当前角色的最低材料成本路线，计入底子、制造材料、强化与保护消耗及合成费用；库存不按免费计算。":"Uses the current character's lowest material-cost route, including bases, production materials, enhancement, protection and combination costs. Owned materials retain their value.","自制为期望材料成本，不含茶费、制作耗时的机会成本及等待时间；实际消耗可能更高，请保留周转金。":"Self-making uses expected material costs, excluding tea, time opportunity cost and waiting. Actual consumption may be higher; keep working capital available.","回本＝较低取得成本扣旧装净收入 ÷ 每日新增净收益。自制按期望材料成本计算。":"Payback = lower acquisition cost less old-item proceeds / added daily net profit. Self-making uses expected material costs.","预计取得成本 · {0}":"Expected acquisition cost · {0}","取得后剩余金币（按期望）":"Coins remaining (expected)","取得资金缺 {0}":"Acquisition shortfall: {0}","全部计入":"Include all","全部跳过":"Skip all","批量采购范围":"Bulk purchase selection","设置当前角色的全部计划，包含游戏队列、队列外计划及原备料车。":"Apply to all plans for this character, including the game queue, manual plans and legacy cart.","计入":"Include","跳过":"Skip","本次采购：{0} +{1}":"This purchase: {0} +{1}","奶酪鞋":"Cheese Boots","强化精华":"Enhancing Essence","左一利润 / h":"Ask profit / h","右一利润 / h":"Bid profit / h","打开强化精华市场":"Open Enhancing Essence market","强化方案、茶饮和底子来源沿用原列表设置；宝箱收益不计入。":"Enhancement routes, drinks and base sources use the list settings. Crate revenue is excluded.","按分解产物售价计算每小时利润":"Hourly profit from decomposition output sales","强化 / 分解":"Enhancing / Decomposition","分解计价":"Decomposition cost","左右报价共用同一强化方案和成本耗时；优先按左一收入选择原列表路线，缺左价时用右价。":"Ask and bid share the same enhancement route, cost and time. The list route is selected using ask revenue, or bid revenue when the ask is missing.","{0}可用 {1}":"{0} available {1}","{0} {1}":"{0} {1}","每小时利润＝（分解期望税后收入－强化成本－分解成本）÷（强化期望耗时＋分解耗时）。强化沿用原列表方案；分解概率计入产出一次，不再重复扣减。":"Hourly profit = (expected net output revenue - enhancement cost - decomposition cost) / (expected enhancement time + decomposition time). Enhancement uses the list route. Decomposition probability is applied to output once.","强化精华分别使用左一、右一售价，其余分解材料使用右一报价；不使用催化剂，不计宝箱。强化设置、底子采购或自制、材料模拟和备料倍率与原列表共用；备料倍率只影响需备数量。交易与游戏动作需手动确认。":"Enhancing Essence uses separate ask and bid sale prices; other outputs use bids. No catalyst or crate revenue is included. Enhancement settings, base sourcing, material simulation and preparation multipliers are shared with the list. Multipliers affect preparation quantities only. Trades and game actions require manual confirmation.","同款计划均已保留；同时计入采购时请先核对。":"Matching plans are retained. Review them before purchasing for both.","计入本次采购：{0} +{1}":"Include in this purchase: {0} +{1}","仅影响本次采购；自动刷新保留选择，刷新页面后恢复全选。":"Only affects this purchase. Automatic updates preserve choices; reloading the page selects all projects.","计入本次采购":"Included in this purchase","不计入本次采购":"Excluded from this purchase","本次预算":"Purchase budget","本次采购 {0} / {1} 项":"Purchasing {0} / {1} projects","仅为“计入”项目采购材料；共享库存重算，计划进度与时长不变。":"Only Include projects contribute to this purchase. Shared stock is recalculated; plan progress and time stay unchanged.","未选采购项目，请在上方选择“计入”。":"No projects selected. Choose Include above.","本次需备":"Selected need","计划已变化，请重新选择采购项目。":"The plan changed. Select purchase projects again.","采购选择已变化，请从材料表重新操作。":"Purchase selection changed. Try again from the material table.","此材料已不在本次采购中，请从材料表重新操作。":"This material is no longer in the purchase. Try again from the material table.","序":"#","耗时":"Time","成功率≈":"Success ≈","材料时长":"Stock time","起始":"Start","进度":"Status","自动":"Auto","等前项制造":"Await prior craft","已关联队列":"Linked","已达标":"Complete","制造缺料":"Craft short","制造待料":"Craft pending","待制造":"To craft","待购底子":"Buy base","强化缺料":"Enhance short","强化待料":"Enhance pending","待强化":"To enhance","达标 {0} · 缺底子 {1}":"Done {0} · Bases short {1}","原备料车：数量为新增制作，沿用原路线。":"Legacy cart: additional crafting units, original route.","参数只读，在游戏中修改。":"Read-only. Edit in game.","目标数先扣达标装备，再用库存底子。":"Deduct completed gear, then use stocked bases.","队列 {0} 件 · 额外 {1} 件":"Queued {0} · Additional {1}","取消关联":"Unlink","仅跳转预填，核对后手动开始":"Navigate and prefill only. Review and start manually.","同步 · 只读":"Synced · Read-only","清空计划":"Clear plans","整行剩余强化的期望耗时（小时）。":"Expected hours for all remaining enhancements in this row.","当前库存完成本行的近似概率，非单次强化成功率。":"Approximate chance of completing this row with current stock, not per-click success.","前项预留后，剩余已到账材料可支撑的强化时长（小时），不以期望耗时封顶。":"Enhancement hours supported by physical stock after earlier reservations, uncapped by expected time.","<0.01时":"<0.01h","{0}时":"{0}h","无保护":"Unprotected","已达标 {0} 件":"Completed {0}","缺底子 {0} 件":"Bases short {0}","自动匹配库存；也可指定起始等级。":"Auto matches inventory; a starting level can also be set.","自动选择剩余成本最低的保护等级；也可手动指定。":"Auto selects the protection level with the lowest remaining cost; manual levels are also available.","使用当前角色的实际强化和炼金参数；不采用原列表的虚拟角色、底子自制选择或备料倍率。全部使用助手读取的市场行情在本地计算，不读取网站中位价，不用均价替换报价；不可交易箱子按本地掉落表和物品行情估价。":"Uses the current character's Enhancing and Alchemy parameters, independently of virtual characters, crafted base selection and preparation multipliers. All calculations use the assistant's market quotes locally, with no website median or average-price substitution. Non-tradable loot is valued from local drop tables and market quotes.","点击表头排序；行情刷新保留行序。拖动表头调整列顺序，拖动边缘调整列宽。":"Click a heading to sort. Price updates retain row order. Drag headings to reorder columns and edges to resize.","强化保护":"Enhancement protection","强化掉落":"Enhancement drops","强化投入":"Enhancement inputs","分解掉落":"Decomposition drops","分解所得":"Decomposition yield","分解投入":"Decomposition inputs","投入缺少买入报价，完整成本与利润待计算。":"An input has no ask quote. Complete cost and profit are pending.","可交易产物缺少卖出报价，仅显示已知收入，完整利润待计算。":"A tradable output has no bid quote. Only known revenue is shown; complete profit is pending.","采购成本独立核算；收益仅计入有卖出报价的产物。未估值掉落单列，不计入利润、工时费和利润率。":"Purchase cost is calculated independently. Revenue includes only quoted outputs. Unvalued drops are listed separately and excluded from profit, hourly profit and margin.","另有未估值掉落，未计入收益。":"Additional unvalued drops are excluded from returns.","已知部分":"Known portion","可交易产物收益":"Tradable output revenue","已知部分，缺价产物列于未估值掉落。":"Known portion. Outputs without quotes are listed under unvalued drops.","未估值掉落":"Unvalued drops","下列掉落保留期望数量，价值未知，未计入上方收益。":"Expected quantities are retained below. Their value is unknown and excluded from the returns above.","未估值掉落明细":"Unvalued drop details","缺少卖出报价":"No bid quote","不可交易，未估值":"Non-tradable; unvalued","使用当前角色的实际强化和炼金参数；不采用原列表的虚拟角色、底子自制选择或备料倍率。全部使用助手读取的市场行情在本地计算，不读取网站中位价，不用均价替换报价。不可交易箱子单列为未估值掉落，不按箱内物品或牛铃推算卖出收入。投入或可交易产物缺价时，完整利润保持未知。":"Uses the current character's Enhancing and Alchemy parameters, independently of virtual characters, crafted base selection and preparation multipliers. Calculations use the assistant's market quotes locally, without website medians or average-price substitution. Non-tradable crates are listed as unvalued drops; their contents and cowbells are not converted into sale revenue. Complete profit remains unknown when inputs or tradable outputs lack quotes.","等待前项制造":"Waiting for earlier crafting","采购入口已变化，请从强化计划重新操作。":"This purchase entry changed. Retry from the enhancement plan.","统一备料与预算":"Unified materials and budget","强化计划统一显示游戏队列、队列外计划与原备料车，下方共用一张材料与采购表。新增只需加入一次计划。":"The enhancement workspace combines the game queue, manual targets and legacy cart in one materials and purchasing ledger. Add a new target only once.","队列外计划按目标数量抵扣已有达标装备和可用库存底子；原备料车保留新增制作数量与原路线含义。":"Manual targets deduct owned finished equipment and available bases. Legacy cart entries retain their additional-production quantities and original routes.","游戏队列自动同步且参数只读。同款重复时可选择独立新增，或关联队列承担相应数量；核对前不生成采购预填。":"The game queue syncs automatically and is read-only. Review matching targets as additional units or link them to the queue before purchase prefilling.","材料汇总底子采购、直接制造、强化耗材与保护材料，共享库存和待到账只抵扣一次。":"Requirements combine base purchases, direct crafting, enhancement and protection. Shared stock and incoming orders are deducted once.","按游戏队列、队列外计划、原备料车的顺序分配预算；每项先安排取得底子与制造，再安排强化耗材，部分备料后停止向后分配。":"Budget follows game queue, manual targets and legacy cart order. Fund base acquisition and crafting before enhancement; stop after a partially funded stage.","材料已到账但底子未完成时可以先制造，不要求后续强化耗材也全部备齐。待到账和等待前项制造会分别标记。":"Craft once its own materials arrive, even if later enhancement supplies are short. Incoming orders and earlier crafting are shown separately.","跨等级需求按产品合并制造批次；同款保护装备随采购或自制来源备料。未知库存、配方、队列与报价保持未知。":"Crafting batches are combined across target levels. Same-item protection follows its purchase or craft source. Unknown stock, recipes, queues and prices stay unknown.","原新增制作路线的库存支撑时长与成功率暂不估算；已知总期望时长和材料采购仍保留。":"Stock-supported duration and probability are not estimated for legacy production routes. Known total duration and procurement requirements remain available.","底子就绪不表示强化材料已齐。缺料、待到账、待制造、待强化与已达标分别显示；所有操作只导航和预填，由玩家手动确认。":"A ready base does not mean enhancement supplies are ready. Shortages, incoming orders, crafting, enhancement and completed targets are shown separately. Actions only navigate and prefill; confirm manually.","原材料分区汇集收藏及计划关联材料，需备与缺口采用强化计划的统一核算结果。":"The materials partition includes favorites and planned inputs, using the unified plan requirements and shortages.","20 个目标等级":"20 target levels","选择一件装备，自动比较 +1～+20 的强化分解收益。":"Choose equipment to compare enhancement and decomposition returns from +1 to +20.","采购起点":"Starting equipment","强化 → 分解 → 出售产物":"Enhance → Decompose → Sell outputs","最高时利":"Best hourly profit","等待报价后计算。":"Waiting for prices to calculate.","分解 {0}":"Decomposing {0}","合计 {0}":"Total {0}","采购投入":"Purchase inputs","分解产出":"Decomposition outputs","采购投入明细":"Purchase input details","分解产出明细":"Decomposition output details","税后金额":"After-tax amount","每件起始装备的期望投入与产出；采购、强化、分解和出售均需手动确认。":"Expected inputs and outputs per starting equipment. Purchases, enhancement, decomposition and sales require manual confirmation.","祝福跳出目标等级仍按目标等级分解计价。":"Blessed overshoots are decomposed and valued at the target level.","计划关联数据异常，原数据已保留":"Invalid plan links. Original data retained.","底子或制造用量未知":"Base or manufacturing requirements are unknown","装备库存、待到账或制造配方未就绪":"Equipment stock, incoming orders or crafting recipes are not ready","原新增制作路线的库存时长暂未计入，逐项结果以已核算部分为准。":"Stock-supported duration for legacy production routes is not included. Check the calculated rows.","补齐预算":"Restocking budget","装备进度":"Equipment readiness","核对重复计划":"Review overlapping plans","同款项目可能重复，核对后再生成采购预填；原计划均已保留。":"These plans may overlap. Review them before purchase prefilling. All original entries are retained.","原备料车与现有计划同款":"Legacy cart overlaps with an existing plan","队列外计划与游戏队列同款":"Manual plan overlaps with the game queue","作为独立新增计划":"Treat as additional units","关联游戏队列":"Link to game queue","仅保留现有计划":"Keep existing plan only","撤销移除原备料计划":"Undo legacy plan removal","该物品已有新计划，未覆盖。":"A new entry already exists. It was not overwritten.","已关联游戏队列":"Linked to game queue","目标已达标":"Target met","待购买制造材料":"Purchase crafting materials","制造材料待到账":"Crafting materials pending","底子就绪，强化缺料":"Base ready; enhancement supplies short","底子就绪，强化材料待到账":"Base ready; enhancement supplies pending","可准备强化":"Ready to prepare enhancement","详情":"Details","原备料车：新增制作数量，保留原路线与取得方式。":"Legacy cart: additional production quantities retain their original routes and acquisition sources.","游戏队列参数只读，请在游戏中修改。":"Game queue parameters are read-only. Edit them in the game.","队列外目标数量会抵扣已有达标装备，剩余部分使用库存底子。":"Manual targets deduct owned finished equipment, then use available lower-level bases.","取消队列关联":"Unlink queue","只导航与预填，请在游戏中核对后手动开始":"Navigation and prefilling only. Review and start manually in the game.","游戏队列":"Game queue","自动同步，参数只读":"Synced automatically; parameters are read-only","添加装备":"Add equipment","备料进度":"Preparation status","路线与操作":"Route and actions","撤销移除计划":"Undo plan removal","原备料车计划":"Legacy cart plans","新增制作数量保留原含义；与上方计划共用材料核算，不再单独维护采购表。":"Additional production quantities retain their meaning and share one materials ledger with the plans above.","原备料车计划装备":"Legacy cart equipment","材料与采购":"Materials and purchasing","制造与底子":"Crafting and bases","强化期望消耗":"Expected enhancement use","共享库存只扣一次；待到账抵扣采购，不计入已备齐与库存可支撑时长。":"Shared stock is deducted once. Incoming orders reduce purchases but do not count as ready stock or supported duration.","{0} / {1} 件底子就绪":"{0} / {1} bases ready","已达标 {0} 件 · 缺底子 {1} 件":"{0} targets met · {1} bases missing","游戏队列承担 {0} 件；队列外还需 {1} 件":"Queue covers {0} unit(s); {1} remain outside the queue","缺少起始底子 {0} 件":"Missing {0} starting base(s)","减少强化数量：{0}":"Decrease planned quantity: {0}","增加强化数量：{0}":"Increase planned quantity: {0}","原备料数量：{0} +{1}":"Legacy quantity: {0} +{1}","移除原备料计划：{0}":"Remove legacy plan: {0}","计划已变化或同款尚未核对，请在强化计划中重新操作。":"The plan changed or overlapping entries need review. Retry from the enhancement plan.","计划未算全或存在待核对项目，暂不能预填采购。":"The plan is incomplete or has overlapping entries to review. Purchase prefilling is unavailable.","计划未算全，请等待数据同步。":"The plan is incomplete. Wait for data to sync.","当前项目无需新增制造，请检查底子来源或待到账。":"This entry needs no additional crafting. Check its source and incoming orders.","当前项目没有可用起始装备，请先取得底子或查看已达标数量。":"No starting equipment is available for this entry. Obtain a base or check completed targets.","同款有多个计划，请在队列外计划中分别调整。":"Multiple entries share this target. Edit them separately in the manual plan.","查看计划":"View plan","计划已有新修改，未覆盖当前计划。":"The plan has changed. Current entries were not overwritten.","计划关联 · 角色 {0}":"Plan links · Character {0}","强化 {0} + 分解 {1}；祝福跳出目标等级仍按目标等级分解计价。":"Enhancing {0} + Decomposing {1}. Blessed overshoots are valued at the target level.","装备对比 · 角色 {0}":"Equipment comparison · Character {0}","装备对比":"Equipment comparison"," · 过期参考":" · Stale reference","{0} 天":"{0} days","{0} 天回本":"Payback in {0} days","{0} 天收益减投入":"{0}-day profit less investment","{0}% 时间 · {1} / 天":"{0}% of time · {1} / day","不含期末装备残值":"Excludes remaining equipment value","买入后剩余金币":"Coins remaining after purchase","买入时需要":"Upfront purchase cost","今天":"Today","使用基准左价":"Snapshot ask price","使用手动报价。":"Manual price. ","保存失败，本次修改仅在当前页面有效。":"Could not save. Changes remain in this page only. ","保留":"Keep","保留周转金":"Working capital reserve","候选装备":"Equipment candidates","候选装备或价格无效。":"Invalid candidate equipment or price.","净投入":"Net investment","卖出抵扣":"Sell and deduct","占比按强化时间填写，合计须为 100%。新增项目默认 0%，由你决定时间分配。":"Allocate enhancement time totaling 100%. New projects start at 0%; choose their share yourself.","原路线所需价格不完整，无法固定路线比较。":"Prices for the original route are incomplete; a fixed-route comparison is unavailable.","可用金币（手动覆盖）":"Available coins (override)","可计算时间占比 {0}% / 100%。":"Calculable time: {0}% / 100%.","各方案都从当前装备出发，只替换一个槽位。":"Each candidate replaces one slot from your current equipment.","同项目 · 同路线 · 同保护设置":"Same projects, routes and protection","周转金缺 {0}":"Reserve shortfall: {0}","回本最快":"Fastest payback","回本＝净投入 ÷ 每日新增净收益；缺少数据的方案不参与排名。":"Payback = net investment / added daily net profit. Incomplete candidates are excluded from ranking.","固定日常强化项目，比较每次换一件装备带来的新增收益。":"Keep your usual enhancement projects fixed and compare the added profit from replacing one item.","基准更新失败，保留已有方案。":"Baseline refresh failed. Existing plans are retained. ","小时":"Hours","已更新本地对比方案。":"Local comparison updated.","已更新角色与行情基准，全部方案已重算。":"Character and market baseline refreshed; all candidates recalculated.","已有新数据，当前仍使用冻结基准。":"New data is available; this comparison still uses its frozen baseline.","已留足 {0} 周转金":"Working capital reserve of {0} covered","常做项目组合":"Regular project mix","平均分配时间":"Distribute time evenly","强化 {0} · 建筑 {1}":"Enhancing {0} · Observatory {1}","强化项目与占比无效。":"Invalid enhancement projects or weights.","当前净收益待补茶费或项目数据；相同的每小时茶费在增收中抵消。":"Net profit needs tea costs or project data. Shared hourly tea costs cancel out in the difference.","当前强化未配置饮品":"No enhancement drinks configured","当前槽位存在多件装备，无法确定换装基准。请重新读取角色。":"Multiple items occupy this slot. Reload your character to establish a baseline.","当前槽位未装备":"Slot currently empty","当前装备":"Current equipment","当前预计净收益 {0} / 小时 · {1} / 天":"Current estimated net profit: {0} / hour · {1} / day","待填写":"Enter amount","待补数据":"Data needed","成品购入价（金币）":"Finished item price (coins)","手动购入价 {0}":"Manual purchase price: {0}","换装净投入":"Net replacement cost","换装方案":"Replacement candidate","搜索收藏项目":"Search favorite projects","撤销移除":"Undo removal","收益下降":"Profit decreases","收益对比":"Profit comparison","新增收益何时覆盖投入":"When added profit covers investment","方案 {0}":"Candidate {0}","无增收":"No added profit","无需回本":"No payback needed","旧装出售净收入（金币）":"Net proceeds from old item (coins)","旧装备如何处理":"What to do with old equipment","时间占比":"Time share","暂无可用项目，请先在列表或分区中收藏已强化物品。":"No projects available. First add enhanced items to your favorites in the list or groups.","暂无报价，可手动填写。":"No quote available. Enter a price manually.","更换为":"Replace with","更新基准并重算":"Refresh baseline","期望收益不代表当天到账。不预测价格变化、出售等待或后续升级；时间仅计强化，另行制造备料耗时未计入。":"Expected profit is not same-day cash. Price changes, sale delays and later upgrades are not forecast. Time covers enhancement only, excluding production and preparation.","期限内收益最多":"Highest period return","本地模拟，不会更换装备或执行游戏操作。":"Local simulation. No equipment changes or game actions are performed.","查看各项目的增收贡献":"View added profit by project","正在读取角色与行情…":"Reading character and market data…","每天多赚":"Added profit / day","每小时净收益":"Net profit / hour","每小时增收 {0}":"Added profit / hour: {0}","每小时工时费（未扣茶费）":"Hourly earnings before tea costs","每小时茶水费用（金币）":"Hourly tea costs (coins)","每日增收最多":"Highest daily increase","每日强化时间":"Daily enhancing time","每日新增净收益":"Added net profit / day","比较基准":"Comparison baseline","比较期限":"Comparison period","沿用已装备物品、茶与增益":"Uses equipped items, drinks and buffs","添加一个装备方案，开始比较。":"Add equipment to begin comparing.","添加方案":"Add candidate","留空使用基准右价扣除 4% 交易费；售出前不增加可用金币。":"Leave blank for the snapshot bid less a 4% fee. Proceeds are unavailable until sold. ","留空使用基准左价；缺价时可手动填写。":"Leave blank for the snapshot ask. Enter a price if missing. ","目标强化等级":"Target enhancement level","目标装备":"Target equipment","真实角色或物品数据未就绪，请重新读取。":"Real character or item data is unavailable. Reload it.","移除方案":"Remove","第 {0} 天":"Day {0}","第 {0} 天：{1}":"Day {0}: {1}","等待真实角色与物品数据。可点击更新基准重试。":"Waiting for real character and item data. Refresh the baseline to retry.","累计新增收益减投入：开始 {0}，第 {1} 天 {2}。":"Cumulative added profit less investment: {0} initially; {2} on day {1}.","累计新增经营净收益 − 换装净投入":"Cumulative added net profit − replacement cost","编辑当前方案":"Edit candidate","缺少可靠的饮品消耗速率时不推算茶费。可填实际每小时总费用；所有方案使用相同饮品和时长，增收差额不受共同茶费影响。":"Tea costs are not estimated without a reliable consumption rate. Enter the actual hourly total. All candidates share the same drinks and duration, so shared tea costs cancel out.","茶水费用与收益口径":"Tea costs and profit basis","补齐项目数据与换装价格后显示回本曲线。":"Complete project data and replacement prices to show the payback chart.","装备对比设置无效，原记录保留。":"Invalid equipment comparison settings. Original records are retained.","装备投资对比":"Equipment investment comparison","装备收益对比表，可横向滚动":"Equipment profit table; scroll horizontally","角色 {0} · 基准 {1}":"Character {0} · Snapshot {1}","角色与行情已固定；全部方案共用。":"All candidates share this frozen character and market baseline.","角色尚未就绪。":"Character is not ready.","请从收藏选择强化项目。":"Select enhancement projects from favorites.","请输入 {0}～{1} 的有效数值。":"Enter a valid number from {0} to {1}.","请选择支持的装备和 0～20 的强化等级。":"Choose supported equipment and an enhancement level from 0 to 20.","调整项目与占比":"Edit projects and shares","购入资金缺 {0}":"Purchase shortfall: {0}","资金或装备价格未知":"Funds or equipment price unknown","部分项目缺少计算数据，暂不汇总和排名。":"Some projects lack data. Totals and ranking are unavailable.","项目时间占比须合计为 100%。":"Project time shares must total 100%.","项目缺少有效售价、底子或材料价格。":"Project is missing a valid sale, base item or material price.","预计回本":"Estimated payback","预计覆盖净投入":"Time to cover investment","强化或炼金等级尚未就绪，请重新读取角色。":"Enhancing or Alchemy level is unavailable. Read the character again.","角色增益数据无效，请重新读取角色。":"Invalid character buffs. Read the character again.","装备或饮品数据尚未就绪，请重新读取角色。":"Equipment or drink data is unavailable. Read the character again.","装备强化加成表尚未就绪。":"Equipment enhancement bonus data is unavailable.","强化计算参数无效。":"Invalid enhancement parameters.","强化成功率超出有效范围，请核对角色增益。":"Enhancement success is outside the valid range. Check character buffs.","强化期望计算失败，请核对游戏规则。":"Expected enhancement calculation failed. Check game rules.","此物品没有可用的强化分解规则。":"This item has no enhancement and decomposition rules.","没有可购买的起始装备报价。":"No starting equipment has a buying quote.","目标等级不高于网站选定的起点。":"Target does not exceed the website's selected starting level.","保护道具缺少买入报价。":"No protection item has a buying quote.","动作耗时或炼金效率数据尚未就绪。":"Action duration or Alchemy efficiency is unavailable.","分解成功率无效，请核对炼金参数。":"Invalid decomposition success. Check Alchemy parameters.","投入或产物缺少有效行情，暂不计算收益。":"An input or output has no valid quote. Profit is unavailable.","网站盈利预筛选未通过。":"Did not pass the website's profitability filter.","强化分解":"Enhance Decompose","更换物品":"Change item","采购装备与耗材 → 强化 → 自行分解 → 出售产物；自动比较全部 20 个目标等级。":"Buy equipment and materials → Enhance → Decompose yourself → Sell outputs. All 20 target levels are compared automatically.","选择强化分解物品":"Select an item to enhance and decompose","搜索物品名称或 HRID":"Search item name or HRID","搜索强化分解物品":"Search enhancement decomposition items","没有匹配的物品。":"No matching items.","等待游戏物品规则，请刷新角色数据。":"Waiting for game item rules. Refresh character data.","请等待当前角色加载后选择物品。":"Wait for the current character to load before selecting an item.","行情更新失败，当前使用已有报价，请核对行情时间。":"Market refresh failed. Existing quotes remain in use; check their timestamp.","网站选定起点：":"Website starting level:","暂无通过网站盈利筛选的方案。":"No route passed the website's profitability filter.","目标":"Target","催化剂":"Catalyst","期望成本":"Expected cost","库存抵扣后":"After stock","单件期望成本":"Expected cost per item","扣除可用库存价值后的单件成本":"Per-item cost after deducting available inventory value","期望成本未知":"Expected cost unavailable","单件材料需求或库存数据未知，暂不能计算库存抵扣":"Per-item material demand or inventory is unknown; stock deduction is unavailable","税后收入":"Net revenue","总耗时":"Total time","强化次数":"Enhance actions","分解成功率":"Decompose success","强化分解 20 个等级":"Enhance decompose: 20 levels","不保护":"No protection","以下为处理一件起始装备的期望投入与产出；采购、强化、分解和出售均需手动确认。":"Expected inputs and outputs per starting gear. Buying, enhancing, decomposing and selling require manual confirmation.","用途":"Use","期望数量":"Expected quantity","强化分解投入产出":"Enhance decompose inputs and outputs","投入":"Inputs","产出":"Outputs","计算口径":"Calculation method","沿用 Milkonomy 强化分解逻辑：优先选择有报价的 +1～+5 起点，否则 +0；枚举保护等级及三档催化剂，按强化与分解合计时利选优。仅修复目标 +1 的 NaN。未通过盈利筛选的等级保留显示供核对。":"Uses Milkonomy's logic: choose the first quoted starting level from +1 to +5, otherwise +0; compare protection thresholds and three catalyst options by combined hourly profit. Fixes target +1 NaN. Levels failing the profit filter remain visible for comparison.","当前角色：强化 {0} · 炼金 {1}；买入左一，卖出右一，卖出税率 4%。":"Current character: Enhancing {0} · Alchemy {1}. Buy at ask, sell at bid, 4% sales tax.","最高时利 +{0}：{1} / h":"Best hourly profit +{0}: {1} / h","强化 {0} h + 分解 {1} h；祝福跳出目标等级仍按目标等级分解计价。":"Enhancing {0} h + Decomposing {1} h. Blessed overshoots are valued at the target level.","物品可同时属于多个分区，分区归属按物品和强化等级独立保存。全部取消则归入未分区；删除分区保留其他归属。管理列表按游戏编号升序排列。":"Items can belong to multiple partitions. Membership is saved separately for each item and enhancement level. Clearing all memberships moves an item to Unassigned; deleting one partition retains the others. Management rows follow game ID order.","按备料车顺序分配共享库存；待到账不算备齐。底子就绪不代表强化耗材齐全，请查看备料车材料表。":"Shared stock is allocated in cart order. Pending deliveries are not ready supplies. Having the base item does not mean enhancement materials are ready; check the cart material table.","强化预填按当前行情方案执行；模拟方案仅用于比较。":"Enhancement forms use the current market route. Simulated routes are for comparison only.","预设与收藏管理":"Presets and favorite management","期望成功率（近似）":"Expected success (approx.)","材料可支撑时间":"Material-supported time","合计每项最多计入其计划期望时间；行内材料可支撑时间显示剩余库存的容量，不以期望时间封顶。":"The total caps each row at its expected duration. Row material-supported time shows remaining stock capacity without that cap.","行内成功率和材料可支撑时间按当前已到账库存估算：前项按期望消耗预留，不足时预留可支撑部分；本项按剩余库存中最先耗尽的材料反推。成功率采用指数／Gamma 近似，不是队列整体成功率，保护材料的实际随机消耗可能有偏差。":"Row success rates and material-supported times use physical inventory. Earlier rows reserve expected consumption, or the supported fraction if short; this row is limited by the first material to run out in the remainder. Rates use an exponential/Gamma approximation, not a joint queue probability. Actual random protection consumption may differ.","混合起始等级，暂不能用同尺度 Gamma 模型估算成功率。":"Mixed starting levels cannot be estimated with a common-scale Gamma model.","缺少起始底子，当前库存不能完成整行计划。":"Missing base equipment: current inventory cannot complete the entire row.","按本行剩余件数与可用材料容量估算；不是单次强化点击成功率。":"Estimated for this row’s remaining units and available material capacity, not success per click.","计划已变化，请重新输入成功率。":"The plan changed. Please enter the success rate again.","备料设置数据异常，原数据已保留":"Invalid preparation settings. Original data has been preserved.","备料倍率须为 0～100":"Preparation multipliers must be between 0 and 100.","队列备料设置 · 角色 {0}":"Queue preparation settings · Character {0}","逐行设置：成功率以计划材料备齐为前提，按该行剩余件数共用预算的 Gamma 模型估算；倍率以该行剩余强化的期望消耗为基准。输入成功率后，倍率向上取两位小数，回显对应概率。回车或离开输入框保存。":"Per-row settings: rates assume all planned materials are supplied and use a Gamma model with a shared budget for the remaining units in that row. Multipliers apply to expected remaining enhancement consumption. Entering a rate rounds the multiplier up to two decimals and displays the resulting rate. Press Enter or leave the field to save.","强化耗材与保护材料分别估算，不代表两类材料同时够用的概率，也不是单次点击成功率。混合起始等级暂不估算概率；缺少底子时以补齐底子为前提，不含底子成本。":"Enhancement and protection materials are estimated separately. Rates do not represent joint material sufficiency or success per click. Mixed starting levels have no probability estimate. Missing bases must be supplied first; base costs are excluded.","期望时间（整行）":"Expected time (row)","强化耗材 · 成功率 / 倍率":"Enhancement · Success / Multiplier","保护材料 · 覆盖率 / 倍率":"Protection · Coverage / Multiplier","已完成 · 100%":"Completed · 100%","无需此类材料":"Not required","待强化 {0} 件":"{0} units remaining","混合起点 · 概率未知":"Mixed starts · Rate unknown","数据未齐 · 概率未知":"Missing data · Rate unknown","近似完成概率；接近 100% 时显示 99.99%。":"Approximate completion probability; displayed as 99.99% near 100%.","计划顺序已变化，请重新拖动。":"Plan order changed. Please drag again.","拖动调整顺序；Alt + 上下方向键移动，Esc 取消拖动。":"Drag to reorder; Alt + Up/Down moves the row, Esc cancels dragging.","调整顺序：{0} +{1}":"Reorder: {0} +{1}","队列计划":"Queue plans","队列外计划":"Manual plans","队列计划装备":"Queue equipment","队列外计划装备":"Manual equipment","清空队列外计划":"Clear manual plans","未启用保护":"Protection disabled","队列尚未读取完整，正在自动重试；手动计划已保留，合计与采购暂不可用。":"Queue data is incomplete. Retrying automatically; manual plans are preserved. Totals and purchasing are unavailable.","队列强化参数暂不支持核算，已保留原始设置。":"These queue parameters cannot be calculated yet. Original settings are preserved.","自动同步游戏中的强化动作，每条动作单独显示并按 1 件核算。顺序、起始等级、目标与保护设置以队列为准；重复次数不是装备件数。":"Enhancement actions sync automatically, in queue order, at one piece per action. Starting levels, targets and protection come from the queue. Repeat counts are not equipment quantities.","当前没有强化队列。游戏中加入强化动作后会自动显示。":"No enhancement actions in the queue. Actions added in the game will appear automatically.","手动添加和填写，可调整数量、等级与顺序。旧版已保存的计划保留在此；如与队列重复且不需额外强化，请手动移除。":"Add and edit quantities, levels and order manually. Previously saved plans remain here; remove overlaps with the queue if no additional enhancement is intended.","合计按队列计划在前、队列外计划在后的顺序核算，共用库存只扣除一次。":"Totals use queue plans first, then manual plans. Shared stock is deducted only once.","全部计划期望时长":"Total expected enhancement time","库存材料可支撑时长":"Time supported by current stock","强化计划时长":"Enhancement plan duration","不足 0.01 小时":"Less than 0.01 hours","暂无法计算":"Unavailable","未算全（已知 {0}）":"Incomplete (known: {0})","库存或强化时长未读取完整，暂不能估算。":"Stock or enhancement duration is incomplete; an estimate is unavailable.","按计划顺序扣除共用库存，缺料项计入可支撑的部分时间，再继续计算后续项目。仅计已到账材料与金币，不计待到账、采购或备料倍率，不含制造及等待时间。强化有随机性，实际时长会有差异。":"Shared stock is allocated in plan order. Partially supplied items contribute their supported time, then later items use the remaining stock. Only physical materials and coins count; excludes deliveries, purchases, preparation buffers, manufacturing and waiting. Actual duration varies with enhancement outcomes.","缺少装备底子的部分不计入可支撑时长，其余项目继续按剩余库存计算。":"Portions without base equipment are excluded. Other items continue to use the remaining stock.","数量":"Quantity","上移":"Move up","下移":"Move down","保护":"Protection","状态":"Status","已加入":"Added","清空强化计划":"Clear enhancement plan","撤销清空":"Undo clear","强化计划已有新项目，未覆盖当前计划。":"The plan has new projects. They were not overwritten.","从当前队列添加并排序":"Add from queue and sort","当前强化队列尚未读取完整，未修改强化计划。":"The current enhancement queue is incomplete. The plan was not changed.","已添加 {0} 项并按队列逐条排列；重复物品分别显示，未入队项目按添加顺序排在末尾。":"Added {0} projects in queue order, retaining repeated items as separate rows. Unqueued projects follow in the order added.","按当前及排队中的强化动作逐条导入，同物品每次出现各占一行。再次导入复用已有行并保留数量与设置；未入队项目按添加顺序放在末尾。":"Import each active and queued enhancement as a separate row, including repeated items. Reimport reuses existing rows and preserves quantities and settings. Unqueued projects follow in the order added.","队列新增项目带入有效保护等级，未设置或不支持的保护等级使用自动方案；重复次数不作为装备数量。":"New queue projects use valid protection levels; unset or unsupported levels use the automatic plan. Repeat counts are not equipment quantities.","加入强化计划":"Add to enhancement plan","已加入强化计划":"Already in enhancement plan","已加入强化计划，可在强化计划页调整数量":"Already added. Adjust quantity on the enhancement plan page.","加入 1 件强化计划":"Add one unit to the enhancement plan","按当前队列排序":"Sort by current queue","当前强化队列尚未读取完整，未调整计划顺序。":"The current enhancement queue is incomplete. Plan order was not changed.","角色已切换或尚未就绪，未调整计划顺序。":"The character changed or is not ready. Plan order was not changed.","已按当前队列排序；未入队项目按添加顺序排在末尾。":"Sorted by the current queue. Unqueued projects follow in the order added.","按物品与目标等级匹配，包含正在强化的项目；重复入队取首次位置。未入队项目按添加顺序排在末尾，金币分配随新顺序更新。":"Matches item and target level, including the active enhancement. Repeated entries use their first position. Unqueued projects follow in the order added. Coin allocation follows the new order.","强化计划":"Enhancement schedule","强化计划与采购":"Enhancement schedule and purchasing","强化计划 · 角色 {0}":"Enhancement schedule · Character {0}","强化计划数据异常，原数据已保留":"Invalid enhancement schedule. The original data has been preserved.","项目已移出强化计划":"This item is no longer in the enhancement schedule.","同物品有多个计划，请选择具体一行。":"This item has multiple projects. Select a specific row.","无效的强化顺序":"Invalid enhancement order.","强化方案未算全，暂不能分配。":"Enhancement requirements are incomplete. Budget allocation is unavailable.","装备库存未知，暂不能核算强化计划":"Equipment inventory is unknown. Cannot calculate the enhancement schedule.","强化材料数据未知":"Enhancement material data is unknown.","角色或强化材料数据未就绪":"Character or enhancement material data is not ready.","强化路线或材料报价未就绪":"The enhancement route or material quotes are not ready.","批量添加装备":"Add equipment in bulk","仅核算普通强化耗材与保护材料，不含底子制造或镜子、精炼路线。与备料车分别核算，共用的库存不能视为已被两个清单同时预留。":"Includes ordinary enhancement consumables and protection materials only; excludes base manufacturing, mirror and refinement routes. Calculated separately from the preparation cart; shared inventory cannot be reserved by both lists at once.","添加强化计划":"Add to enhancement schedule","搜索装备":"Search equipment","搜索可添加装备":"Search equipment to add","选择强化计划：{0} +{1}":"Select for enhancement: {0} +{1}","选择可见项":"Select visible items","添加所选（每项 1 件）":"Add selected (1 each)","请先选择装备":"Select equipment first.","列表中暂无强化装备，请先在列表或分区中添加目标物品。":"No enhancement equipment in the list. Add target items to the list or groups first.","选择装备后，将按计划顺序合并材料和采购缺口。":"Select equipment to combine materials and purchase shortages in schedule order.","顺序":"Order","计划物品":"Planned item","起始等级":"Starting level","目标等级":"Target level","保护等级":"Protection level","库存与路线":"Inventory and route","强化计划装备":"Scheduled equipment","强化数量：{0} +{1}":"Enhancement quantity: {0} +{1}","数量须为 1～1,000,000 的整数":"Quantity must be an integer from 1 to 1,000,000.","自动匹配库存":"Match inventory automatically","自动最低剩余成本":"Auto: lowest remaining cost","目标等级已有 {0} 件":"Already at target: {0}","缺少起始底子 {0} 件（不计入采购）":"Missing starting equipment: {0} (excluded from purchases)","强化备料倍率 {0}× · 保护材料倍率 {1}×（在设置中调整）":"Enhancement multiplier {0}× · Protection multiplier {1}× (change in Settings)","按当前金币顺序分配":"Allocate current coins in order","按当前":"Allocate current ","顺序分配":" in order","总缺口预算":"Total shortage budget","预算未计全":"Budget incomplete","按顺序先备齐前项；不足时仅为当前项按比例备料，停止向后分配。备料比例不代表强化成功率。":"Fund earlier items first. If funds run short, partially supply the current item proportionally and stop. The supply percentage is not an enhancement success probability.","目标已备齐":"Target already owned","本项已分配":"Fully allocated","部分备料":"Partially supplied","尚未分配":"Not allocated","期望消耗":"Expected consumption","计划需备":"Planned supply","可用库存":"Available inventory","本次采购":"Purchase now","参考单价":"Reference unit price","采购金额":"Purchase amount","强化计划材料合计":"Enhancement schedule materials","直接消耗":"Direct consumption","采购强化材料：{0}":"Purchase enhancement material: {0}","市场预填":"Prefill market","待到账只抵扣采购缺口，不表示已备齐。采购前重新核算库存、买单与余额；仅预填，由你确认交易。倍率备料不保证全部强化成功。":"Pending purchases reduce purchase shortages but are not ready inventory. Inventory, buy orders and balance are recalculated before prefilling; you confirm the trade. Supply multipliers do not guarantee completion.","加入计划":"Add to plan","加入计划：{0}":"Add to plan: {0}","加入 1 件备料计划":"Add 1 item to the preparation plan","取消":"Cancel","操作记录":"Operation history","保存天数":"Save retention","操作记录保存天数":"Operation history retention in days","已设置保存 {0} 天，已清理到期记录。":"Retention set to {0} days. Expired records cleared.","显示更多记录":"Show more records","记录分区归属调整，包含拖动、分区设置和预设添加；只影响对应物品的强化等级。":"Records group changes from dragging, group settings and presets. Each change applies to the specified item and enhancement level.","默认保存 7 天，可设为 1–3650 天。缩短期限会立即清理到期记录，清理后无法撤销。":"Records are kept for 7 days by default (range: 1–3650 days). Shortening retention immediately removes expired records; those changes can no longer be undone.","暂无操作记录。拖动物品调整分区后，可在这里查看和撤销。":"No operations recorded yet. Drag an item to change its groups, then view and undo the change here.","分区：{0} → {1}":"Groups: {0} → {1}","撤销此操作":"Undo this change","已撤销此条分区调整。":"This group change has been undone.","操作记录保存天数无效。":"Invalid operation history retention period.","操作记录格式异常，原数据已保留。":"Invalid operation history format. Original data retained.","请输入 1 至 3650 的整数天数。":"Enter a whole number of days between 1 and 3650.","记录已到期，无法撤销。":"This record has expired and cannot be undone.","已撤销":"Undone","归属已变化，请先撤销后续操作。":"Membership has changed. Undo later changes first.","原分区已删除，无法撤销。":"The original group was deleted. Undo is unavailable.","原默认归属已变化，无法撤销。":"The inherited membership changed. Undo is unavailable.","无效的列顺序":"Invalid column order","移动列：{0}":"Move column: {0}","拖动调整列顺序；Alt + 左右方向键移动":"Drag to reorder columns; Alt + Left/Right moves the column","列顺序保存失败，已保留原顺序，请重试。":"Column order could not be saved. The previous order is retained; try again.","无效物品或强化等级":"Invalid item or enhancement level","独立等级分区已达上限。":"The limit for per-level group assignments has been reached.","此等级的分区已再次变化，无法撤销。":"Groups for this level have changed again; undo is unavailable.","已撤销分区调整。":"Group change undone.","无法撤销，请重新调整分区。":"Could not undo. Adjust the groups again.","分区归属未变化。":"Group membership is unchanged.","已移出全部分区，回到未分区。":"Removed from all groups and returned to Unassigned.","已加入「{0}」。":"Added to \"{0}\".","已移出「{0}」。":"Removed from \"{0}\".","已更新此等级的分区。":"Groups updated for this level.","未能保存分区，原归属已保留，请重试。":"Could not save groups. Original membership is retained. Try again.","仅调整当前强化等级；可同时属于多个分区。":"Changes apply only to this enhancement level. Multiple groups are allowed.","调整分区":"Adjust groups","暂无自定义分区，请先在分区栏新增分区。":"No custom groups. Create one in the group bar first.","保存归属":"Save membership","此等级的分区已变化，请关闭后重新调整。":"Groups for this level changed. Close and reopen to adjust them.","未能读取分区，请关闭后重试。":"Could not read groups. Close and try again.","移出全部分区":"Remove from all groups","保存后回到未分区。":"Saving will return this level to Unassigned.","移出全部分区，回到未分区":"Remove from all groups and return to Unassigned","移出「{0}」":"Remove from \"{0}\"","已在此分区":"Already in this group","加入「{0}」":"Add to \"{0}\"","拖到分区标签加入；松手到空白处取消":"Drop on a group to add; release on empty space to cancel","目标分区已变化，请重新拖动。":"The target group changed. Drag again.","单击展开；拖动调整分区；右键或 Shift+F10 打开分区设置":"Click for details; drag to adjust groups; right-click or Shift+F10 for group settings","调整分区：{0} +{1}":"Adjust groups: {0} +{1}","按物品和强化等级独立归属；全部取消后退回未分区。":"Membership is independent for each item and enhancement level. Clearing all returns it to Unassigned.","单击切换基准并保留顺序；双击当前选项按原规则重新排序（键盘：Shift+Enter）。":"Click to change the price basis without moving rows; double-click the selected option to reapply the previous sort (keyboard: Shift+Enter).","行情更新失败，请重试；角色与挂单状态见页面提示。":"Market refresh failed. Try again; see the page for character and listing status.","行情时间 {0}{1}":"Market data time {0}{1}","行情时间 {0}":"Market data time {0}","正在获取行情…":"Loading market data…"," 本人挂单 {0} 单{1}。":" Your listings: {0}{1}.","行情 {0}":"Market {0}","{0}{1}":"{0}{1}","尚未读取行情":"Market data not read yet","买单明细未读取，请打开该物品市场。":"Buy orders have not been read. Open this item's market.","左一：{0}":"Best ask: {0}","{0}；采购 {1} 份":"{0}; buy {1} units","优于行情":"Better than market","暂无法预估":"Estimate unavailable","请刷新物品市场；保留当前输入。":"Refresh the item market; current input is retained.","请打开或刷新该物品市场。":"Open or refresh this item’s market.","区间外按报价估算，低于下限的卖单实际按区间下限执行。左一非现档时保留原价参考。":"Out-of-range quotes are used as quoted for estimates; sell orders below the lower bound execute at that bound. Off-tick best asks retain their original quote for reference.","库存概况":"Stock overview","低等级库存":"Lower-level stock","库存与制作":"Inventory & production","制作中":"In progress","低等级":"Lower levels","持续":"Ongoing","当前 +{0} 等级的库存数量":"Inventory at the current +{0} level","当前及排队制作任务的剩余配方产出；不含已完成量，不表示已得到当前强化等级成品。同款不同等级行共享队列，不能相加。":"Remaining recipe output from active and queued production, excluding completed output. This is not finished equipment at the target enhancement level. Rows for the same item share a queue; do not add them together.","低于 +{0} 的同款库存总数（含 +0，不含制作中）":"Inventory of the same item below +{0}, including +0 and excluding production","；数据尚未读取，请等待游戏同步":"; data not read yet; wait for the game to sync","{0} 分钟":"{0} min","{0} 小时":"{0} hr","已挂参考":"Listing age","暂无数据":"unavailable","读取中…":"loading…","参考挂单时长：{0}":"Reference listing age: {0}","{0}到{1}":"{0} to {1}","秒":" seconds","分钟":" minutes","个小时":" hours","天":" days","以内":" or less","以內":" or less","以上":" or more","参考挂单时长：暂无数据":"Reference listing age: unavailable","参考挂单时长：读取中…":"Reference listing age: loading…","参考 {0} 档首条订单的已挂时长，不是预计成交时间。":"Age of the first listing at price {0}, not an estimated fill time.","相邻价格档位未提供可读取的挂单时长。":"No readable listing age at the adjacent price level.","制作进度待确认":"Production progress unknown","待购买材料":"Materials needed","材料待到账":"Materials pending delivery","材料齐全，待缝纫":"Materials ready; awaiting tailoring","材料齐全，待制造":"Materials ready; awaiting production","底子已就绪，待强化":"Base ready; awaiting enhancement","已有强化底子，待继续强化":"Enhanced base ready; awaiting continuation","目标等级已备齐":"Target level ready","待购买底子":"Base purchase needed","底子待到账":"Base pending delivery","达标 {0}/{1} · 底子 {2}/{3}":"At target {0}/{1} · Bases {2}/{3}","按备料车顺序分配共享库存；待到账不算备齐。底子就绪不代表强化耗材齐全，详见下方材料表。":"Shared stock is allocated in cart order; pending deliveries are not ready. Base readiness excludes enhancement supplies; see the material table below."," · 无需再购 {0}/{1} 种":" · No purchase needed: {0}/{1} types","按当前{0}分配采购":"Allocate purchases to available {0}","工作区页面与备料计划":"Workspace pages & preparation plans","强化备料":"Enhancement","工作区页面":"Workspace pages","列表":"List","分区":"Partitions","设置":"Settings","备料与采购":"Preparation & purchasing","前往列表添加计划":"Add plans from the list","排序":"Sort","备料材料排序":"Sort preparation materials","缺料优先":"Shortages first","预算降序":"Budget: high to low","单价降序":"Price: high to low","待核算":"Unknown","缺料":"Short","已备齐":"Ready","待到账":"Pending","材料 {0} 种":"{0} materials","买单未成":"Unfilled buys","成交待领":"Unclaimed","净缺口":"Net shortage","计划需求":"Plan requirements","库存与买单":"Inventory & buy orders","采购核算":"Purchase estimate","材料明细：{0}":"Material details: {0}","采购：{0}":"Purchase: {0}","前往市场并预填缺口，请在游戏中确认购买":"Open the market and prefill the shortage; confirm your purchase in game","需求核对":"Requirement details","参与抵扣 {0} · 建议购买 {1}":"Available for this plan {0} · Suggested purchase {1}","净缺口已扣库存和买单待收；已占用作底子的装备不会重复抵扣。":"Net shortage deducts inventory and pending buys; equipment reserved as a base is not deducted twice.","买单未成仍需等待成交；成交待领需在游戏中领取。":"Unfilled buys still await a match; claim filled orders in game.","数量按备料方案计算，采购数量向上取整。":"Requirements follow the preparation plan; purchase quantities are rounded up.","当前筛选下没有缺料。":"No shortages match this filter.","使用参考售价计算整表收益":"Use reference sale prices for all project returns","未设 · 用右一":"Unset · use bid","未设 · 用右":"Unset · use bid","默认使用最近记录到的本人已成交卖单原挂单价，并非实际成交单价。":"Defaults to the original listing price of your most recently observed filled sell order, not its execution price.","支持 K / M / B（大小写均可）；清空恢复成交记录默认价，无记录则留空。":"Accepts K / M / B (case-insensitive). Clear to restore the sale-history default, or leave blank when no record exists.","未设 · 用左":"Unset · use ask","未设 · 用左一":"Unset · use ask","按参考售价计算收益":"Returns based on reference sale price","保护材料备料倍率":"Protection preparation multiplier","保护材料覆盖率（%）":"Protection coverage (%)","两类备料独立调整；覆盖率按同一近似公式估算，不代表两类材料同时够用的概率。倍率不改变期望成本与收益。":"Adjust the two supplies independently. Coverage uses the same approximation, not the probability that both supplies suffice. Multipliers do not change expected costs or profits.","切换整表利润、利润率和工时费的成品售价；保留材料计价与模拟调价。未设置参考售价时沿用此前选择的左一或右一；该侧无报价时显示未知。排序请使用上方排序菜单。":"Change the sale price used for all project profit, margin and hourly returns. Keep material pricing and simulation edits. Unset reference prices use the previously selected ask or bid; missing quotes on that side remain unknown. Use the sorting menu above to sort.","市场左价":"Market ask","市场右价":"Market bid","左":"Ask","左−":"Ask−","右":"Bid","右+":"Bid+","使用市场左一降一档计算整表收益":"Use one tick below best ask for all project returns","使用市场右一升一档计算整表收益":"Use one tick above best bid for all project returns","按市场左一降一档计算收益":"Returns based on one tick below best ask","按市场右一升一档计算收益":"Returns based on one tick above best bid","未设 · 用左−":"Unset · Ask−","未设 · 用右+":"Unset · Bid+","点击用于计算":"Use for calculation","✓ 计算采用":"✓ Used for calculation","使用市场左一计算整表收益":"Use best ask for all project returns","使用市场右一计算整表收益":"Use best bid for all project returns","按市场左一计算收益":"Returns based on best ask","按市场右一计算收益":"Returns based on best bid","市场右一":"Market best bid","固定比例：整体宽度变化时，左右按当前比例一起伸缩。":"Lock ratio: both panels resize proportionally with the overall width.","固定右宽：保持右侧宽度，整体宽度变化由左侧吸收。":"Lock right width: keep the right panel width; the left panel absorbs width changes.","固定比例":"Lock ratio","固定右宽":"Lock right width","继续拖动收起左侧":"Keep dragging to collapse left","继续拖动收起右侧":"Keep dragging to collapse right","左侧已收起，向右拖动恢复":"Left collapsed; drag right to restore","右侧已收起，向左拖动恢复":"Right collapsed; drag left to restore","左侧 {0} 像素，右侧 {1} 像素":"Left {0} px, right {1} px","拖到最小宽度后继续拖动收起；反向拖动恢复。双击或 Enter 恢复双栏；方向键微调，Esc 取消。":"Drag past the minimum width to collapse; reverse to restore. Double-click or Enter resets both panels; arrows adjust, Esc cancels.","调整左右区块比例":"Resize workbench panels","拖动调整比例；双击恢复 60:40；方向键微调，Esc 取消。":"Drag to resize; double-click to reset to 60:40; use arrow keys to adjust, Esc to cancel.","左侧 {0}%，右侧 {1}%":"Left {0}%, right {1}%","挤奶":"Milking","采摘":"Foraging","伐木":"Woodcutting","奶酪":"Cheesemaker","工匠":"Crafter","裁缝":"Tailor","厨师":"Chef","饮品":"Brewer","炼金":"Alchemy","强化":"Enhancing","衣":" Top","裤":" Bottoms","强化助手":"Enhancement Assistant","刷新行情":"Refresh market","行情更新失败，已保留旧价格；角色与挂单状态见页面提示。":"Market update failed. Previous prices retained; see character and listing status above.","已更新买卖一价；本人挂单保存状态见上方提示。":"Best ask and bid updated. See your listing save status above.","已更新买卖一价并自动保存本人挂单；可直接查看价格比较结果。":"Best ask and bid updated; your listings saved. Price comparisons are ready.","柆雨强化助手":"LaYu Enhancement Assistant","设置与备份":"Settings & backup","管理预设":"Manage presets","掉落与经验":"Loot & XP","行情与角色状态":"Market & character status","无法读取或保存收藏，请检查浏览器存储设置后重试。":"Unable to read or save favorites. Check browser storage settings and retry."," 已取消收藏 ":" removed from favorites ","撤销取消收藏":"Undo removal","该项目已有新的收藏记录，保留现值。":"A newer favorite exists. Its current values were kept.","已恢复收藏及原参考售价。":"Favorite and original reference price restored.","撤销失败：{0}":"Undo failed: {0}","角色尚未就绪":"Character not ready","本地挂单不可用，请检查浏览器存储权限":"Local listings unavailable. Check browser storage permissions.","挂单保存失败，本次数据仅在当前页面有效；请检查浏览器存储空间或权限":"Could not save listings. Data is only available on this page; check browser storage space or permissions.","本地历史不可用，请检查浏览器存储权限后重试":"Local history unavailable. Check browser storage permissions and retry.","本人记录读取失败":"Could not read your records","市场快照 {0}{1}":"Market snapshot {0}{1}"," · 更新失败，保留已有价格":" · Update failed; previous prices retained","行情读取失败：{0}":"Market read failed: {0}","正在获取市场快照…":"Fetching market snapshot…"," 已保留 {0} 份订单簿。":" Order books retained: {0}."," 本人挂单 {0} 单 · {1}{2}。":" Your listings: {0} · {1}{2}.","本地保存，待更新":"Saved locally; awaiting update","尚未保存":"Not saved yet","已自动保存":"Saved automatically"," · 数据变更于 {0}":" · Data changed at {0}","{0} · {1} 订单簿{2}":"{0} · Order books: {1}{2}","快照 {0}":"Snapshot {0}","行情待更新":"Market update pending"," · 更新失败":" · Update failed","分区读取失败：{0}。原有数据保留。":"Could not read groups: {0}. Existing data retained.","正在打开制作页面…":"Opening production page…","正在打开强化页面并填写设置…":"Opening enhancement page and filling settings…","角色已切换，请在当前角色的方案中重新操作。":"Character changed. Repeat this action from the current character's plan.","材料不足，已打开白板物品市场。":"Insufficient materials. Opened the +0 item market.","已预填生产数量 {0}，请核对材料和用茶后手动开始。":"Production quantity set to {0}. Check materials and drinks, then start manually.","已填写强化目标和保护设置，请确认后手动开始。":"Enhancement target and protection settings filled. Review and start manually.","未能完成页面跳转或预填，请刷新游戏后重试。":"Could not navigate or fill settings. Refresh the game and retry.","读取库存或预填失败，请重试。":"Could not read inventory or fill settings. Please retry.","市场跳转提示":"Market navigation notice","正在打开市场…":"Opening market…","角色已切换，请在当前角色的材料卡片重新打开市场。":"Character changed. Open the market again from the current character's material card.","市场已打开，采购数量未知，请手动填写。":"Market opened. Purchase quantity unknown; enter it manually.","采购数量尚未确定，请等待库存、挂单和行情更新后重试。":"Purchase quantity is not ready. Wait for inventory, listings and market data to update, then retry.","市场已打开。2 分钟内可预填数量（不超过余额），请核对后确认。":"Market opened. Open the buy form within 2 minutes to fill an affordable quantity. Review and confirm.","游戏桥接未响应，请确认脚本更新后已刷新游戏。":"Game bridge did not respond. Refresh the game after updating the script.","未找到游戏市场入口，请刷新游戏后重试。":"Game market entry not found. Refresh the game and retry.","打开市场失败，请重试。":"Could not open market. Please retry.","从柆雨收藏移除：{0}":"Remove from LaYu favorites: {0}","收藏到柆雨：{0}":"Add to LaYu favorites: {0}","从柆雨收藏移除":"Remove from LaYu favorites","收藏到柆雨":"Add to LaYu favorites","本地备份与恢复":"Local backup & restore","导出本地备份":"Export local backup","已生成本地备份文件。":"Local backup file created.","导出失败：{0}":"Export failed: {0}","选择备份文件 ":"Choose backup file ","选择本地备份文件":"Choose local backup file","文件超过 2 MiB，请选择插件导出的备份":"File exceeds 2 MiB. Choose a backup exported by this plugin.","将恢复 {0} 项本地数据。仅覆盖文件内同名数据；未包含的数据保留。备料车按文件中的角色 ID 恢复。":"Restore {0} local data entries. Only matching keys in the file will be overwritten; other data is retained. Carts use the character IDs in the file.","覆盖现有":"Overwrite existing","新增":"Add new"," · 空数据将清空该项":" · Empty data will clear this entry","确认覆盖并刷新游戏":"Confirm overwrite and reload game","恢复成功，正在刷新游戏以载入设置。":"Restore succeeded. Reloading the game to load settings.","恢复失败：{0}":"Restore failed: {0}","取消恢复":"Cancel restore","已取消，数据未改动。":"Cancelled. Data unchanged.","校验通过，请检查覆盖范围后再恢复。":"Validation passed. Review the overwrite scope before restoring.","无法读取备份：{0}":"Could not read backup: {0}","强化经验":"Enhancing XP","制造经验 · 锻造":"Production XP · Cheesesmithing","制造经验 · 制作":"Production XP · Crafting","制造经验 · 缝纫":"Production XP · Tailoring","制造经验 · 烹饪":"Production XP · Cooking","制造经验 · 冲泡":"Production XP · Brewing","制造经验":"Production XP","虚拟角色没有可对应的实际经验进度":"Virtual characters have no actual XP progress to compare","经验所需的角色增益、游戏规则或路线数据未就绪":"Required character buffs, game rules or route data are not ready","按当前角色增益及路线估算，不预测途中升级或增益到期引起的变化":"Estimated using current buffs and route; changes from leveling up or expiring buffs are not predicted","制造配方、库存或经验增益未知":"Production recipe, inventory or XP buffs are unknown","按当前计划需实际制作的批次估算，扣除同名 +0 库存；含备料倍率对应的保护装备，不含另行加工原材料":"Estimated from actual production batches in this plan, after deducting matching +0 inventory; includes protection equipment at the preparation multiplier, excludes processing raw materials separately","管理收藏":"Manage favorites","名称或 HRID":"Name or HRID","搜索收藏":"Search favorites","收藏类别":"Favorite category","全部类别":"All categories","装备":"Equipment","材料":"Materials","其他":"Other","类别未知":"Unknown category","收藏分区":"Favorite group","全部分区":"All groups","最低强化等级":"Minimum enhancement","不限":"Any","最高强化等级":"Maximum enhancement","收藏来源":"Favorite source","全部来源":"All sources","明确由预设新增":"Added by a preset","手动或来源未记录":"Manual or unrecorded","收藏管理表格":"Favorite management table","保存失败，原数据保留，可重试：{0}":"Save failed. Existing data retained; retry: {0}","已删除 {0} 条收藏及其参考价；可撤销最近一次批量删除。":"Removed {0} favorites and their reference prices. You can undo the latest batch deletion.","全选筛选结果":"Select all matches","清空勾选":"Clear selection","删除勾选收藏":"Delete selected favorites","删除筛选结果":"Delete matching favorites","仅删除筛选结果中的预设新增收藏":"Delete preset-added matches only","一键删除所有预设新增收藏":"Delete all preset-added favorites","撤销最近一次批量删除":"Undo latest batch deletion","已恢复 {0} 条收藏及原参考价，保留 {1} 条后续新增或修改的记录。":"Restored {0} favorites and original reference prices; kept {1} records added or changed later.","管理现有收藏与批量清理":"Manage and clean up favorites","组合筛选物品、等级与来源，支持撤销最近一次删除。":"Filter by item, level and source. You can undo the latest deletion.","删除范围与撤销说明":"Deletion scope and undo","筛选条件同时生效；改变条件会清空勾选。删除同时移除参考价，可撤销最近一次删除。分区、备料车及游戏挂单保持原状。":"Filters apply together. Changing filters clears the selection. Deletion also removes reference prices; the latest deletion can be undone. Groups, carts and game listings remain unchanged.","一键清理覆盖全部分区与强化等级，仅删除明确由预设新增的收藏；旧收藏及预设复用的已有收藏保留。":"Bulk cleanup covers all groups and enhancement levels. Only favorites explicitly added by presets are removed; older and reused favorites are kept.","共 {0} 条收藏 · 筛选命中 {1} 条 · 已勾选 {2} 条":"Favorites: {0} · Matches: {1} · Selected: {2}"," · 最低等级高于最高等级，请调整条件":" · Minimum level exceeds maximum; adjust the filters","选择":"Select","物品 / 强化等级":"Item / enhancement","所属分区":"Groups","参考售价":"Reference price","操作":"Actions","勾选收藏：{0} +{1}":"Select favorite: {0} +{1}","删除":"Delete","删除收藏：{0} +{1}":"Delete favorite: {0} +{1}","预设新增":"Preset-added","手动 / 未记录":"Manual / unrecorded","未设置":"Not set","没有匹配收藏，请调整条件或从预设添加。":"No matching favorites. Adjust filters or add from presets.","查看一键清理范围：{0} 条预设新增收藏":"Review bulk cleanup: {0} preset-added favorites","仅删除筛选结果中的预设新增收藏 ({0})":"Delete preset-added matches only ({0})","删除勾选收藏 ({0})":"Delete selected favorites ({0})","删除筛选结果 ({0})":"Delete matching favorites ({0})","一键删除所有预设新增收藏 ({0})":"Delete all preset-added favorites ({0})","收藏与参考售价":"Favorites & reference prices","分区与旧计划":"Groups & legacy plans","工时费与虚拟角色设置":"Hourly profit & virtual character settings","旧版目标数量":"Legacy target quantities","旧版收藏视图":"Legacy favorite view","界面排序、筛选与展开状态":"Sorting, filters & expanded sections","工作台页面与备料抽屉":"Workspace & preparation drawer","备份数据格式无效，未修改本地数据。":"Invalid backup data. Local data unchanged.","备份包含不支持的存储键或其他站点的备料车，未修改本地数据。":"Backup contains unsupported keys or carts from another site. Local data unchanged.","当前站点无效。":"Invalid current site.","备料车 · 角色 {0}":"Preparation cart · Character {0}","备份文件为空、格式不正确或超过 2 MiB。":"Backup is empty, invalid or exceeds 2 MiB.","备份不是有效 JSON，未修改本地数据。":"Backup is not valid JSON. Local data unchanged.","不支持该备份版本。":"Unsupported backup version.","备份站点与当前站点不同，请到原游戏站点恢复。":"Backup belongs to another site. Restore it on the original game site.","部分本地设置无法读取，请修复后再备份。":"Some local settings could not be read. Fix them before exporting a backup.","覆盖文件内同名设置；未包含的设置保持不变。空数组或空对象也会覆盖对应设置。成交历史不在备份范围内。":"Overwrite matching settings in the file; retain settings not included. Empty arrays and objects also overwrite their settings. Trade history is excluded.","请先选择备份并查看预览。":"Choose a backup and review the preview first.","预览后本地设置已变化，请重新预览后恢复。":"Local settings changed after preview. Preview again before restoring.","恢复失败，部分设置未能回滚。请保留备份文件并检查浏览器存储权限。":"Restore failed and some settings could not be rolled back. Keep the backup and check browser storage permissions.","恢复失败，已回滚本次写入；原有设置保留。":"Restore failed. Writes rolled back; original settings retained.","锻造":"Cheesesmithing","制作":"Crafting","缝纫":"Tailoring","烹饪":"Cooking","冲泡":"Brewing","战斗":"Combat","耐力":"Stamina","智力":"Intelligence","攻击":"Attack","力量":"Power","防御":"Defense","远程":"Ranged","魔法":"Magic","总经验":"Total XP","掉落与经验历史":"Loot & XP history","启用插件后，自动保存当前浏览器收到的记录，不限 20 条。同一活动保留最新累计值。打开游戏原生记录页或点击其刷新按钮可获取最新数据；已被游戏删除且从未采集的记录无法补回。":"Records received by this browser are saved while the plugin is enabled, without the 20-record limit. The latest cumulative values are kept for each activity. Open or refresh the game's native history page for new data. Records deleted by the game before collection cannot be recovered.","仅保存在当前浏览器，按服务器和角色隔离。清理网站数据会丢失存档，建议定期导出备份。":"Stored only in this browser, separately by server and character. Clearing site data deletes the archive. Export backups regularly.","读取本地记录":"Read local records","重试保存":"Retry save","导出全部记录":"Export all records","导出失败，请检查浏览器存储后重试。":"Export failed. Check browser storage and retry.","上一页":"Previous","下一页":"Next","未知":"Unknown","{0} · {1} 次":"{0} · Actions: {1}"," · 队伍":" · Party","开始：{0}　持续：{1}　最近采集：{2}":"Started: {0}　Duration: {1}　Last collected: {2}","{0} 秒":"{0} s","掉落未知":"Unknown drops","无掉落":"No drops","经验未知":"Unknown XP","{0}经验 +{1}":"{0} XP +{1}","无经验":"No XP","等待游戏确认当前角色。若刚启用插件，请刷新游戏，再打开原生掉落与经验记录页。":"Waiting for the game to confirm the character. If you just enabled the plugin, refresh the game and open its native loot and XP history.","正在读取本地记录…":"Reading local records…","角色 {0} · 已保存 {1} 条{2}{3}":"Character {0} · Saved records: {1}{2}{3}"," · 仍有数据待保存":" · Data still waiting to be saved","。请打开游戏原生掉落与经验记录页读取当前记录。":". Open the game's native loot and XP history to read current records.","第 {0} / {1} 页":"Page {0} / {1}","本地记录读取失败，请检查浏览器存储设置后点击读取本地记录重试。":"Could not read local records. Check browser storage settings and click Read local records to retry.","装备底子":"Base equipment","强化材料":"Enhancement materials","当前保护物":"Selected protection","保护候选":"Protection candidate","贤者之镜":"Philosopher's Mirror","制作原料":"Crafting ingredients","目标数量须为 1 至 1,000,000 的整数":"Target quantity must be an integer from 1 to 1,000,000","强化等级":"Enhancement level","房屋":"House","饮品槽":"Drink slots","成就增益":"Achievement buffs","社区增益":"Community buffs","工时费已关闭":"Hourly profit disabled","等待游戏物品数据，请刷新游戏后重试":"Waiting for game item data. Refresh the game and retry.","角色读取超时，请更新 V3 脚本并刷新游戏后重试":"Character read timed out. Update the script, refresh the game and retry.","未找到当前角色状态，请等待角色加载后重试读取":"Current character state not found. Wait for the character to load and retry.","角色读取桥接不可用，请刷新游戏后重试":"Character bridge unavailable. Refresh the game and retry.","角色读取失败，请刷新游戏后重试":"Character read failed. Refresh the game and retry.","角色参数缺失：{0}，请重试读取":"Missing character parameters: {0}. Retry reading.","虚拟角色":"Virtual character","当前角色":"Current character","无效的底子取得方式":"Invalid base item source","角色尚未就绪，请重新读取角色后选择底子来源。":"Character not ready. Read the character again before choosing a base source.","已关闭":"Disabled","等待物品数据":"Waiting for item data","等待角色参数":"Waiting for character parameters","未强化":"Not enhanced","暂无售价":"No sale price","缺少材料、底子或保护物价格":"Missing material, base item or protection prices","请先开启工时费计算。":"Enable hourly profit calculation first.","等待游戏物品数据，请刷新游戏后重试。":"Waiting for game item data. Refresh the game and retry.","角色参数尚未就绪，请重新读取角色。":"Character parameters not ready. Read the character again.","请选择已强化的收藏项目。":"Choose an enhanced favorite item.","无效的准备路线":"Invalid preparation route","无效的计划数量":"Invalid planned quantity","生产需求或成品库存未知，请待数据就绪后重试。":"Production demand or finished-item inventory is unknown. Retry when data is ready.","所选路线包含镜子或精炼步骤，请按路线明细手动设置各步骤的生产数量。":"This route includes mirror or refinement steps. Set production quantities for each step manually.","同名 +0 成品库存已满足当前计划，无需继续生产。":"Matching +0 inventory already covers this plan. No further production needed.","所选路线包含镜子或精炼步骤，无法预填为一次普通强化。请按路线明细手动准备各步骤。":"This route includes mirror or refinement steps and cannot be filled as a single normal enhancement. Prepare each step manually.","制造配方或产出数量未知，无法计算完整备料。":"Production recipe or output quantity is unknown. Full requirements cannot be calculated.","强化方案未就绪":"Enhancement plan not ready","材料数据尚未就绪，请重新读取角色或刷新游戏。":"Material data not ready. Read the character again or refresh the game.","操作提示":"Notifications","暂无提示":"No notifications","行情更新失败，请重试；角色与挂单状态见设置。":"Market refresh failed. Try again; see Settings for character and listing status.","已更新买卖一价；本人挂单保存状态见设置。":"Best ask and bid updated. See Settings for your listing save status.","删除提示":"Dismiss notification","生活衣裤":"Skilling clothing","各生活技能衣裤 · 按装备等级建分区":"Skilling tops and bottoms · Grouped by item level","生活工具":"Skilling tools","各生活技能工具 · 包含全部材料系列":"Tools for all skilling activities · All material tiers","武器":"Weapons","主手与双手武器 · 包含普通与精制":"Main-hand and two-handed weapons · Regular and refined","战斗防具":"Combat armor","战斗衣甲、头手足装备与副手":"Combat body, leg, head, hand, foot and off-hand equipment","配饰":"Accessories","首饰、背部、袋子及通用生活装备":"Jewelry, back, pouches and general skilling equipment","护符":"Charms","各技能护符 · 按装备等级建分区":"Skill charms · Grouped by item level","强化消耗与保护物 · 补充原材料分区":"Enhancement costs and protection · Added to Materials","等级未知":"Unknown level","{0}级":"Level {0}","请选择至少一个有效预设。":"Choose at least one valid preset.","强化等级须为 0 至 20 的整数。":"Enhancement level must be an integer from 0 to 20.","预设物品选择无效，请重新选择。":"Invalid preset selection. Select again.","预设物品已变化或不属于该分区，请重新选择。":"Preset items changed or no longer belong to this group. Select again.","请选择至少一件物品。":"Choose at least one item.","请选择至少一个强化等级。":"Choose at least one enhancement level.","目标分区不存在，请重新选择。":"Target group no longer exists. Select again.","{0}（预设{1}）":"{0} (preset {1})","添加后将超过 10,000 条收藏或 200 个分区，请减少所选等级或分区。":"This would exceed 10,000 favorites or 200 groups. Select fewer levels or groups.","设置已变化，请重试。":"Settings changed. Please retry.","添加失败，部分写入未能回滚。请检查浏览器存储权限后重新打开管理分区。":"Add failed; some writes could not be rolled back. Check browser storage permissions and reopen group management.","添加失败，已回滚本次写入。请检查浏览器存储空间或权限后重试。":"Add failed; writes rolled back. Check browser storage space or permissions and retry.","从预设添加":"Add from presets","按预设批量删除":"Delete by preset","批量添加":"Batch add","批量删除":"Batch delete","搜索预设物品":"Search preset items","隐藏普通装备":"Hide basic equipment","已开启 · 隐藏 {0} 件普通装备":"Enabled · Basic items hidden: {0}","未开启 · 显示全部装备":"Disabled · Showing all equipment","隐藏范围":"What is hidden","隐藏 1–65 级生活工具、基础奶酪与木材系列装备，以及粗糙、爬行动物、哥布林、野兽、暗影皮革系列装备；另隐藏 40 级哥布林装备及棉、亚麻、竹、丝绸、光辉基础布料装备，以及指定的 12 件低中阶装备及小、中、大、巨大四种袋子。保留高阶皮革装备、80/90 级工具及所有精制版。开启时取消被隐藏物品的本次勾选，关闭后不恢复勾选；已有收藏不变。":"Hides level 1–65 skilling tools; basic cheese and wood equipment; rough, reptile, gobo, beast and umbral leather equipment; level 40 gobo equipment; cotton, linen, bamboo, silk and radiant cloth equipment; 12 specified low/mid-tier items; and small, medium, large and giant pouches. Higher-tier leather, level 80/90 tools and all refined equipment remain. Enabling clears hidden selections; disabling does not reselect them. Existing favorites are unchanged.","商店":"Shop","打开商店：{0}":"Open shop: {0}","{0}装备等级":"{0} item levels","展开分类：{0}":"Expand category: {0}","预设：{0}":"Preset: {0}","全选":"Select all"," · {0} 个分区 · {1} 件 · 已选 {2} 件":" · Groups: {0} · Items: {1} · Selected: {2}","筛选后暂无可添加物品，可关闭隐藏查看。":"No items remain after filtering. Disable hiding to see more.","当前物品表中无可添加物品":"No eligible items in the current catalog","预设分区：{0}":"Preset group: {0}","{0} · {1}/{2} 件":"{0} · Items: {1}/{2}","全部选中":"All selected","部分选中":"Partly selected","未选择":"Not selected","{0}预设物品":"{0} preset items","预设物品：{0}：{1}":"Preset item: {0}: {1}","官方预设目录分类树":"Official preset category tree","全 {0} 大主分类 · 逐件或按品阶勾选":"Categories: {0} · Select by item or tier","全选所有分类":"Select all categories","{0} 种装备类型尚未识别（不自动添加）":"Unrecognized equipment types: {0} (not added automatically)","清空选择":"Clear selection","已选分区与物品":"Selected groups & items","目标归属分区 ":"Target group ","目标归属分区":"Target group","按预设自动分区":"Group automatically by preset","删除哪些强化等级":"Enhancement levels to delete","加入哪些强化等级":"Enhancement levels to add","预设强化等级 +{0}":"Preset enhancement +{0}","快捷：":"Quick select:","全选 0–20":"Select 0–20","清空等级":"Clear levels","等级可多选；不可强化物品仅加入 +0。":"Multiple levels allowed; non-enhanceable items are added at +0 only.","删除所有匹配收藏":"Delete all matches","添加所选分区与物品":"Add selected groups & items","已删除 {0} 条收藏。":"Deleted {0} favorites.","已创建 {0} 个分区，新增 {1} 条收藏，复用 {2} 条收藏。":"Created {0} groups, added {1} favorites and reused {2} favorites.","撤销预设批量删除":"Undo preset batch deletion","已恢复 {0} 条收藏，保留 {1} 条后续新增或修改的记录。":"Restored {0} favorites; kept {1} records added or changed later.","仅删除预设新增收藏":"Delete preset-added only","已删除 {0} 条预设新增收藏，手动及来源未记录的收藏保留。":"Deleted {0} preset-added favorites; kept manual and unrecorded favorites.","预计执行结果":"Preview","两个按钮使用相同物品与强化等级条件：仅删预设新增，或删除全部匹配。删除同时移除参考价，可撤销；分区、备料车及游戏挂单保持原状。":"Both buttons use the same item and level filters: delete only preset-added favorites or all matches. Reference prices are also removed; deletion can be undone. Groups, carts and game listings stay unchanged.","仅添加所选物品；保留已有分区归属、收藏与参考价。":"Adds only selected items; preserves existing groups, favorites and reference prices.","已选 {0} 个分区 · {1} 件物品":"Selected groups: {0} · Items: {1}","尚无匹配收藏":"No matching favorites yet","全部匹配 {0} 条收藏 · 其中预设新增 {1} 条":"Matching favorites: {0} · Preset-added: {1}","仅删除预设新增收藏 ({0})":"Delete preset-added only ({0})","删除所有匹配收藏 ({0})":"Delete all matches ({0})","查看匹配收藏：{0} 条 · 其中预设新增 {1} 条":"Review matches: {0} · Preset-added: {1}","来源未记录":"Source unrecorded","{0} 个新分区":"New groups: {0}","{0} 条新收藏":"New favorites: {0}","复用已有 {0} 条收藏":"Reused favorites: {0}","请展开分类，选择需要的物品。":"Expand a category and select items.","匹配":"Match","加入":"Add","取消选择：{0}：{1}":"Deselect: {0}: {1}","移除":"Remove","尚未选择物品。":"No items selected.","采购":"Buy","制造":"Produce","{0}材料模拟单价：{1}":"{0} material simulated unit price: {1}","降低一档":"One tick lower","提高一档":"One tick higher","{0}材料{1}：{2}":"{0} material {1}: {2}","左一":"Best ask","暂无有效左一价格，请先读取该材料行情":"No valid best ask. Read this material's market data first.","{0}材料恢复当前左一价格：{1}":"{0} material: reset to current best ask: {1}","右一":"Best bid","{0}材料使用当前右一价格：{1}":"{0} material: use current best bid: {1}","请输入大于 0 且不超过 1,000,000,000,000 的单价":"Enter a unit price greater than 0 and at most 1,000,000,000,000","强化计价":"Enhancement cost basis","底子采购计价":"Base purchase cost basis","自制材料计价":"Production material cost basis","镜子计价":"Mirror cost basis","保护计价":"Protection cost basis","模拟报价：{0} · {1}：{2}":"Simulated quote: {0} · {1}: {2}","{0}{1}{2}左一：{3}":"{0}{1}{2}Best ask: {3}","缓存 · ":"Cached · ","旧报价 · ":"Old quote · ","已有行情":"Available market data","暂无有效右一价格":"No valid best bid","用当前右一 {0} 模拟本项成本":"Simulate this cost at the current best bid {0}","无可用更低档位":"No lower price tick available","模拟{0}：{1}":"Simulate {0}: {1}","无可用更高档位":"No higher price tick available","计算未就绪，请重新展开项目重试":"Calculation not ready. Reopen the item details and retry.","无市场报价，请先读取该材料行情":"No market quote. Read this material's market data first."," · 自制未启用、缺价或组合分摊未知":" · Production disabled, missing prices or unknown allocation","模拟报价：{0} · 制造计价：{1} · 强化计价：{2}":"Simulated quote: {0} · Production cost basis: {1} · Enhancement cost basis: {2}","模拟报价无效，请修正":"Invalid simulated quote. Please correct it.","亏损／持平":"Loss / break-even","低工时":"Low hourly profit","一般工时":"Fair hourly profit","中等工时":"Medium hourly profit","较高工时":"High hourly profit","高工时":"Top hourly profit","不使用":"Disabled","左一退一档":"One tick below best ask","右一进一档":"One tick above best bid","强化计算设置":"Enhancement calculation settings","计算与显示":"Calculation & display","自动收藏挂单":"Auto-favorite listings","自动收藏读取到的本人买卖挂单，同物品、同等级去重；手动移除后，同一挂单不会重复加入。保存后在下一次读取挂单时生效。":"Automatically favorite your observed buy and sell listings, deduplicated by item and level. Manually removed listings are not added again. Takes effect on the next listing read after saving.","显示工时费":"Show hourly profit","计入当前社区强化增益":"Include current community enhancing buff","制造时使用工匠茶":"Use Artisan Tea for production","强化路线选择":"Enhancement route objective","最高工时费":"Highest hourly profit","最低成本":"Lowest cost","标准时薪":"Standard hourly rate","标准时薪（M／小时）":"Standard hourly rate (M/h)","强化备料倍率":"Preparation multiplier","期望成功率（%）":"Expected success rate (%)","按 1 − e^(−备料倍率) 估算，保留两位小数；接近 100% 时显示 99.99%。":"Estimated as 1 − e^(−preparation multiplier), rounded to two decimals; capped at 99.99% for display.","100% 需要无限备料倍率，请输入小于 100% 的成功率。":"100% requires an infinite preparation multiplier. Enter a rate below 100%.","底子取得成本":"Base item cost","材料第 {0} 顺位":"Material price priority {0}","成品 +0 报价":"Finished +0 item quote","工时费颜色":"Hourly profit colors","分档阈值":"Tier thresholds","第 {0} 档阈值（M／小时）":"Tier {0} threshold (M/h)","显示颜色":"Display colors","启用虚拟配置":"Enable virtual configuration","强化技能等级":"Enhancing skill level","天文台等级":"Observatory level","强化器等级":"Enhancer level","强化上衣等级":"Enhancer's Top level","强化下装等级":"Enhancer's Bottoms level","项链等级":"Necklace level","附魔手套等级":"Enchanted Gloves level","机缘披风等级":"Chance Cape level","暴饮之囊等级":"Guzzling Pouch level","技能与建筑":"Skills & buildings","强化器类型":"Enhancer type","星空强化器":"Celestial Enhancer","神圣强化器":"Holy Enhancer","机缘披风类型":"Chance Cape type","不装备":"Unequipped","普通":"Normal","精炼":"Refined","茶与增益":"Drinks & buffs","强化茶":"Enhancing Tea","普通强化茶":"Enhancing Tea","超级强化茶":"Super Enhancing Tea","究极强化茶":"Ultra Enhancing Tea","冠军成就":"Champion achievement","虚拟社区增益等级":"Virtual community buff level","跟随当前社区增益开关":"Follow community buff toggle","虚拟参数无效，尚未应用。请修正标记的输入。":"Invalid virtual parameters; not applied. Correct the highlighted input.","虚拟配置已生效，计算已更新。":"Virtual configuration applied. Calculations updated.","已切回当前角色，计算已更新。":"Switched to current character. Calculations updated.","虚拟配置保存失败，仍使用原设置，请重试。":"Could not save virtual configuration. Previous settings retained; retry.","保存并应用":"Save & apply","恢复默认值":"Restore defaults","重新读取角色":"Read character again","无法读取已保存设置，暂用默认值。请检查浏览器存储后重新保存。":"Could not read saved settings. Using defaults temporarily; check browser storage and save again.","颜色阈值必须依次递增，设置尚未保存。":"Color thresholds must increase in order. Settings not saved.","已保存，工时费已更新。":"Saved. Hourly profit updated.","保存失败，请检查浏览器存储设置后重试。":"Save failed. Check browser storage settings and retry.","已填入默认值，点击保存并应用后生效。":"Defaults filled. Click Save & apply to use them.","制造原料":"Production ingredients","底子":"Base item","镜子路线候选":"Mirror route candidate","缺少可用的材料、底子或保护物价格，请先读取对应行情后刷新页面。":"Missing material, base item or protection prices. Read the relevant market data, then refresh the page.","模拟报价格式无效":"Invalid simulated quote format","模拟物品不在当前成本候选中":"Simulated item is not a current cost candidate","模拟报价须大于 0 且不超过 1,000,000,000,000":"Simulated quote must be greater than 0 and at most 1,000,000,000,000","暂无有效售价":"No valid sale price","页面状态读取失败，已使用默认视图，原记录保留。":"Could not read page state. Using the default view; original record retained.","页面状态保存失败，当前操作仍可继续，刷新后可能无法恢复。":"Could not save page state. You can continue, but the view may not restore after reload.","0秒":"0s","不足1秒":"Less than 1s","{0}秒":"{0}s","{0}天":"{0}d","{0}小时":"{0}h","{0}分":"{0}m","{0} 次":"{0} actions","{0} + 未知":"{0} + unknown","保存失败，请重试":"Save failed. Please retry.","长按编辑分区；F2 编辑；拖动或 Alt + 左右方向键排序":"Hold to edit group; F2 to edit; drag or Alt + Left/Right to reorder","拖动或 Alt + 左右方向键排序":"Drag or Alt + Left/Right to reorder","数量为 1，点击后再次点击可移除规划":"Quantity is 1. Click, then click again to remove the plan.","继续下拉收起":"Pull farther down to collapse","调整备料抽屉高度":"Resize preparation drawer","上下拖动调整高度，最低处继续下拉可收起；方向键微调，双击或 Enter 恢复默认":"Drag vertically to resize; pull below the minimum to collapse. Arrow keys adjust; double-click or Enter resets.","{0} 像素":"{0} pixels","{0} 像素，继续下拉收起":"{0} pixels; pull farther down to collapse","调整列宽：{0}":"Resize column: {0}","列宽保存失败，已恢复原宽度，请重试。":"Could not save column width. Previous width restored; retry.","返回强化项目":"Back to enhancement projects","分区筛选":"Group filters","全部":"All","分区内物品排序":"Sort items within groups","工时费":"Hourly profit","利润":"Profit","利润率":"Profit margin","物品名称 / 等级":"Item name / level","市场左一":"Market best ask","我的挂单价格":"My listing price","降序":"Descending","升序":"Ascending","收藏顺序":"Favorite order","搜索物品或等级":"Search items or levels","搜索收藏与原材料":"Search favorites & materials","清除搜索":"Clear search","挂单快速筛选":"Quick listing filters","全部项目":"All projects","我的挂单":"My listings","被压价":"Undercut","需要更新":"Needs update","管理功能":"Management","预设批量添加 / 删除":"Preset batch add / delete","自定义分区与归属":"Custom groups & membership","收藏批量管理":"Batch manage favorites","返回选品主表":"Back to item table","{0} 个项目":"Projects: {0}","没有符合搜索或挂单筛选的项目。":"No projects match the search or listing filters.","所选分区暂无项目。":"No projects in the selected groups.","物品 / 等级":"Item / level","工时费 / h":"Profit / h","备料":"Prepare","收藏项目列表":"Favorite project list","原材料":"Materials","{0} 种材料":"Material types: {0}","请勾选上方分区，可同时选择多个。":"Select groups above. Multiple groups can be selected.","备料抽屉":"Preparation drawer","备料车 · {0} 项 / {1} 件":"Cart · Projects: {0} / Quantity: {1}","采购预算 {0}{1}":"Purchase budget {0}{1}"," · 数据待完整":" · Incomplete data","收起备料清单":"Collapse preparation list","展开备料清单":"Expand preparation list","等 {0} 项":"and more · Total: {0}","缺料 {0} 种":"Missing material types: {0}","{0}：点击{1}排列":"{0}: sort {1}","原材料统一核算看板":"Combined material requirements","需求仅按备料车累计，制造与强化共用材料统一扣减库存。":"Demand is totaled from the cart; shared production and enhancement inventory is deducted once.","查看采购清单":"View purchase list","角色尚未就绪，备料需求未知。":"Character not ready. Requirements unknown.","暂无可显示的材料，请添加收藏并读取角色与配方。":"No materials to show. Add favorites and read character and recipe data.","原材料 / 等级":"Material / level","库存":"Inventory","需备合计":"Total required","还缺":"Missing","采购预算":"Purchase budget","快捷采购":"Quick purchase","原材料分区列表":"Material group list","{0} 项":"Entries: {0}","预填采购":"Fill purchase","预填采购：{0}":"Fill purchase: {0}","材料范围可能不完整：":"Material scope may be incomplete: ","等待计算":"Waiting for calculation","暂无利润":"Profit unavailable","暂无利润率":"Margin unavailable","自定义价格：{0}":"Custom price: {0}","支持 K / M / B（大小写均可），例如 500K、170m、1.2B；清空表示未设置。":"Supports K / M / B (case insensitive), e.g. 500K, 170m, 1.2B; clear to leave unset.","参考售价支持 K / M / B，换算后须为非负安全整数金币；清空表示未设置。":"Reference prices support K / M / B and must resolve to a non-negative safe integer in coins; clear to leave unset.","参考售价请输入非负整数金币，清空表示未设置。":"Enter a non-negative integer reference price in coins; clear to leave unset.","计划备料数量：{0}":"Planned quantity: {0}","输入整数数量，0 表示移出备料计划":"Enter an integer; 0 removes it from the plan","备料数量须为 0 至 {0} 的整数；同物品各等级合计最多 1,000,000 件":"Quantity must be an integer from 0 to {0}; total across levels of the same item is capped at 1,000,000","同物品各等级合计最多 1,000,000 件":"Total across levels of the same item is capped at 1,000,000","减少计划备料数量：{0}":"Decrease planned quantity: {0}","增加计划备料数量：{0}":"Increase planned quantity: {0}","减少 1 件，减到 0 移出计划":"Decrease by 1; reaching 0 removes it from the plan","增加 1 件":"Increase by 1","项目明细：{0}":"Project details: {0}","本地缓存 · ":"Local cache · ","等待行情":"Waiting for market data","旧":"Old","缓存":"Cached","市场快照":"Market snapshot","快照":"Snapshot","订单簿":"Order book","；报价超过 5 分钟，请打开市场复核":"; quote is over 5 minutes old. Open the market to verify.","未读取":"Not read","{0} {1} · {2}单":"{0} {1} · Listings: {2}","卖":"Sell","买":"Buy","旧 · ":"Old · "," · 另{0}单被压价":" · Other undercut listings: {0}","暂无行情":"No market data","模拟":"Simulated","材料价格模拟 · 固定售价 {0}":"Material price simulation · Fixed sale price {0}","按当前行情计算":"Using current market data","备料车":"Preparation cart","备料计划与采购清单核算":"Preparation plan & purchase list","{0} 项 · {1} 件":"Projects: {0} · Quantity: {1}","角色尚未就绪，读取后即可加入项目。":"Character not ready. Read the character to add projects.","在强化项目中加入备料后，统一计算材料需求。":"Add projects to the preparation cart to calculate combined requirements.","备料数量：{0}":"Preparation quantity: {0}","备料数量须为 1 至 {0} 的整数；同物品各等级合计最多 1,000,000 件":"Quantity must be an integer from 1 to {0}; total across levels of the same item is capped at 1,000,000","项目已移出备料车，请重新加入":"Project is no longer in the cart. Add it again.","请先输入有效的整数数量":"Enter a valid integer quantity first","{0}备料数量：{1}":"{0} preparation quantity: {1}","减少":"Decrease","增加":"Increase","再次点击移除该规划":"Click again to remove this plan","减少 1 件":"Decrease by 1","移出备料车：{0}":"Remove from cart: {0}","{0} {1} 金币 · 无需再购 {2}/{3} 种":"{0} {1} coins · No purchase needed: {2}/{3} types","缺口预算":"Shortfall budget","缺口预算未计全":"Incomplete shortfall budget","收起预算采购清单":"Collapse budget purchase list","按当前金币分配采购":"Allocate purchases to available coins","可用 {0} · 采购 {1} · 预留消耗 {2} · 余额 {3}":"Available {0} · Purchase {1} · Reserved consumption {2} · Remaining {3}","金币不足以备齐制造材料；本次仅分配制造材料，暂不分配强化材料。":"Not enough coins for all production materials. Only production materials are allocated; enhancement materials are deferred.","建议购买":"Suggested purchase","金额":"Amount","预算采购清单":"Budget purchase list","当前预算下无须或无法追加采购。":"No additional purchases needed or affordable under this budget.","未计入金额：":"Excluded from total: ","备料车只看缺料":"Cart: show shortages only","只看缺料（含未知）":"Shortages only (including unknown)","合计材料 · 单价降序":"Combined materials · Unit price descending","数量中的「+ 未知」表示尚有项目未算入；已算部分保留，完整缺口和预算待方案就绪后计算。":"“+ unknown” means some projects are not included yet. Known requirements are retained; full shortages and budget await complete plans.","总需":"Required","缺口":"Shortfall","左一单价":"Best ask unit price","预算小计":"Budget subtotal","备料车材料合计":"Combined cart materials","{0} · {1}；采购 {2} 份":"{0} · {1}; purchase quantity: {2}","金币直接消耗或报价未知":"Direct coin consumption or quote unknown","{0}（待收 {1}）":"{0} (incoming {1})","制造 {0}；强化备料 {1}":"Production {0}; enhancement preparation {1}","制造 / 强化用量拆分":"Production / enhancement breakdown","备料用量拆分":"Preparation breakdown","未算全：":"Incomplete: ","备料路线：":"Preparation route: ","打开原材料市场：{0}":"Open material market: {0}","等待材料参数":"Waiting for material parameters","制造与强化备料合计":"Combined production & enhancement requirements","单价":"Unit price","补齐总价":"Shortfall cost","暂无报价":"No quote","当前单价：{0}":"Current unit price: {0}","无需补齐，补齐总价为 0；已扣除库存与待收货":"No shortfall; cost is 0 after deducting inventory and incoming purchases","补齐总价：{0} × {1} = {2}；缺少数量已扣除库存与待收货":"Shortfall cost: {0} × {1} = {2}; inventory and incoming purchases already deducted","缺少数量或当前单价未知":"Missing quantity or current unit price unknown","{0}备料进度":"{0} preparation progress","自制 {0}":"Craft {0}","当前计划数量：{0}":"Current plan quantity: {0}","减少当前计划数量：{0}":"Decrease current plan quantity: {0}","增加当前计划数量：{0}":"Increase current plan quantity: {0}","强化 {0}":"Enhance {0}","自制可用 {0}":"Craft available {0}","强化可用 {0}":"Enhance available {0}","剩余 {0}":"Remaining {0}","{0}库存分配":"{0} inventory allocation","库存缺口 {0}":"Stock gap {0}","库存 {0}；自制需 {1}，可用 {2}；强化需 {3}，可用 {4}；剩余 {5}；库存缺口 {6}。条长按库存与总需求较大值计算，按先自制、后强化分配；红色缺口未扣待收货，下方缺少数量已扣待收货。":"Inventory {0}; craft needs {1}, available {2}; enhance needs {3}, available {4}; remaining {5}; stock gap {6}. Scale is the greater of inventory and total demand, allocated to crafting first, then enhancement. The red gap excludes incoming purchases; the shortfall below deducts them.","缺：{0}":"Missing: {0}","已扣除待收货数量 {0}":"Incoming quantity already deducted: {0}","需：{0}":"Required: {0}","库存：{0}":"Inventory: {0}","无需此类材料。":"No materials of this type needed.","强化方案未就绪，合计需备未知。":"Enhancement plan not ready. Total requirements unknown.","计划经验预估":"Planned XP estimate","{0}{1}，预计 {2}；预计增加 {3} 经验":"{0}{1}, projected {2}; estimated gain {3} XP","跨级，":"Level up, ","实心表示已有经验，斜纹表示预计新增经验。{0}":"Solid fill shows current XP; hatching shows estimated added XP. {0}","跨级":"Level up","预计经验未知":"Estimated XP unknown","预计 +{0} 经验":"Estimated +{0} XP","期望时间":"Expected time","期望次数":"Expected actions","单件期望强化耗时，不含制造、采购或等待；期望值不保证本次完成时间":"Expected enhancement time per item, excluding production, purchases and waiting; an expectation is not a completion guarantee","单件期望强化动作次数，不是保护材料消耗量":"Expected enhancement actions per item, not protection material consumption","强化方案":"Enhancement plan","方案尚未就绪，请先读取所需行情。":"Plan not ready. Read the required market data first.","保护之镜":"Mirror Of Protection","打开市场：{0}":"Open market: {0}","无需强化":"No enhancement needed","无需保护":"No protection needed","· +{0} 精炼继承":"· +{0} refinement carryover","组成装备与数量":"Component equipment & quantities","需另备组成装备，镜子合成与精炼步骤需手动操作。":"Prepare component equipment separately. Mirror combination and refinement steps require manual actions.","先强化未精炼底子，再按标示等级精炼继承；需分步手动操作。":"Enhance the unrefined base first, then refine at the indicated level for carryover. Perform each step manually.","下方强化预填按当前行情方案执行；模拟方案仅用于比较。":"Enhancement prefill below uses the current market plan; the simulated plan is for comparison only.","底子取得方式":"Base item source","自制":"Craft","{0}底子：{1}":"{0} base: {1}","{0}底子及同物品保护；同角色的该物品各强化等级共用此选择{1}":"{0} base and same-item protection; shared across this item's enhancement levels for the current character{1}","；采购报价缺失时使用自制成本":"; use production cost if the purchase quote is missing","同物品保护：":"Same-item protection: ","同步自制":"Craft as well","同步采购":"Buy as well","保护：":"Protection: ","保护随组成装备来源":"Protection follows component source","方案未就绪":"Plan not ready","普通保护 · +{0} 起保":"Normal protection · Start at +{0}","普通路线 · 无需保护":"Normal route · No protection needed","贤者之镜路线":"Philosopher's Mirror route","精炼继承路线":"Refinement carryover route","缺价，按自制":"No quote; using production cost","工时费差未知":"Hourly profit difference unknown","工时费相同":"Same hourly profit","{0}{1}/h收益":"{0} {1}/h profit","获得":"Gain","失去":"Lose","采购报价缺失，底子及同物品保护按自制成本计算；采购报价恢复后按采购成本计算。":"Purchase quote missing. Base and same-item protection use production cost until a purchase quote is available again.","当前{0}方案相对{1}方案的预计工时费差；使用相同售价、角色参数和当前模拟报价，分别计算完整强化方案。{2}":"Estimated hourly profit difference for {0} compared with {1}, using the same sale price, character parameters and simulated quotes to calculate both full routes. {2}","缺少有效售价或可比较的方案。":"No valid sale price or comparable plan.","按未缩写数值计算。":"Calculated using unrounded values.","等待路线计算；采购报价缺失时使用自制成本，自制成本也缺失时无法估算":"Waiting for route calculation; production cost is used if the purchase quote is missing. Cannot estimate when both are missing.","无有效售价 · 最低成本强化方案 · 单件预计成本 {0} · 预计耗时 {1} 小时":"No valid sale price · Lowest-cost plan · Expected cost per item {0} · Expected time {1} hours","配方材料与调价模拟":"Recipe materials & price simulation","恢复左一":"Reset to ask","恢复全部材料当前报价":"Reset all material quotes","重新读取已收到的当前行情，清除全部模拟调价":"Read current received market data again and clear all simulated prices","价格模拟":"Price simulation","关闭价格模拟":"Disable price simulation","开启价格模拟":"Enable price simulation","关闭并清除模拟调价，恢复当前行情计算":"Disable and clear simulated prices; return to current market calculations","开启后显示材料调价按钮":"Enable to show material price controls","计划 {0} 件":"Planned quantity: {0}","单件备料预览 · 未加入计划":"Single-item preview · Not in plan","{0} · 库存同等级 {1} 件":"{0} · Inventory at this level: {1}","强化：{0}":"Enhance: {0}","前往强化并预填，请在游戏中确认后开始":"Open enhancement and fill settings; confirm in the game before starting","市场":"Market","市场：{0}":"Market: {0}","角色尚未就绪，请先刷新角色。":"Character not ready. Refresh character data first.","计划：{0}":"Plan: {0}","加入备料并查看采购":"Add to cart & view purchases","买 {0} 单":"Buy: {0} orders","卖单":"Sell orders","仅汇总已读取的同价订单，买卖分开，不代表全市场总量":"Observed same-price orders only; buy and sell quantities are separate, not market totals","买单明细未读取；旧加载器或旧缓存可能仅含卖单。请更新脚本后刷新游戏，再打开该物品市场。":"Buy depth unavailable; an old loader or cache may contain only sells. Update the script, reload the game, then open this item in the market.","先后未知":"Queue order unknown","{0} 单":"{0} orders","同价订单越靠下越早；先后未知的订单单独列出。仅显示已读取订单。":"Earlier same-price orders appear lower; unranked orders are separate. Observed orders only.","市场页面刷新于 {0}前":"Market page refreshed {0} ago","市场深度与收益测算":"Market depth & estimated returns","卖单量":"Sell quantity","测算":"Estimate","位置未知":"Position unknown","旧位置 {0}":"Old position {0}","卖单 {0}":"Sell order {0}","仅汇总已读取的同价卖单，不代表全市场总量":"Sum of observed sell orders at this price, not the entire market","市场卖单深度与本人在售状态":"Sell order depth & your active listings","本地缓存 · 待复核 · ":"Local cache · Needs verification · ","已过期 · ":"Expired · ","订单簿 · ":"Order book · ","尚未读取订单簿":"Order book not read yet","模拟收益 · 以下各售价按当前模拟材料成本重算":"Simulated profit · Recalculated at each sale price using simulated material costs","{0}价格档位工时费":"{0} hourly profit by price tick","各售价对应工时费、利润和利润率，售价从高到低":"Hourly profit, profit and margin at each sale price, highest price first","售价档位":"Price tick","单件利润":"Profit per item","售价：{0}":"Sale price: {0}","左一 · 非现档":"Best ask · Off tick","右一 · 非现档":"Best bid · Off tick","区间外":"Out of range","工时费：{0} / h":"Hourly profit: {0} / h","工时费 / h：{0}":"Profit / h: {0}","利润：{0}":"Profit: {0}","利润率：{0}":"Margin: {0}","存在区间外报价":"Some quotes are outside the trading range","可交易区间尚未读取，以游戏挂单窗口为准。":"Trading range not read yet. Check the game's listing form.","左一非现档":"Best ask off tick","右一非现档":"Best bid off tick","方向":"Side","我的价格":"My price","左一／右一":"Best ask / bid","价格比较":"Price comparison","本人挂单价格比较":"Your listing price comparison","出售":"Sell","购买":"Buy","本人完整挂单价格比较":"Full listing price comparison","本人在售 {0} 单 · 剩余 {1} 件；等待成交时间未知。":"Your sell listings: {0} · Remaining quantity: {1}; time until sale is unknown.","位置":"Position","售价":"Sale price","挂单量":"Listed quantity","{0}卖单":"{0} sell orders","其余本人订单 · 公开订单簿未给出位置":"Other own orders · Position not provided by public order book","省略第 {0}–{1} 条":"Omitted rows {0}–{1}","本人 · {0}":"Yours · {0}","待复核":"Needs verification","旧 {0}":"Old {0}","旧订单簿中的位置；请打开该物品市场更新":"Position in an old order book; open this item's market to update","本人订单：与我的左一订单同价":"Your order: same price as your best-ask order","本人订单：前方有其他玩家订单或售价高于左一":"Your order: other players ahead or price above best ask","本人订单：左一归属未知，请读取最新订单簿":"Your order: best-ask ownership unknown; read a fresh order book","该等级暂无卖单。":"No sell orders at this level.","打开该物品市场后读取前三卖单。":"Open this item's market to read the top three sell orders.","本人挂单尚未读取，归属暂不可确认。":"Your listings have not been read; ownership cannot be confirmed.","{0} · 估算工时费 {1}":"{0} · Estimated hourly profit {1}","模拟固定售价 {0}":"Simulated fixed sale price {0}","无有效售价 · 最低成本模拟":"No valid sale price · Lowest-cost simulation","{0}{1}{2}左一 {3}":"{0}{1}{2}Best ask {3}","{0} · 本人已成交历史订单记录":"{0} · Your filled order history","原挂单价":"Original price","累计成交":"Total filled","挂单时间":"Listed at","成交耗时上限":"Fill time upper bound","记录时间":"Recorded at","{0}本人成交记录":"{0} own trade records","本人卖出订单 #{0}":"Your sell order #{0}","收起历史":"Collapse history","查看全部 {0} 条":"View all {0} records","历史读取失败：{0}":"History read failed: {0}","正在读取本人记录…":"Reading your records…","尚未记录到该等级的本人卖出成交。":"No recorded filled sell orders at this level yet.","分区分类管理":"Manage groups","新分区名称":"New group name","添加分区":"Add group","编辑分区":"Edit group","编辑分区：{0}":"Edit group: {0}","分区名称":"Group name","删除分区":"Delete group","删除此分区":"Delete this group","分区已不存在，请关闭后重试。":"This group no longer exists. Close and try again.","删除「{0}」？保留收藏及其他分区归属；无其他归属的物品回到未分区。":"Delete “{0}”? Favorites and other memberships are kept. Items without another group return to Ungrouped.","已删除分区，收藏已保留。":"Group deleted. Favorites kept.","分区已保存。":"Group saved.","新增分区":"Add group","{0} 件":"Items: {0}","重命名分区：{0}":"Rename group: {0}","保存名称":"Save name","合并分区":"Merge groups","再次点击，将“{0}”的物品归属合并到“{1}”，并移除当前分区":"Click again to merge items from “{0}” into “{1}” and remove the current group","删除分区并移出物品":"Delete group & remove memberships","系统兜底":"Fallback","内置分区":"Built-in group","物品多分区归属矩阵":"Item group membership matrix","同物品各强化等级共享归属；全部取消后退回未分区。":"All enhancement levels share membership. Clearing all groups returns the item to Ungrouped.","快速过滤物品":"Filter items","搜索分区归属物品":"Search group items","物品":"Item","{0}所属分区：{1}":"{0} group: {1}","移出":"Remove","移出所有分区：{0}":"Remove from all groups: {0}","收藏与分区":"Favorites & groups","点击刷新价格与库存即可更新全市场买卖一价；本人挂单在打开游戏我的挂单时自动保存。":"Refresh prices and inventory to update best asks and bids across the market. Your listings are saved automatically when you open My Listings in the game.","收藏中的资源材料默认归入此区，同时汇集备料车及收藏项目的直接制造、强化和保护材料；相同物品和等级合并。未加入备料车的项目不计入需备数量。":"Favorited resource materials appear here, together with direct production, enhancement and protection materials from the cart and favorites. Matching items and levels are combined. Projects outside the cart do not contribute to required quantities.","点击物品旁的收藏按钮保存物品与等级；参考售价可以单独填写。收藏已有挂单商品可导入现有挂单，以后新挂单会自动收藏。":"Use the favorite button beside an item to save its item and level. Reference prices can be entered separately. Existing listings can be imported as favorites; new listings are favorited automatically when enabled.","物品可同时属于多个分区，分区归属适用于全部收藏等级。全部取消则归入未分区；删除分区保留其他归属。管理列表按游戏编号升序排列。":"Items may belong to multiple groups; membership applies to all favorited enhancement levels. Clearing all memberships returns an item to Ungrouped. Deleting one group retains other memberships. Management lists follow ascending game sort order.","点击表头切换升降序，未知值始终置底；我的挂单按本人最低挂单价排序。":"Click a column header to toggle ascending or descending order. Unknown values always sort last. My listings sort by your lowest listing price.","拖动调节列宽；双击或 Enter 恢复默认；方向键调节，Esc 取消拖动。":"Drag to resize columns; double-click or Enter resets. Arrow keys adjust and Esc cancels dragging.","计算与路线":"Calculation & routes","与月饼相同的强化计算口径：售价扣除 4% 税，再减期望成本、除以强化小时。材料按市场机会成本计价，库存不抵扣；不包含交易等待时间。":"Uses Mooncake's enhancement calculation: subtract 4% tax and expected costs from the sale price, then divide by enhancement hours. Materials use market opportunity cost, without inventory deductions. Trade waiting time is excluded.","自制材料依次尝试以下报价，与成品 +0 报价比较，取较低完整路径。全部选择“不使用”可停用自制路线。":"Production materials try the configured quote priorities. The full production cost is compared with the finished +0 item quote, and the cheaper complete route is used. Disable all priorities to turn off production routes.","按当前价格与角色参数选择最低总成本方案；次数为期望值，可能与工时费所选方案不同。":"The lowest-total-cost preparation plan uses current prices and character parameters. Action counts are expectations and may differ from the route selected for hourly profit.","耗时不含制造、排队与等待成交；利润和成本沿用当前路线。":"Time excludes production, queues and waiting for trades. Profit and costs follow the current route.","列表默认按市场左一出售价估算。利润 = 税后售价 − 总成本；利润率 = 税后利润 ÷ 总成本。价格阶梯按每一档售价和当前角色参数重新估算。":"The list defaults to the market best ask. Profit = after-tax sale price − total cost; margin = after-tax profit ÷ total cost. Each price tick is recalculated using its sale price and current character parameters.","项目明细的材料名称下显示当前模拟单价。左右按钮按该材料 +0 的价格档位减一档、加一档，悬停可看下一档报价；点击后立即更新展开区的利润、利润率、工时费及模拟路线备料。不同收藏等级独立模拟；收藏主行、展开摘要、售价档位和卖单工时费同步标注模拟收益。备料车仍按真实行情计算。":"Material controls show simulated unit prices. Left and right buttons move one +0 price tick; hover to see the next quote. Changes update profit, margin, hourly profit and simulated requirements. Each favorite level has an independent simulation. Project rows, details, price ticks and sell-order profit are marked as simulated. The cart still uses real market prices.","首次打开项目明细截取行情、成品售价和角色参数。材料行可点击“恢复当前左一价格”，将该计价使用的报价恢复为插件最新已读取的 +0 左一价格，仅影响当前材料；缺少有效左一价时按钮不可用。强化与保护按实际单价显示，自制材料按直接配方采用的计价显示；报价与计价可能因自制比较而不同，复杂组合配方无法逐项分摊时显示未知。引擎按原有报价顺位、制造/购买比较和路线目标重新选择方案，候选材料调价可能不影响最终成本。":"Opening details captures market quotes, sale price and character parameters. Reset to current best ask updates only that material's cost basis to the latest received +0 ask; it is unavailable without a valid ask. Enhancement and protection show actual unit costs; production materials show costs used by the direct recipe. Quotes and cost allocation can differ after production comparisons; complex combinations may remain unknown. The engine keeps its quote priorities, buy/produce comparison and route objective, so changing a candidate quote may not affect the final cost.","模拟仅计算单件期望值，不使用备料倍率或向上取整的备料数量。变化含重新选择路线的影响。零价不表示免费，缺价显示未知。金币等固定成本沿用原公式。":"Simulation calculates expected cost per item, without preparation multipliers or rounded preparation quantities. Changes include route reselection effects. Zero is not a free price; missing prices are unknown. Fixed costs such as Coins retain the original formulas.","模拟不会修改真实行情、参考售价、库存或挂单；输入仅保留在当前页面，刷新游戏或确认切换角色后清空。自动刷新角色参数、库存、行情不会清空当前模拟；新角色参数在刷新页面后重新截取。恢复左一只更新对应材料报价，保留其他材料调整、成品售价与基准参数。缺价或达到档位边界时，对应换档按钮不可用。":"Simulation does not change real quotes, reference prices, inventory or listings. Inputs last only for this page and clear on reload or confirmed character change. Automatic character, inventory and market updates do not clear simulations; new character parameters are captured after reloading. Reset to ask affects the selected material only, retaining other edits, sale price and baseline parameters. Tick buttons are disabled at boundaries or without a valid quote.","备料与库存":"Preparation & inventory","强化备料 = 单件路线期望消耗 × 目标数量 × 倍率，按材料汇总后向上取整。包含实际保护物和贤者之镜；默认 1.2，期望值不保证实际够用。":"Enhancement preparation = expected route consumption per item × target quantity × multiplier, totaled by material and rounded up. Includes actual protection items and Philosopher's Mirror. The default multiplier is 1.2; expected quantities do not guarantee enough materials.","按当前左一估算路线的期望消耗备料，非保证用量；不同等级独立对照库存。":"Preparation uses expected consumption at current best asks and is not guaranteed sufficient. Different enhancement levels compare against inventory independently.","备料车将同装备各目标等级的件数合并，统一抵扣未强化（+0）库存，只为不足的件数计算制造用量；已有强化装备不抵扣。项目明细仍显示新增制作的配方用量，未加入备料车时按 1 件预览。":"The cart combines target quantities across levels of the same equipment and deducts unenhanced (+0) inventory once. Only the remaining quantity needs production materials; enhanced equipment is not deducted. Details still show requirements for new production, previewing one item when not in the cart.","制造按直接配方和整批次数计算，保留小数用量；详情按物品合并制造与强化用量，需备显示合计，还缺统一扣除一次库存。制造与强化初始计价相同时共用调价控件，不同时在同一行分别显示；已显示的调价控件在本次模拟中保持可见。镜子路线的组成装备需另行备齐，制造用量仍为目标装备的直接配方。":"Production uses direct recipes and whole batches while retaining fractional consumption. Details combine production and enhancement by material and deduct inventory once from total requirements. Identical starting cost bases share price controls; different ones are separate. Controls already shown remain visible during the simulation. Prepare mirror-route components separately; production requirements cover the target equipment's direct recipe.","没有目标售价时，备料和准备强化按最低成本路线计算，利润与工时费仍保持售价未知；有售价时恢复所选路线目标。材料、底子或保护物价格缺失时仍可能无法计算。":"Without a target sale price, preparation and enhancement prefill use the lowest-cost route; profit and hourly profit still show an unknown sale price. A valid sale price restores the selected route objective. Missing material, base or protection prices can still prevent calculation.","备料车中某个项目方案未就绪时，已算出的材料仍会保留；数量中的「+ 未知」表示还有未计入部分，不是完整需求。库存足够覆盖已算部分也不代表整车备齐。":"If a cart project is not ready, known materials remain visible. “+ unknown” means some requirements are excluded. Enough inventory for the known portion does not mean the whole cart is ready.","启用工匠茶时按角色饮料浓度估算制造减耗，可在设置关闭；升级底子不减耗。":"When enabled, Artisan Tea reduces production consumption using the character's drink concentration. Disable it in settings if needed. Base-item upgrades do not receive this reduction.","备料车与预算":"Cart & budget","按当前左一估算缺口，采购数量向上取整；金币直接消耗只计一次。预算不改变工时费成本。":"Shortfalls use current best asks; purchase quantities round up. Direct Coin consumption is counted once. Budget calculations do not alter hourly profit costs.","制造按直接配方，强化为期望备料；同材料合并，库存统一扣一次。":"Production uses direct recipes and enhancement uses expected preparation. Matching materials are combined; inventory is deducted once.","金币不足时，可点击「按当前金币分配采购」查看整数采购数量。先备齐缺少装备的制造材料，再按各项目路线的强化期望消耗同比例分配余额；普通强化材料保持每次强化的用量比例，保护物按期望消耗参与。现有库存优先使用，并为制造、强化直接消耗的金币预留额度。":"If coins are insufficient, Allocate purchases to available coins suggests whole purchase quantities. Missing-equipment production materials take priority; remaining coins are distributed in proportion to expected enhancement consumption. Normal materials retain per-action ratios, while protection follows expected usage. Existing inventory is used first, with coins reserved for direct production and enhancement consumption.","制造材料也买不齐时，仅按制造用量比例分配；取整后无法利用的余额保留。清单随库存、行情和备料数量更新，只提供采购建议，不执行购买。缺价、未知库存或不完整路线无法分配；当前左一报价不保证实际可成交数量。":"If production materials alone exceed the budget, only production materials receive proportional allocation. Unusable rounding remainders stay unspent. Suggestions update with inventory, market prices and quantities and never execute purchases. Missing quotes, unknown inventory or incomplete routes block allocation. Best-ask quotes do not guarantee available volume.","从预算采购清单点击材料进入市场，两分钟内打开该物品同等级的购买表单，会一次性预填本次建议数量并保留制造、强化消耗金币；从合计材料进入，则预填全部剩余缺口，金币不够时按表单当前价格填最大可负担数量。卖单不预填，填写后仍需自行确认购买。":"Open a material from the budget list, then open its same-level buy form within two minutes to fill the suggested quantity once, reserving coins for direct production and enhancement costs. Opening from combined materials fills the remaining shortfall, capped by affordability at the form's current price. Sell forms are not filled. Purchases still require your confirmation.","挂单成功后，未成交买单和已成交未领取材料计入待收货，与当前库存共同抵扣采购缺口；已扣金币不会再次计作可用余额。部分成交、领取和撤单后自动更新，避免对已下单材料重复分配。待收货不代表已经可以用于制造或强化。":"After a buy listing is placed, unfilled orders and filled but unclaimed materials count as incoming and reduce the purchase shortfall alongside inventory. Spent coins are not counted again. Partial fills, claims and cancellations update the plan to avoid duplicate purchases. Incoming materials are not yet available for production or enhancement.","项目和材料按市场左一单价降序排列；金币按 1，未知价格置底。只看缺料会同时保留未知项。":"Projects and materials sort by best-ask unit price, highest first. Coins use 1; unknown prices sort last. Shortages-only filtering also keeps unknown requirements.","数量减至 1 后，再次点击减号进入移除确认，再点一次移除；也可直接使用移除按钮。":"At quantity 1, click minus once to enter removal confirmation and again to remove. The Remove button is also available.","市场制作与强化":"Market, production & enhancement","打开市场查看当前物品及等级；打开制作进入该物品的直接配方。开始强化会选择背包中低于目标等级的最高等级同物品，并按当前展示路线填写目标等级、保护物和保护起始等级，仍需手动确认开始。缺少物品或保护材料时会提示；多段路线按明细手动准备。制造请自行核对材料与游戏茶槽。":"Market opens the selected item and level; production opens its direct recipe. Enhancement chooses the highest-level matching inventory item below the target and fills target level, protection item and protection start according to the displayed route. You must still confirm Start manually. Missing equipment or protection is reported; multi-step routes require manual preparation. Check production materials and game drink slots yourself.","行情与挂单":"Market & listings","左一／右一价格可对照买卖挂单；同价只表示价格相同，不代表同价队列第一。完整订单可在项目明细查看。":"Best ask and bid can be compared with your listings. Equal price does not mean first in the queue. Full orders are available in project details.","旧报价保留来源和时间；旧订单簿位置需要重新打开物品市场更新。区间外按报价估算，低于下限的卖单实际按区间下限执行。左一非现档时保留原价参考。":"Old quotes retain their source and time. Reopen an item's market to refresh old order-book positions. Out-of-range quotes are used as quoted for estimates; sell orders below the lower bound execute at that bound. Off-tick best asks retain their original quote for reference.","成交历史":"Trade history","每行对应一个已有成交的本人订单，包含部分成交，记录原挂单价与累计成交量。挂单时间取自订单创建时间；成交耗时上限为挂单至记录时间的间隔，用 ≤ 表示，仅针对已成交部分，不代表整单售罄耗时。缺少挂单时间或时间异常时显示未知；旧记录再次读取到同一订单的创建时间后可补齐，已从游戏移除且未保存创建时间的订单无法恢复。数据源未提供实际成交价和成交时间；原挂单价仅供对照，记录时间不是成交时间，离线或后续订单更新可能使耗时上限偏大。":"Each row is one of your orders with recorded fills, including partial fills, showing the original listing price and cumulative filled quantity. Listed at comes from order creation. The fill-time upper bound is the interval from creation to observation, marked ≤; it covers observed fills and is not the time to sell the entire order. Missing or invalid creation times show Unknown. Old records can be backfilled when the same order is observed with a creation time; removed orders whose creation time was never saved cannot be recovered. The source provides neither actual execution price nor execution time. The original price is for reference, and observation time is not execution time. Offline periods or later updates may widen the bound.","设置与虚拟角色":"Settings & virtual character","排序、筛选、搜索词及各区块展开状态会自动保存在当前浏览器与站点，刷新后恢复，并包含在本地备份中。未提交输入、删除确认和页面滚动位置不跨刷新恢复。":"Sorting, filters, searches and expanded sections are saved for this browser and site, restored after reload and included in local backups. Unsubmitted inputs, deletion confirmations and scroll positions do not persist across reloads.","阈值须依次递增。颜色仅按工时费分档，达到阈值进入下一档；亏损或持平使用对应颜色，不受利润率评级影响。":"Thresholds must increase. Colors depend only on hourly profit; reaching a threshold enters the next tier. Loss or break-even uses its own color, independently of profit-margin ratings.","切换后立即生效；启用时修改下方参数会自动保存并重算。关闭时读取当前角色已装备物品、技能、建筑、茶与成就。装备等级 -1 表示未装备；虚拟模式按月饼默认计入祝福茶。":"Virtual mode takes effect immediately. While enabled, parameter changes save and recalculate automatically. When disabled, current equipment, skills, buildings, drinks and achievements are read. Equipment level −1 means unequipped. Virtual mode includes Blessed Tea by the upstream defaults.","本地备份":"Local backup","导出收藏、参考售价、分区、设置和本服务器各角色的备料车。文件仅保存在本机，不含行情缓存、游戏账号凭据或成交历史。":"Exports favorites, reference prices, groups, settings and each character's cart on this server. Files stay local and exclude market caches, game credentials and trade history.","恢复只覆盖文件内同名数据，未包含的数据保留；备料车按文件中的角色 ID 恢复。恢复前会显示覆盖范围，确认后刷新游戏。":"Restore overwrites only matching data included in the file and preserves other data. Carts restore under the file's character IDs. Review the overwrite preview, then confirm to restore and reload the game.","帮助":"Help","未分区":"Ungrouped","分区数据格式异常，原数据已保留":"Invalid group data. Original data retained.","收藏数据异常，无法迁移默认分区，原数据已保留":"Invalid favorite data prevents default-group migration. Original data retained.","生活衣裤（{0}）":"Skilling clothing ({0})","物品分区数据异常，原数据已保留":"Invalid item membership data. Original data retained.","分区选择数据异常，原数据已保留":"Invalid group selection data. Original data retained.","分区名称须为 1 至 40 个字":"Group names must contain 1 to 40 characters","无效的列或列宽":"Invalid column or width","无效分区选择":"Invalid group selection","无效物品或分区":"Invalid item or group","计划数量须为 1 至 1,000,000 的整数":"Planned quantity must be an integer from 1 to 1,000,000","已有同名分区":"A group with this name already exists","默认分区不可重命名":"Default groups cannot be renamed","合并分区已变化，请重新选择":"Groups changed. Select the merge target again.","默认分区不可删除":"Default groups cannot be deleted","{0}未知":"{0} unknown","{0}同价":"Same as {0}","优于快照":"Better than snapshot","备料车数据异常，原数据已保留":"Invalid cart data. Original data retained.","同物品各等级的总件数不能超过 1,000,000":"Total quantity across levels of the same item cannot exceed 1,000,000","角色尚未就绪，请重新读取角色":"Character not ready. Read the character again.","无目标售价，按最低成本路线备料":"No target sale price; preparing the lowest-cost route","强化方案未就绪{0}":"Enhancement plan not ready{0}","镜子路线组成装备需另外备齐":"Prepare mirror-route component equipment separately","未强化装备库存未知，制造用量待确认":"Unenhanced inventory unknown; production requirements unconfirmed","制造配方未就绪":"Production recipe not ready","材料范围尚未完整":"Material scope incomplete","金币":"Coins","金币库存未知，暂不能分配。":"Coin inventory unknown; allocation unavailable.","备料方案未算全，暂不能分配。":"Preparation plan incomplete; allocation unavailable.","材料库存或用量未知，暂不能分配。":"Material inventory or consumption unknown; allocation unavailable.","缺少材料报价，暂不能分配。":"Material quotes missing; allocation unavailable.","预算超出可计算范围，暂不能分配。":"Budget exceeds the supported calculation range; allocation unavailable.","暂无有效左一价格":"No valid best ask","工时费未知":"Hourly profit unknown","已到最低报价，尚未出现负工时费":"Lowest price reached without negative hourly profit","档位过多，计算已暂停，尚未找到负工时费":"Too many price ticks. Calculation paused before finding negative hourly profit.","市场缓存读取失败，已保留本次内存数据":"Could not read market cache. Current in-memory data retained.","市场缓存保存失败，本次数据仅在当前页面有效，请检查浏览器存储空间或权限":"Could not save market cache. Data is available only on this page; check browser storage space or permissions.","请求超时":"Request timed out","市场快照保存失败，本次快照仅在当前页面有效":"Could not save market snapshot. It is available only on this page.","IndexedDB 不可用":"IndexedDB unavailable","市场缓存打开超时":"Opening market cache timed out","市场缓存被其他页面阻塞":"Market cache blocked by another page","市场缓存读取失败":"Could not read market cache","市场缓存保存失败":"Could not save market cache","[柆雨强化助手] 挂单记录保存失败，将重试；原有记录保留。":"[LaYu Enhancement Assistant] Could not save listings; will retry. Existing records retained.","掉落与经验记录保存失败，待保存数据暂留当前页面；请检查浏览器存储空间并点击重试，成功前不要关闭或刷新页面。":"Could not save loot and XP records. Pending data is kept on this page; check browser storage space and click Retry save. Do not close or refresh until saving succeeds.","部分界面偏好无效，已使用默认显示；原存储暂未修改。":"Some view preferences are invalid. Using default display; stored data unchanged for now.","界面偏好读取失败，暂用默认显示；请检查浏览器存储权限。":"Could not read view preferences. Using defaults; check browser storage permissions.","无效的界面偏好":"Invalid view preference","界面选择仅在本次页面有效，保存失败；请检查浏览器存储空间或权限。":"Could not save view preferences. Changes apply only to this page; check browser storage space or permissions.","无效的展开区域":"Invalid expandable section","强化上衣":"Enhancer's Top","强化下装":"Enhancer's Bottoms","附魔手套":"Enchanted Gloves","界面语言":"Interface language","应用语言":"Apply language","切换语言会重建插件界面，请先保存其他设置和未提交的输入。":"Changing language rebuilds the plugin interface. Save other settings and unfinished inputs first.","语言设置已保存。":"Language preference saved.","工匠茶":"Artisan Tea","祝福茶":"Blessed Tea","暴饮之囊":"Guzzling Pouch","机缘披风":"Chance Cape","生产数量无效，请核对当前计划后重试。":"Invalid production quantity. Check the current plan and retry.","未找到该物品的制作配方，无法打开制作页面。":"Recipe not found. Cannot open production for this item.","该路线需分步准备，请按路线明细手动设置。":"This route requires separate steps. Set them manually using the route details.","目标等级为 +0，无需强化。":"Target is +0. No enhancement needed.","背包中没有低于目标等级的该物品，请先准备可强化的物品。":"No matching inventory item is below the target level. Prepare an eligible item first.","制作所需参数尚未完整，已打开白板市场，请先核对配方与用茶设置。":"Production parameters are incomplete. Opened the +0 market; check the recipe and drink settings.","库存中已有达到目标等级的物品，无需继续强化。":"Inventory already contains an item at the target level. No more enhancement needed.","已填目标等级；所选方案的保护物不足，请补齐后选择保护物。":"Target level filled. Protection is insufficient; obtain it and select it manually.","已填目标等级；保护方案暂不可用，请手动确认保护设置。":"Target level filled. Protection plan unavailable; review protection settings manually.","该等级没有可用库存底子":"No eligible inventory base at this level","装备库存未知，暂不抵扣制造用量":"Equipment inventory is unknown; manufacturing requirements have not been reduced","现有装备库存已满足当前计划，无需继续生产。":"Existing equipment covers this plan. No additional production is needed.","所选库存底子已不可用，请刷新角色后重新选择。":"The selected inventory base is no longer available. Refresh your character and select again.","库存续强化单独估算；市场收益仍按完整成本测算。":"Inventory continuation is estimated separately; market profits still use full costs.","自制 · 用库存":"Craft · Use stock","本人挂单（缓存）· 不抵扣":"My listings (cached) · Excluded","本人挂单 · 不抵扣":"My listings · Excluded","各等级库存与本人挂单":"Inventory and my listings by level","+{0}：库存 {1}，本人挂单 {2}":"+{0}: inventory {1}, my listings {2}","本次底子":"Selected base","不低于目标等级，不作底子":"At or above target; not an eligible base","自制模式下可选为底子":"Can be selected as a base in Craft mode","没有可用库存底子":"No eligible inventory base","库 {0}":"Stock {0}","挂 {0}":"Listed {0}","使用库存 {0}；还需制造 {1} 件底子":"Use stock {0}; craft {1} missing base(s)","使用库存 {0}；无需制造底子":"Use stock {0}; no base manufacturing needed","无可用低等级库存，按自制备料":"No eligible lower-level stock; prepare crafting materials"});})(globalThis);
 
 // ---- src/v3/i18n.js ----
 (function initLanguage(root) {
@@ -2884,7 +1205,8 @@ SOFTWARE.
           if (state.itemHrid !== request.itemHrid) { if (seenTarget) cancelPurchasePrefill(); return; }
           seenTarget = true;
           if (!state.showPostListing) return;
-          if (state.isSell !== false || Number(state.enhancementLevelInput) !== request.enhancementLevel) return cancelPurchasePrefill();
+          if (state.isSell !== false || state.isPostNewListing === false || state.isInstantOrder === true ||
+              Number(state.enhancementLevelInput) !== request.enhancementLevel) return cancelPurchasePrefill();
           const price = Number(state.priceInput);
           if (!Number.isFinite(price) || price <= 0) return;
           const maximum = panel.getMaxQuantity(false, request.itemHrid, request.enhancementLevel, price);
@@ -2993,9 +1315,18 @@ SOFTWARE.
       let listingCharacterId = null;
       let listingFormState = null;
       let lootSnapshot = null;
+      let purchaseContext = null;
       try {
         if (request.action === "ping") {
           accepted = true;
+        } else if (request.action === "purchase-context") {
+          const controller = find(fiber => typeof fiber.stateNode?.handleGoToMarketplace === "function" ? fiber.stateNode : null, false);
+          const panel = find(fiber => typeof fiber.stateNode?.handleShowPrefilledPostListing === "function" ? fiber.stateNode : null, false);
+          if (controller && panel) {
+            purchaseContext = { characterId:controller.state?.character?.id, itemHrid:panel.state?.itemHrid,
+              enhancementLevel:panel.state?.enhancementLevel };
+            accepted = true;
+          }
         } else if (request.action === "loot-snapshot" && typeof normalizeLoot === "function") {
           const state = find(fiber => {
             const value = fiber.stateNode?.state;
@@ -3024,7 +1355,7 @@ SOFTWARE.
             return null;
           });
           accepted = true;
-        } else if (request.action === "my-listings") {
+        } else if (request.action === "my-listings" || request.action === "sale-claim-state") {
           listingCharacterId = find((fiber) => fiber.stateNode?.state?.character?.id || null, false);
           const records = find((fiber) => {
             for (const candidate of [fiber.stateNode?.state, fiber.memoizedProps]) {
@@ -3034,7 +1365,18 @@ SOFTWARE.
           }, false);
           if (records) {
             const fields = ["id", "itemHrid", "enhancementLevel", "isSell", "price", "workingPrice", "orderQuantity", "filledQuantity", "status", "isInstantOrder", "unclaimedItemCount", "unclaimedCoinCount", "createdTimestamp", "createdAt", "updatedAt", "expireAt", "expiresAt"];
-            listings = [...records.values()].map((item) => Object.fromEntries(fields.filter((key) =>
+            let selected = [...records.values()];
+            if (request.action === "sale-claim-state") {
+              const token = request.rowToken;
+              const row = typeof token === "string" && /^sale-\d+$/.test(token)
+                ? window.document.querySelector(`[data-mwi-sale-plan-row="${token}"]`) : null;
+              // Some companion scripts remove DOM React expandos. The current
+              // root still retains the exact host node and its native row key.
+              const id = row && (fibers(row)[0]?.key ?? find(fiber =>
+                fiber.stateNode === row && fiber.key != null ? String(fiber.key) : null, false));
+              selected = selected.filter(item => id != null && String(item.id) === String(id));
+            }
+            listings = selected.map((item) => Object.fromEntries(fields.filter((key) =>
               item[key] === null || typeof item[key] === "boolean" || typeof item[key] === "string" ||
               (typeof item[key] === "number" && Number.isFinite(item[key]))).map((key) => [key, item[key]])));
             listingCharacterId = find((fiber) => fiber.stateNode?.state?.character?.id || null, false);
@@ -3194,7 +1536,7 @@ SOFTWARE.
         }
       } catch (_error) { accepted = false; error = "page_error"; }
       window.document.dispatchEvent(new CustomEvent(options.responseEvent, {
-        detail: JSON.stringify({ requestId: request.requestId, accepted, names, language, enhancementState, listings, listingCharacterId, listingFormState, lootSnapshot, destination, notice, preparationInfo, error: accepted ? "" : error })
+        detail: JSON.stringify({ requestId: request.requestId, accepted, names, language, enhancementState, listings, listingCharacterId, listingFormState, lootSnapshot, purchaseContext, destination, notice, preparationInfo, error: accepted ? "" : error })
       }));
     });
   }
@@ -3230,6 +1572,7 @@ SOFTWARE.
     openPurchase: async (item, quantity, reservedCoins = 0) => (await request({ action: "open", itemHrid: item.itemHrid,
       enhancementLevel: item.enhancementLevel || 0, purchaseQuantity: quantity, reservedCoins })).accepted === true,
     cancelPurchase: async () => (await request({ action:"cancel-purchase" })).accepted === true,
+    purchaseContext: async () => (await request({ action:"purchase-context" })).purchaseContext,
     prepareItem: (item, plan, destination) => request({ ...plan, action: "prepare-item", itemHrid: item.itemHrid, enhancementLevel: item.enhancementLevel, destination }, 5000),
     itemNames: async (hrids, language = app.i18n?.language || "zh") => (await request({ action: "names", hrids, language })).names || {},
     lastError: () => lastError
@@ -4270,7 +2613,9 @@ SOFTWARE.
       return editableDefaultClothes ? [...saved.filter(group => group.id === "clothes"), ...builtins, ...saved.filter(group => group.id !== "clothes")] : [...builtins, ...saved];
     }
     function groupsOf(hrid, level) {
-      const state = read();
+      return resolveGroups(read(), materialHrids, hrid, level);
+    }
+    function resolveGroups(state, materials, hrid, level) {
       const key = levelKey(hrid, level);
       const assigned = key && Object.hasOwn(state.levelAssignments || {}, key) ? state.levelAssignments[key] : state.assignments[hrid];
       if (assigned != null) {
@@ -4280,7 +2625,14 @@ SOFTWARE.
         const valid = [...new Set(ids)].filter(id => available.includes(id));
         return valid.length ? valid : ["unassigned"];
       }
-      return [!editableDefaultClothes && isClothing(hrid) ? "clothes" : materialHrids.has(hrid) ? "materials" : "unassigned"];
+      return [!editableDefaultClothes && isClothing(hrid) ? "clothes" : materials.has(hrid) ? "materials" : "unassigned"];
+    }
+    // One render needs a consistent view, without parsing/validating every saved
+    // assignment again for each row and each partition count. Mutations and
+    // subsequent snapshots still read storage, including edits from other tabs.
+    function membershipSnapshot() {
+      const state = read(), materials = materialHrids;
+      return Object.freeze({ groupsOf: (hrid, level) => resolveGroups(state, materials, hrid, level) });
     }
     function levelKey(hrid, level) {
       if (level === undefined) return null;
@@ -4317,7 +2669,7 @@ SOFTWARE.
       if (!text || text.length > 40) throw new Error(t("分区名称须为 1 至 40 个字"));
       return text;
     }
-    return Object.freeze({ read, groups, groupOf, groupsOf, selectedGroups,
+    return Object.freeze({ read, groups, groupOf, groupsOf, membershipSnapshot, selectedGroups,
       columnWidths() { return columnWidths(read()); },
       columnOrder() { return columnOrder(read()); },
       setColumnOrder(order) {
@@ -10617,6 +8969,7 @@ function getPriceTier(price, direction) {
     let rulesText = "";
     let characterSignature = "";
     let inventorySignature = "";
+    let inventoryIndex = null;
     let experienceSignature = "";
     let engine = null;
     let engineKey = "";
@@ -10669,6 +9022,15 @@ function getPriceTier(price, direction) {
         const nextInventorySignature = JSON.stringify([next?.characterId, next?.inventoryItems, next?.purchaseListings, next?.productionQueue, next?.enhancementQueue]);
         const inventoryChanged = nextInventorySignature !== inventorySignature;
         character = next;
+        if (inventoryChanged) {
+          inventoryIndex = Array.isArray(character?.inventoryItems) ? new Map() : null;
+          for (const item of inventoryIndex ? character.inventoryItems : []) {
+            if (!inventoryIndex.has(item.itemHrid)) inventoryIndex.set(item.itemHrid, new Map());
+            const levels = inventoryIndex.get(item.itemHrid), previous = levels.get(item.enhancementLevel);
+            levels.set(item.enhancementLevel, previous === null || !Number.isFinite(item.count) || item.count < 0
+              ? null : (previous ?? 0) + item.count);
+          }
+        }
         if (Number.isSafeInteger(next?.characterId) && next.characterId > 0) simulationOwner = next.characterId;
         inventorySignature = nextInventorySignature;
         if (inventoryChanged) inventoryRevision += 1;
@@ -10880,10 +9242,9 @@ function getPriceTier(price, direction) {
         info:{...plan.info, routeType:"traditional", protectAt:protection?.level ?? null, protectionItemHrid:protection?.itemHrid ?? null}};
     }
     function inventoryCount(itemHrid, enhancementLevel = 0) {
-      if (!Array.isArray(character?.inventoryItems)) return null;
-      const owned = character.inventoryItems.filter((item) => item.itemHrid === itemHrid && item.enhancementLevel === enhancementLevel);
-      if (owned.some((item) => !Number.isFinite(item.count) || item.count < 0)) return null;
-      return owned.reduce((sum, item) => sum + item.count, 0);
+      if (!inventoryIndex) return null;
+      const levels = inventoryIndex.get(itemHrid);
+      return levels?.has(enhancementLevel) ? levels.get(enhancementLevel) : 0;
     }
     function inventoryLevels(item) {
       return Array.from({ length: 21 }, (_, enhancementLevel) => ({ enhancementLevel,
@@ -11943,7 +10304,7 @@ function getPriceTier(price, direction) {
   "use strict";
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   const t = (text, ...values) => app.i18n ? app.i18n.t(text, ...values) : typeof text === "string" ? text : text.reduce((out, part, i) => out + part + (values[i] ?? ""), "");
-  function create({ store, cart, decisions, purchaseSelection = app.unifiedPlan.purchaseSelection, onPurchaseChange = () => {}, onCraft, onEnhance, onChange, onStatus, onOpen, node, button, table, row }) {
+  function create({ store, cart, decisions, purchaseSelection = app.unifiedPlan.purchaseSelection, onPurchaseChange = () => {}, onStartPurchase, onCraft, onEnhance, onChange, onStatus, onOpen, node, button, table, row }) {
     let budgetOwner = null, pickerOwner = null, selectedOwner = null, clearedPlan = null, gesture = null, manualDisclosure = null, removedManual = null, shortagesOnly = false, removedLegacy = null;
     const selected = new Set(), quantityDrafts = new Map();
     let disclosures = new Map();
@@ -12430,6 +10791,10 @@ function getPriceTier(price, direction) {
       const shortageLabel = node("label", null, "v3-plan-filter");
       const shortageToggle = node("input"); shortageToggle.type = "checkbox"; shortageToggle.checked = shortagesOnly;
       shortageToggle.onchange = () => { shortagesOnly = shortageToggle.checked; onChange(); }; shortageLabel.append(shortageToggle, t("只看缺料（含未知）")); tools.append(shortageLabel);
+      const startPurchase = button(t("开始采购"), el => onStartPurchase(el, {owner, budget:allocated}));
+      startPurchase.className = "v3-primary v3-start-purchase";
+      startPurchase.disabled = !procurement.complete || !(allocated ? allocation.rows : budget.rows).some(material => material.itemHrid !== "/items/coin" && material.purchaseQuantity > 0);
+      tools.append(startPurchase);
       if (!procurement.projects.length) materialsSection.append(node("p", t("未选采购项目，请在上方选择“计入”。")));
       const materials = table([t("材料"), t("制造与底子"), t("强化期望消耗"), t("本次需备"), t("可用库存"), t("买单未成"), t("成交待领"), t("净缺口"), t("本次采购"), t("参考单价"), t("采购金额"), t("状态"), t("操作")], t("强化计划材料合计"));
       materials.region.classList.add("v3-enhancement-materials");
@@ -12789,6 +11154,312 @@ function getPriceTier(price, direction) {
     return Object.freeze({ element, createStatus, destroy() { observers.forEach(observer => observer.disconnect()); element.remove(); } });
   }
   app.v3Notifications = Object.freeze({ create });
+})(globalThis);
+
+
+// ---- src/v3/purchase-queue.js ----
+(function initPurchaseQueue(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n.t(text, ...values);
+  const key = item => app.materialCart.key(item);
+  const purchasable = row => row.itemHrid !== "/items/coin" && Number.isSafeInteger(row.purchaseQuantity) && row.purchaseQuantity > 0;
+  function create({ readPlan, contextKey, spriteBase, onStatus }) {
+    const document = root.document;
+    const footer = document.createElement("section"); footer.className = "mwi-layu-purchase-queue";
+    footer.setAttribute("aria-label", t("采购队列"));
+    const status = document.createElement("span"); status.setAttribute("role", "status");
+    const list = document.createElement("div"); list.className = "v3-purchase-queue-items";
+    list.setAttribute("role", "group"); list.setAttribute("aria-label", t("待采购物品"));
+    const actions = document.createElement("div"); actions.className = "v3-purchase-queue-actions";
+    const button = (label, run) => {
+      const el = document.createElement("button"); el.type = "button"; el.textContent = t(label); el.onclick = run; return el;
+    };
+    const remove = button("移除当前", () => {
+      if (!session || busy) return;
+      const index = session.items.findIndex(item => key(item) === session.current);
+      session.items.splice(index, 1);
+      if (!session.items.length) { stop(); return; }
+      select(Math.min(index, session.items.length - 1));
+    });
+    const next = button("下一项", () => select(session.items.findIndex(item => key(item) === session.current) + 1));
+    const close = button("结束采购", () => stop());
+    next.className = "v3-purchase-queue-next";
+    actions.append(remove, next, close); footer.append(status, list, actions);
+    let session = null, timer = null, host = null, generation = 0, busy = false, checking = false, destroyed = false;
+    function detach() {
+      footer.remove(); host?.classList.remove("mwi-layu-purchase-host"); host = null;
+    }
+    function stop(message = "") {
+      generation++; session = null; busy = false;
+      root.clearInterval(timer); timer = null; detach();
+      app.marketBridge.cancelPurchase();
+      if (message) onStatus(message);
+    }
+    function paint() {
+      if (!session) return;
+      const focused = document.activeElement?.closest?.("[data-purchase-key]")?.dataset.purchaseKey;
+      const scroll = list.scrollLeft;
+      list.replaceChildren();
+      status.textContent = t`待购 ${session.items.length}`;
+      for (const item of session.items) {
+        const el = button("", () => select(session.items.findIndex(row => key(row) === key(item))));
+        el.dataset.purchaseKey = key(item); el.disabled = busy;
+        el.setAttribute("aria-pressed", String(key(item) === session.current));
+        const label = `${item.name}${item.enhancementLevel ? ` +${item.enhancementLevel}` : ""}`;
+        el.append(app.itemUI.identity(item, spriteBase(), label));
+        const quantity = document.createElement("span"); quantity.className = "v3-purchase-queue-quantity";
+        quantity.textContent = app.priceSimulationUI.formatPrice(item.purchaseQuantity).toUpperCase();
+        el.append(quantity); el.title = `${label} × ${item.purchaseQuantity.toLocaleString(app.i18n.locale)}`;
+        el.setAttribute("aria-label", el.title); list.append(el);
+      }
+      list.scrollLeft = scroll;
+      if (focused) [...list.children].find(el => el.dataset.purchaseKey === focused)?.focus({preventScroll:true});
+      remove.disabled = busy;
+      next.disabled = busy || session.items.findIndex(item => key(item) === session.current) >= session.items.length - 1;
+      footer.setAttribute("aria-busy", String(busy));
+    }
+    async function select(index, initialPlan = null) {
+      if (!session || busy || !session.items[index]) return;
+      const version = generation, target = key(session.items[index]);
+      const focused = list.contains(document.activeElement) ? document.activeElement.dataset.purchaseKey : null;
+      busy = true; paint();
+      try {
+        const fresh = initialPlan || await readPlan(session.options);
+        if (version !== generation || destroyed) return;
+        if (fresh.contextKey !== session.contextKey) { stop(t("采购计划已变化，请重新开始采购。")); return; }
+        const rows = new Map(fresh.rows.filter(purchasable).map(row => [key(row), row]));
+        const oldItems = session.items;
+        session.items = oldItems.map(item => rows.get(key(item))).filter(Boolean);
+        if (!session.items.length) { stop(t("当前没有需要采购的物品。")); return; }
+        // A newly filled order can remove the clicked item. Continue to the next remaining item in the original order.
+        const after = oldItems.slice(index).find(item => rows.has(key(item)));
+        const item = rows.get(target) || (after && rows.get(key(after))) || session.items[0];
+        session.current = key(item);
+        if (!await app.marketBridge.openPurchase(item, item.purchaseQuantity, fresh.reservedCoins)) throw new Error(t("未找到游戏市场入口，请刷新游戏后重试。"));
+        if (version !== generation || destroyed) return;
+        session.navigatedAt = Date.now(); session.navigationSeen = false; session.prefillArmed = true;
+        paint(); mount();
+      } catch (error) {
+        if (version === generation) stop(error.message || t("打开市场失败，请重试。"));
+      } finally {
+        if (version === generation) {
+          busy = false; paint();
+          if (focused) [...list.children].find(el => el.dataset.purchaseKey === focused)?.focus({preventScroll:true});
+          const active = list.querySelector('[aria-pressed="true"]');
+          if (active) {
+            const itemRect = active.getBoundingClientRect(), listRect = list.getBoundingClientRect();
+            if (itemRect.left < listRect.left) list.scrollLeft += itemRect.left - listRect.left;
+            else if (itemRect.right > listRect.right) list.scrollLeft += itemRect.right - listRect.right;
+          }
+        }
+      }
+    }
+    function mount() {
+      if (!session) return;
+      const visible = el => el?.isConnected && el.getClientRects().length && root.getComputedStyle(el).visibility !== "hidden";
+      const panels = [...document.querySelectorAll('[class*="MarketplacePanel_marketplacePanel"]')];
+      const panel = panels.find(visible);
+      if (!panel) {
+        // React can replace the panel without closing its visible native modal.
+        if (visible(host)) { if (footer.parentElement !== host) host.append(footer); return; }
+        session.missingSince ??= Date.now();
+        if (session.mounted ? Date.now() - session.missingSince > 1500 : Date.now() - session.startedAt > 5000) stop();
+        return;
+      }
+      session.missingSince = null;
+      const container = panel.closest('[class*="MainPanel_marketplaceModal__"]') || panel;
+      if (container !== host || footer.parentElement !== container) { detach(); host = container; host.classList.add("mwi-layu-purchase-host"); host.append(footer); }
+      session.mounted = true;
+    }
+    async function tick() {
+      if (!session || destroyed || busy || checking) return;
+      const version = generation;
+      try {
+        if (contextKey() !== session.contextKey) { stop(t("采购计划已变化，请重新开始采购。")); return; }
+        mount(); if (!session) return;
+        checking = true;
+        const native = await app.marketBridge.purchaseContext();
+        if (version !== generation || !session) return;
+        if (Number.isSafeInteger(native?.characterId) && String(native.characterId) !== session.owner.split(":").at(-1)) { stop(); return; }
+        const same = native && `${native.itemHrid}:${native.enhancementLevel}` === session.current;
+        if (same) session.navigationSeen = true;
+        else if (session.prefillArmed && (session.navigationSeen || Date.now() - session.navigatedAt > 5000)) {
+          // Missing/stale fibers or browsing another item only disarm the input.
+          // They are not evidence that the player ended the purchase queue.
+          session.prefillArmed = false; app.marketBridge.cancelPurchase();
+        }
+      } catch (_error) {
+        if (version === generation && session?.prefillArmed) {
+          session.prefillArmed = false; app.marketBridge.cancelPurchase();
+        }
+      }
+      finally { checking = false; }
+    }
+    async function start(trigger, options) {
+      stop(); const version = generation;
+      trigger.disabled = true;
+      try {
+        const plan = await readPlan(options);
+        if (version !== generation || destroyed) return;
+        const items = plan.rows.filter(purchasable).sort((a,b) => b.shortage - a.shortage);
+        if (!items.length) { onStatus(t("当前没有需要采购的物品。")); return; }
+        session = {options, items, current:null, owner:plan.owner, contextKey:plan.contextKey, startedAt:Date.now(), mounted:false};
+        await select(0, plan);
+        if (session) timer = root.setInterval(tick, 300);
+      } catch (error) { if (version === generation) onStatus(error.message || t("打开市场失败，请重试。")); }
+      finally { trigger.disabled = false; }
+    }
+    return Object.freeze({start, stop, destroy() { destroyed = true; stop(); }});
+  }
+  app.purchaseQueue = Object.freeze({create});
+})(globalThis);
+
+
+// ---- src/v3/native-sale-plan.js ----
+(function initNativeSalePlan(root) {
+  "use strict";
+  const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
+  const t = (text, ...values) => app.i18n.t(text, ...values);
+  // Fixed-price sell proceeds are net of the native 4% tax. Pegged fills can
+  // have different execution prices, so never infer their quantity from coins.
+  function soldQuantity(listing) {
+    if (listing?.isSell !== true || listing.workingPrice > 0 ||
+        !Number.isSafeInteger(listing.price) || listing.price < 3 ||
+        !Number.isSafeInteger(listing.unclaimedCoinCount) || listing.unclaimedCoinCount <= 0 ||
+        !Number.isSafeInteger(listing.filledQuantity) || listing.filledQuantity <= 0) return null;
+    const unit = listing.price * 0.96;
+    const count = Math.round(listing.unclaimedCoinCount / unit);
+    return Number.isSafeInteger(count) && count > 0 && count <= listing.filledQuantity && count <= 1000000 &&
+      Math.abs(count * unit - listing.unclaimedCoinCount) < 1 ? count : null;
+  }
+  function create({ store, enhancementSchedule, cart, spriteBase, onChange }) {
+    const document = root.document, entries = new Map();
+    const notices = app.v3Notifications.create({ floating:true });
+    notices.element.classList.add("mwi-layu-sale-plan-notices");
+    document.body.append(notices.element);
+    let sequence = 0, refreshing = false, destroyed = false, operationBusy = false, bulk = null;
+    function message(item, text, retry) {
+      const content = notices.createStatus();
+      content.append(app.itemUI.identity(item, spriteBase(), `${item.name}${item.enhancementLevel ? ` +${item.enhancementLevel}` : ""}`), document.createTextNode(` ${text}`));
+      if (retry) {
+        const button = document.createElement("button"); button.type = "button"; button.textContent = t("重试添加计划");
+        button.onclick = () => { try { retry(); button.remove(); } catch (_) { button.title = t("计划保存失败，请检查浏览器存储后重试。"); } };
+        content.append(button);
+      }
+    }
+    function add(owner, item, quantity, storage = null) {
+      const target = item.enhancementLevel > 0 ? enhancementSchedule : cart;
+      const writer = storage ? (item.enhancementLevel > 0 ? app.enhancementSchedule : app.materialCart).create(storage) : target;
+      if (item.enhancementLevel > 0) writer.addMany(owner, [{...item, quantity}]);
+      else writer.add(owner, item, quantity);
+    }
+    const read = entry => app.marketBridge.request({action:"sale-claim-state", rowToken:entry.token});
+    function favorite(listing) { return store.list().find(item => app.materialCart.key(item) === app.materialCart.key(listing)); }
+    async function execute(native, snapshot) {
+      if (operationBusy || destroyed) return;
+      operationBusy = true;
+      for (const entry of entries.values()) entry.button.disabled = true;
+      if (bulk) bulk.button.disabled = true;
+      try {
+        const before = await snapshot();
+        const owner = app.materialCart.scope(before.listingCharacterId);
+        if (!before.accepted || !Array.isArray(before.listings) || !owner || !native.isConnected || native.disabled) throw Error(t("挂单状态已变化，请刷新后重试。"));
+        const sales = before.listings.filter(listing => listing.isSell === true && listing.unclaimedCoinCount > 0)
+          .map(listing => ({listing, item:favorite(listing), quantity:soldQuantity(listing)})).filter(sale => sale.item);
+        if (!sales.length || sales.some(sale => sale.quantity === null)) throw Error(t("无法准确核对本次已售数量，请使用原生收集并手动添加计划。"));
+        // Validate the complete batch against one temporary copy before collecting.
+        const memory = new Map();
+        const storage = {getItem:key => memory.has(key) ? memory.get(key) : root.localStorage.getItem(key), setItem:(key,value) => memory.set(key,value)};
+        for (const sale of sales) add(owner, sale.item, sale.quantity, storage);
+        native.click();
+        const confirmed = new Set();
+        for (let attempt = 0; attempt < 24 && !destroyed && confirmed.size < sales.length; attempt++) {
+          await new Promise(resolve => root.setTimeout(resolve, 250));
+          const after = await app.marketBridge.request({action:"my-listings"});
+          if (!after.accepted || !Array.isArray(after.listings)) continue;
+          if (after.listingCharacterId !== before.listingCharacterId) break;
+          for (const sale of sales) {
+            const remaining = after.listings.find(row => String(row.id) === String(sale.listing.id));
+            if (!remaining || remaining.unclaimedCoinCount === 0) confirmed.add(sale);
+          }
+        }
+        if (destroyed) return;
+        for (const sale of sales) {
+          if (!confirmed.has(sale)) { message(sale.item, t("未确认收集成功，未添加计划；请核对挂单状态。")); continue; }
+          let saved = false;
+          const save = () => {
+            if (saved) return;
+            add(owner, sale.item, sale.quantity); saved = true;
+            onChange(); message(sale.item, t`已收集并添加 ${sale.quantity} 件计划。`);
+          };
+          try { save(); }
+          catch (_) { message(sale.item, t("已收集，但计划保存失败；可重试添加，收集不会重复执行。"), save); }
+        }
+      } catch (error) { if (!destroyed) message({itemHrid:"/items/coin",name:t("金币")}, error.message); }
+      finally { operationBusy = false; if (!destroyed) refresh(); }
+    }
+    function refreshBulk() {
+      const native = [...document.querySelectorAll('[class*="MarketplacePanel_myListings"] button')]
+        .find(button => !button.classList.contains("mwi-layu-sale-plan-all") && /^(全部收集|Collect All)\s*\(/i.test(button.textContent.trim()));
+      if (bulk && (bulk.native !== native || !bulk.button.isConnected)) { bulk.button.remove(); bulk = null; }
+      if (!native || bulk) return;
+      const button = document.createElement("button"); button.type = "button";
+      button.className = `${native.className} mwi-layu-sale-plan-all`;
+      button.textContent = t("全部计划");
+      button.title = t("全部收集，并仅为收藏物品按本次已售数量添加计划");
+      button.onclick = event => { event.preventDefault(); event.stopPropagation(); execute(native, () => app.marketBridge.request({action:"my-listings"})); };
+      native.after(button); bulk = {button,native};
+    }
+    function remove(row, entry) {
+      entry.button.remove(); entry.host.classList.remove("mwi-layu-sale-plan-actions");
+      row.removeAttribute("data-mwi-sale-plan-row"); entries.delete(row);
+    }
+    async function refresh() {
+      if (refreshing || destroyed) return;
+      refreshing = true;
+      try {
+        refreshBulk();
+        if (bulk) {
+          const snapshot = await app.marketBridge.request({action:"my-listings"});
+          if (destroyed) return;
+          const sales = snapshot.accepted && Array.isArray(snapshot.listings) ? snapshot.listings.filter(listing => listing.isSell === true && listing.unclaimedCoinCount > 0 && favorite(listing)) : [];
+          bulk.button.disabled = operationBusy || bulk.native.disabled || !sales.length || sales.some(listing => soldQuantity(listing) === null);
+        }
+        for (const [row, entry] of entries) if (!row.isConnected || !row.contains(entry.native)) remove(row, entry);
+        for (const row of document.querySelectorAll('table[class*="MarketplacePanel_myListingsTable"] tbody tr')) {
+          const host = row.querySelector('[class*="MarketplacePanel_claimsContainer"]');
+          const native = host && [...host.querySelectorAll("button")].find(button => !button.classList.contains("mwi-layu-sale-plan"));
+          if (!native) { if (entries.has(row)) remove(row, entries.get(row)); continue; }
+          let entry = entries.get(row);
+          if (!entry) {
+            const button = document.createElement("button"); button.type = "button";
+            button.className = `${native.className} mwi-layu-sale-plan`;
+            button.textContent = t("计划"); button.hidden = true;
+            entry = {button, native, host, token:`sale-${++sequence}`};
+            row.setAttribute("data-mwi-sale-plan-row", entry.token);
+            button.onclick = event => { event.preventDefault(); event.stopPropagation(); execute(entry.native, () => read(entry)); };
+            entries.set(row, entry); native.after(button);
+          }
+          if (operationBusy) { entry.button.disabled = true; continue; }
+          const result = await read(entry);
+          if (destroyed || !row.isConnected) continue;
+          const listing = result.accepted && result.listings?.[0];
+          const item = listing && listing.isSell === true && listing.unclaimedCoinCount > 0 && favorite(listing);
+          entry.item = item;
+          const visible = Boolean(item);
+          if (entry.button.hidden === visible) entry.button.hidden = !visible;
+          entry.host.classList.toggle("mwi-layu-sale-plan-actions", visible);
+          entry.button.disabled = !visible || native.disabled || soldQuantity(listing) === null;
+          const title = !visible ? "" : soldQuantity(listing) === null ? t("无法准确核对本次已售数量，请使用原生收集并手动添加计划。") : t("收集金币，并按本次已售数量添加计划");
+          if (entry.button.title !== title) entry.button.title = title;
+          if (entry.button.getAttribute("aria-label") !== title) entry.button.setAttribute("aria-label", title);
+        }
+      } finally { refreshing = false; }
+    }
+    return Object.freeze({ refresh, destroy() { destroyed = true; for (const [row, entry] of entries) remove(row, entry); bulk?.button.remove(); notices.destroy(); } });
+  }
+  app.nativeSalePlan = Object.freeze({ soldQuantity, create });
 })(globalThis);
 
 
@@ -14486,6 +13157,22 @@ function getPriceTier(price, direction) {
   const app = (root.MWILayuEnhancement = root.MWILayuEnhancement || {});
   // The approved V3 sketch is the visual authority. Adapt to the game panel, independently of browser viewport width.
   const css = `
+.mwi-layu-purchase-host {display:flex;flex-direction:column;min-height:0;}
+.mwi-layu-purchase-host > [class*="MainPanel_marketplaceModalContent"] {flex:1 1 0;min-height:0;height:auto;overflow:auto;}
+.mwi-layu-purchase-queue {position:sticky;bottom:0;z-index:1;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:none;width:100%;padding:7px 9px;background:#141a24;border-top:1px solid #43556f;color:#f1f5f9;font:12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;}
+.mwi-layu-purchase-queue > [role=status] {flex:none;color:#b6c4d6;}
+.mwi-layu-purchase-queue .v3-purchase-queue-items {display:flex;align-items:center;gap:5px;min-width:0;flex:1 1 180px;overflow-x:auto;scrollbar-color:#43556f #141a24;}
+.mwi-layu-purchase-queue button {display:inline-flex;flex:none;align-items:center;gap:4px;min-height:32px;padding:3px 7px;border:1px solid #43556f;border-radius:4px;background:#1e2636;color:#f1f5f9;font:inherit;cursor:pointer;}
+.mwi-layu-purchase-queue button:hover {background:#283a50;}
+.mwi-layu-purchase-queue button:focus-visible {outline:2px solid #7dd3fc;outline-offset:-2px;}
+.mwi-layu-purchase-queue button:disabled {opacity:.5;cursor:default;}
+.mwi-layu-purchase-queue [aria-pressed=true] {border-color:#7dd3fc;background:#244c66;}
+.mwi-layu-purchase-queue .mwi-layu-item-label {display:inline-flex;align-items:center;gap:4px;}
+.mwi-layu-purchase-queue .mwi-layu-item-icon {width:24px;height:24px;flex:none;}
+.mwi-layu-purchase-queue .mwi-layu-item-name {max-width:65px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mwi-layu-purchase-queue .v3-purchase-queue-quantity {color:#dce9f8;}
+.mwi-layu-purchase-queue .v3-purchase-queue-actions {display:flex;flex:none;gap:5px;margin-left:auto;}
+.mwi-layu-purchase-queue .v3-purchase-queue-next {background:#0284c7;border-color:#0284c7;color:#fff;}
 .mwi-layu-panel .v3-enhanposer {min-width:0;padding:12px;}
 .mwi-layu-panel .v3-enhanposer-heading {display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;}
 .mwi-layu-panel .v3-enhanposer-heading h2 {margin:0;font-size:14px;}
@@ -14816,7 +13503,8 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .v3-plan-row-actions {flex-wrap:nowrap;white-space:nowrap;}
 .mwi-layu-panel .v3-plan-row-actions button {flex:0 0 auto;}
 .mwi-layu-panel .v3-unified-materials {border-top:1px solid #3c4b61;padding-top:14px;margin-top:16px;}
-.mwi-layu-panel .v3-plan-filter {display:flex;align-items:center;gap:5px;margin-left:auto;font-size:11px;color:#b6c4d6;}
+.mwi-layu-panel .v3-plan-filter {display:flex;align-items:center;gap:5px;font-size:11px;color:#b6c4d6;}
+.mwi-layu-panel .v3-start-purchase {margin-left:auto;}
 .mwi-layu-panel .v3-legacy-plans {padding-top:14px;margin-top:14px;border-top:1px solid #303e52;}
 .mwi-layu-panel .v3-legacy-projects table {min-width:760px;}
 .mwi-layu-panel .v3-legacy-projects input {width:64px;}
@@ -15006,6 +13694,23 @@ function getPriceTier(price, direction) {
 .mwi-layu-panel .mwi-layu-settings-help p {line-height:1.7;}
 .mwi-layu-panel .mwi-layu-undo {padding:6px 14px;background:#192333;}
 /* Reserve space in native layout as well as moving the button outside the icon. */
+/* Compact native sale proceeds; keep React-owned nodes and handlers intact. */
+.mwi-layu-sale-plan-actions {display:flex!important;flex-direction:row!important;justify-content:center;align-items:center;gap:0!important;white-space:nowrap;}
+.mwi-layu-sale-plan-actions > [class*="MarketplacePanel_claims__"] {margin-inline-end:16px;}
+.mwi-layu-sale-plan-actions [class*="Item_item__"] {display:flex!important;align-items:center;gap:6px;width:auto!important;height:40px!important;background:transparent!important;overflow:visible!important;}
+.mwi-layu-sale-plan-actions [class*="Item_iconContainer"] {width:40px!important;height:40px!important;margin:0!important;flex:none;}
+.mwi-layu-sale-plan-actions [class*="Item_count"] {display:block!important;margin:0!important;text-shadow:none!important;white-space:nowrap;}
+.mwi-layu-sale-plan-actions > button {box-sizing:border-box;width:auto!important;min-height:34px;margin:0!important;padding:5px 12px!important;font:inherit;line-height:22px;border:1px solid #7182ca!important;flex:none;}
+.mwi-layu-sale-plan-actions > button:not(.mwi-layu-sale-plan) {border-radius:4px 0 0 4px!important;border-inline-end:0!important;}
+.mwi-layu-sale-plan-actions > .mwi-layu-sale-plan {border-radius:0 4px 4px 0!important;background:#23283f!important;color:#dbe2ff!important;}
+.mwi-layu-sale-plan-all {margin-inline-start:6px;background:#23283f!important;color:#dbe2ff!important;border:1px solid #7182ca!important;}
+.mwi-layu-sale-plan-notices {position:fixed;bottom:16px;right:16px;z-index:10000;max-width:min(520px,calc(100vw - 32px));max-height:40vh;overflow:auto;background:#182130;color:#f1f5f9;border:1px solid #3b4966;border-radius:4px;font:13px/1.5 system-ui;}
+.mwi-layu-sale-plan-notices .v3-notification:not([hidden]) {display:flex;align-items:center;gap:8px;padding:8px;}
+.mwi-layu-sale-plan-notices .mwi-layu-item-label {display:inline-flex;align-items:center;gap:4px;}
+.mwi-layu-sale-plan-notices .mwi-layu-item-icon {width:20px;height:20px;vertical-align:middle;flex:none;}
+.mwi-layu-sale-plan:focus-visible {outline:2px solid #38bdf8;outline-offset:2px;}
+.mwi-layu-sale-plan:disabled {opacity:.65;cursor:not-allowed;}
+.mwi-layu-sale-plan[hidden] {display:none!important;}
 .mwi-layu-market-favorite-host {position:relative;margin-inline-end:26px;flex-shrink:0;}
 .mwi-layu-market-favorite-host:has(> .mwi-layu-market-row-favorite) {margin-inline-end:32px;}
 .mwi-layu-favorite-toggle {position:absolute;left:calc(100% + 2px);right:auto;bottom:0;display:grid;place-items:center;box-sizing:border-box;background:#151d2b;border:1px solid #3b4966;border-radius:4px;color:#a0aec2;cursor:pointer;padding:3px;width:24px;height:24px;z-index:3;}
@@ -15696,7 +14401,7 @@ function getPriceTier(price, direction) {
     return "≤ " + [days && t`${days}天`, hours && t`${hours}小时`, minutes && t`${minutes}分`,
       (rest || seconds === 0) && t`${rest}秒`].filter(Boolean).join(" ");
   };
-  function create({ partitions, cart, enhancementSchedule, planDecisions, purchaseSelection, onPurchaseChange, presets, onChange, onOpen, onCraft, onEnhance, onPrice, onStatus, createStatus, notifications }) {
+  function create({ partitions, cart, enhancementSchedule, planDecisions, purchaseSelection, onPurchaseChange, onStartPurchase, presets, onChange, onOpen, onCraft, onEnhance, onPrice, onStatus, createStatus, notifications }) {
     const document = root.document;
     function node(tag, text, className) {
       const el = document.createElement(tag); if (text != null) el.textContent = text;
@@ -16381,7 +15086,7 @@ function getPriceTier(price, direction) {
       }
     }
     let structureSignature = "", refreshLive = null, renderRevision = 0;
-    const enhancementUI = app.enhancementScheduleUI.create({ store:enhancementSchedule, cart, decisions:planDecisions, purchaseSelection, onPurchaseChange, onCraft, onEnhance,
+    const enhancementUI = app.enhancementScheduleUI.create({ store:enhancementSchedule, cart, decisions:planDecisions, purchaseSelection, onPurchaseChange, onStartPurchase, onCraft, onEnhance,
       onChange() { structureSignature = ""; onChange(); }, onStatus, onOpen, node, button, table, row });
     const decompositionUI = app.enhancementDecompositionUI.create({ node, button, table, row, onOpen,
       onChange() { structureSignature = ""; onChange(); } });
@@ -16438,8 +15143,9 @@ function getPriceTier(price, direction) {
       }
       const materialItems = items.map(item => wages.materialInfo(item)).filter(item => item.category === "materials");
       partitions.setMaterialHrids([...materialItems, ...catalog.rows.filter(item => wages.materialInfo(item).category !== "equipment")].map(item => item.itemHrid));
+      const membership = partitions.membershipSnapshot();
       const materialRows = new Map(catalog.rows.map(item => [app.materialCart.key(item), item]));
-      for (const item of items.filter(item => partitions.groupsOf(item.itemHrid, item.enhancementLevel).includes("materials"))) {
+      for (const item of items.filter(item => membership.groupsOf(item.itemHrid, item.enhancementLevel).includes("materials"))) {
         if (!materialRows.has(app.materialCart.key(item))) materialRows.set(app.materialCart.key(item), {
           ...wages.materialInfo(item), sources: [], manufacturing: 0, enhancement: 0, required: 0, shortage: 0
         });
@@ -16471,7 +15177,7 @@ function getPriceTier(price, direction) {
       const all = [...new Map(items.map(item => [app.materialCart.key(item), { item, sortIndex: wages.materialInfo(item).sortIndex }])).values()]
         .sort((a, b) => app.marketPartitions.compare(a.sortIndex, b.sortIndex, 1));
       const matchesSearch = item => !search.trim() || `${names[item.itemHrid] || item.name} +${item.enhancementLevel} ${item.itemHrid}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase());
-      let chosen = items.filter(item => matchesSearch(item) && partitions.groupsOf(item.itemHrid, item.enhancementLevel).some(id => selected.includes(id) && id !== "materials") &&
+      let chosen = items.filter(item => matchesSearch(item) && membership.groupsOf(item.itemHrid, item.enhancementLevel).some(id => selected.includes(id) && id !== "materials") &&
         !(showMaterials && materialRows.has(app.materialCart.key(item)))).map(item => {
         const quote = prices.quote(item);
         const simulation = simulationPanels.get(app.materialCart.key(item));
@@ -16484,7 +15190,10 @@ function getPriceTier(price, direction) {
         const quantity = enhancementItems.filter(row => row.planSource !== "queue" && app.materialCart.key(row) === app.materialCart.key(item)).reduce((sum, row) => sum + row.quantity, 0) || 1;
         const orders = app.marketPartitions.compareListings(own?.listings || [], item, quote);
         const ownPrices = orders.map(row => row.price).filter(Number.isFinite);
-        return { item, quote, result, quantity, orders, ownPrice: ownPrices.length ? Math.min(...ownPrices) : null };
+        // Include material-stock changes in the row fingerprint, so unchanged
+        // rows need no DOM writes even when unrelated inventory has refreshed.
+        return { item, quote, result, quantity, orders, ownPrice: ownPrices.length ? Math.min(...ownPrices) : null,
+          stockedCost: stockedExpectedCost(item, result?.metrics?.totalCost, result) };
       }).filter(plan => listingFilter === "all" || listingFilter === "mine" && plan.orders.length ||
         listingFilter === "behind" && plan.orders.some(order => order.standing === "behind") ||
         listingFilter === "unknown" && (!own || own.cached || plan.orders.some(order => order.standing === "unknown" || order.stale || order.standing === "ahead")));
@@ -16640,7 +15349,7 @@ function getPriceTier(price, direction) {
         return rank(a.id) - rank(b.id);
       });
       for (const group of [{ id: "all", name: t("全部") }, ...orderedGroups]) {
-        const count = items.filter(item => partitions.groupsOf(item.itemHrid, item.enhancementLevel).some(id => group.id === "all" ? id !== "materials" : id === group.id)).length;
+        const count = items.filter(item => membership.groupsOf(item.itemHrid, item.enhancementLevel).some(id => group.id === "all" ? id !== "materials" : id === group.id)).length;
         const label = node("label", null, "mwi-layu-partition-choice");
         const input = node("input"); input.type = "checkbox"; input.setAttribute("aria-label", `${group.name} (${count})`);
         input.checked = group.id === "all" ? visibleGroups.every(group => selected.includes(group.id)) : selected.includes(group.id);
@@ -16807,17 +15516,6 @@ function getPriceTier(price, direction) {
         let changed = false;
         for (const plan of chosen) {
           const entry = projectRows.get(app.materialCart.key(plan.item));
-          if (entry) {
-            const expected = plan.result?.metrics?.totalCost;
-            const expectedCell = projectCell(entry.tr, "expectedCost").firstElementChild;
-            expectedCell.textContent = compactMoney(expected); expectedCell.dataset.value = expected ?? "unknown";
-            expectedCell.title = Number.isFinite(expected) ? `${t("单件期望成本")}：${exactMoney(expected)}` : t("期望成本未知");
-            const adjusted = stockedExpectedCost(plan.item, expected, plan.result);
-            const adjustedCell = projectCell(entry.tr, "stockedCost").firstElementChild;
-            adjustedCell.textContent = compactMoney(adjusted); adjustedCell.dataset.value = adjusted ?? "unknown";
-            adjustedCell.title = adjusted == null ? t("单件材料需求或库存数据未知，暂不能计算库存抵扣")
-              : `${t("扣除可用库存价值后的单件成本")}：${exactMoney(adjusted)}`;
-          }
           const signature = fingerprint(plan);
           if (!entry || entry.signature === signature) continue;
           const buffer = node("tbody");
@@ -17070,7 +15768,7 @@ function getPriceTier(price, direction) {
         const expectedCostCell = node("span", compactMoney(result?.metrics?.totalCost), "v3-project-cost-value");
         expectedCostCell.title = Number.isFinite(result?.metrics?.totalCost) ? `${t("单件期望成本")}：${exactMoney(result.metrics.totalCost)}` : t("期望成本未知");
         expectedCostCell.dataset.value = result?.metrics?.totalCost ?? "unknown";
-        const stockedCost = stockedExpectedCost(item, result?.metrics?.totalCost, result);
+        const stockedCost = plan.stockedCost;
         const stockedCostCell = node("span", compactMoney(stockedCost), "v3-project-cost-value");
         stockedCostCell.title = stockedCost == null ? t("强化计划或库存数据未完整，暂不能抵扣")
           : `${t("扣除可用库存价值后的单件成本")}：${exactMoney(stockedCost)}`;
@@ -17117,13 +15815,15 @@ function getPriceTier(price, direction) {
         tr.cells[salePriceSide === "reference" ? 3 : salePriceSide.startsWith("bid") ? 2 : 1].dataset.salePriceSelected = "true";
         const metricRow = retainedRow || tr;
         const metricCell = name => projectCell(metricRow, name);
-        const updateMetrics = () => {
+        const updateMetrics = (initial = false) => {
           const simulation = simulationPanels.get(key);
           const active = simulation?.active();
-          const metric = active ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, calculationQuote(prices.quote(item), item));
+          // Simulation callbacks pass their panel; only our explicit true uses
+          // the already computed row estimate instead of live simulation data.
+          const metric = initial === true ? result : active ? simulation.current()?.simulated || { reason: t("模拟报价无效，请修正") } : wages.calculate(item, calculationQuote(prices.quote(item), item));
           metricCell("profit").replaceChildren(profit(metric)); metricCell("wage").replaceChildren(wage(metric)); metricCell("margin").replaceChildren(profitMargin(metric));
           const expectedCost = metric?.metrics?.totalCost;
-          const adjustedCost = stockedExpectedCost(item, expectedCost, metric);
+          const adjustedCost = initial === true ? stockedCost : stockedExpectedCost(item, expectedCost, metric);
           const expectedCell = projectCell(metricRow, "expectedCost").firstElementChild;
           expectedCell.textContent = compactMoney(expectedCost); expectedCell.dataset.value = expectedCost ?? "unknown";
           expectedCell.title = Number.isFinite(expectedCost) ? `${t("单件期望成本")}：${exactMoney(expectedCost)}` : t("期望成本未知");
@@ -17140,7 +15840,7 @@ function getPriceTier(price, direction) {
             metricCell(name).title = active ? t`材料价格模拟 · 固定售价 ${number(simulation.sellPrice())}` : saleBasisLabel(item);
           }
         };
-        updateMetrics();
+        updateMetrics(true);
         if (own && orders.length) {
           const standing = orders.some(order => order.standing === "leading") ? "leading" :
             orders.every(order => order.standing === "behind") ? "behind" : "unknown";
@@ -18154,9 +16854,21 @@ function getPriceTier(price, direction) {
     const prices = app.marketPrices.create({ onChange: schedule });
     const listingAgeHint = app.listingAgeHint.create({ prices });
     const wages = app.marketWages.create({ prices, onChange: schedule });
+    const purchaseQueue = app.purchaseQueue.create({
+      async readPlan(options) {
+        await wages.refreshCharacter();
+        return purchasePlan(options);
+      },
+      contextKey: () => purchaseContext().contextKey,
+      spriteBase: () => spriteBase,
+      onStatus: text => { marketStatus.textContent = text; }
+    });
+    const salePlan = app.nativeSalePlan.create({ store, enhancementSchedule, cart,
+      onChange() { signature = ""; schedule(); }, spriteBase: () => spriteBase });
     const presets = app.partitionPresets.create({ getCatalog: () => wages.presetCatalog() });
     const view = app.v3Workspace.create({ partitions, cart, enhancementSchedule, planDecisions, purchaseSelection, presets, createStatus, notifications: notifications.element, onChange() { signature = ""; schedule(); },
-      onPurchaseChange() { app.marketBridge.cancelPurchase(); },
+      onPurchaseChange() { purchaseQueue.stop(); },
+      onStartPurchase: (button, options) => purchaseQueue.start(button, options),
       onOpen: openMarket, onCraft: (item, button, options) => prepareItem(item, button, "crafting", options),
       onEnhance: (item, button, options) => prepareItem(item, button, "enhancing", options),
       onPrice: (item, value) => store.setCustomPrice(item, value), onStatus: (text) => { status.textContent = text; } });
@@ -18337,6 +17049,7 @@ function getPriceTier(price, direction) {
       finally { preparing = false; button.disabled = false; }
     }
     async function openMarket(item, button, purchaseMode = null, allLevels = false) {
+      purchaseQueue.stop();
       button.disabled = true;
       marketStatus.textContent = t("正在打开市场…");
       const purchaseRevision = purchaseSelection.revision();
@@ -18358,19 +17071,12 @@ function getPriceTier(price, direction) {
               quantity = Math.ceil(Math.max(0, purchaseMode.required - inventoryCount - pendingPurchaseCount));
             }
           } else if (purchaseMode.type === "enhancement" || ["shortage", "budget"].includes(purchaseMode)) {
-            const scope = app.materialCart.scope(wages.state().simulationOwner);
-            const snapshot = app.enhancementSchedule.snapshot(enhancementSchedule, scope, wages.enhancementQueue(), names);
-            const unified = app.unifiedPlan.snapshot(snapshot.items, cart.read(scope), planDecisions.read(scope));
-            const selected = purchaseSelection.project(scope, unified.items);
+            const plan = purchasePlan({budget:purchaseMode === "budget" || purchaseMode.budget});
             if (purchaseSelection.revision() !== purchaseRevision) { marketStatus.textContent = t("采购选择已变化，请从材料表重新操作。"); return; }
-            const summary = app.unifiedPlan.purchasing(selected, wages, prices, snapshot.queueError, unified.conflicts);
-            if (!summary.complete) { marketStatus.textContent = t("计划未算全或存在待核对项目，暂不能预填采购。"); return; }
-            const coins = wages.materialInfo({ itemHrid:"/items/coin", enhancementLevel:0 }).inventoryCount;
-            const plan = (purchaseMode === "budget" || purchaseMode.budget) ? app.unifiedPlan.allocate(summary, prices, coins) : app.materialCart.budget(summary, prices);
             const material = plan.rows?.find(row => app.materialCart.key(row) === app.materialCart.key(item));
             if (!material) { marketStatus.textContent = t("此材料已不在本次采购中，请从材料表重新操作。"); return; }
             quantity = material?.purchaseQuantity;
-            reservedCoins = plan.reservedCoins ?? summary.rows.filter(row => row.itemHrid === "/items/coin").reduce((sum, row) => sum + (row.required || 0), 0);
+            reservedCoins = plan.reservedCoins;
           } else { marketStatus.textContent = t("采购入口已变化，请从强化计划重新操作。"); return; }
           if (!Number.isSafeInteger(quantity) || quantity < 0) {
             if (purchaseMode.type === "material") {
@@ -18390,9 +17096,32 @@ function getPriceTier(price, direction) {
         marketStatus.textContent = opened ? purchaseMode ? t("市场已打开。2 分钟内可预填数量（不超过余额），请核对后确认。") : purchaseNotice : error === "bridge_timeout"
           ? t("游戏桥接未响应，请确认脚本更新后已刷新游戏。")
           : t("未找到游戏市场入口，请刷新游戏后重试。");
-      } catch (_error) {
-        if (!destroyed) marketStatus.textContent = t("打开市场失败，请重试。");
+      } catch (error) {
+        if (!destroyed) marketStatus.textContent = error.message || t("打开市场失败，请重试。");
       } finally { button.disabled = false; }
+    }
+    function purchaseContext() {
+      const owner = app.materialCart.scope(wages.state().simulationOwner);
+      const snapshot = app.enhancementSchedule.snapshot(enhancementSchedule, owner, wages.enhancementQueue(), names);
+      const unified = app.unifiedPlan.snapshot(snapshot.items, cart.read(owner), planDecisions.read(owner));
+      const selected = purchaseSelection.project(owner, unified.items);
+      return { owner, snapshot, unified, selected,
+        // Live queue levels and resolved names change during an idle purchase.
+        // Only persisted user choices invalidate this session; each navigation
+        // still recomputes quantities from the latest queue, inventory and orders.
+        contextKey:JSON.stringify([owner, purchaseSelection.revision(), enhancementSchedule.read(owner), cart.read(owner), planDecisions.read(owner)]) };
+    }
+    function purchasePlan(options = {}) {
+      const context = purchaseContext();
+      if (options.owner && context.owner !== options.owner) throw new Error(t("角色已切换，请在当前角色的材料卡片重新打开市场。"));
+      const { selected, snapshot, unified } = context;
+      const summary = app.unifiedPlan.purchasing(selected, wages, prices, snapshot.queueError, unified.conflicts);
+      if (!summary.complete) throw new Error(t("计划未算全或存在待核对项目，暂不能预填采购。"));
+      const coins = wages.materialInfo({itemHrid:"/items/coin", enhancementLevel:0}).inventoryCount;
+      const plan = options.budget ? app.unifiedPlan.allocate(summary, prices, coins) : app.materialCart.budget(summary, prices);
+      if (options.budget && !plan.available) throw new Error(plan.reason);
+      return { ...plan, rows:plan.rows.map(row => ({...row, name:names[row.itemHrid] || row.name})), owner:context.owner, contextKey:context.contextKey,
+        reservedCoins:plan.reservedCoins ?? summary.rows.filter(row => row.itemHrid === "/items/coin").reduce((sum, row) => sum + (row.required || 0), 0) };
     }
     function scan() {
       if (destroyed) return;
@@ -18509,6 +17238,7 @@ function getPriceTier(price, direction) {
           if (button.getAttribute("aria-label") !== title) button.setAttribute("aria-label", title);
         }
       }
+      salePlan.refresh();
       render();
     }
     function schedule() {
@@ -18571,6 +17301,8 @@ function getPriceTier(price, direction) {
         view.destroy();
         notifications.destroy();
         wages?.destroy();
+        purchaseQueue.destroy();
+        salePlan.destroy();
         listingAgeHint.destroy();
         prices.destroy();
         document.removeEventListener(app.config.bridgeEvent, onMarketMessage);
